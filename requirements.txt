@@ -1,0 +1,7 @@
+appdirs
+arrow
+networkx
+openpyxl
+pandas
+pyqt5
+pytest

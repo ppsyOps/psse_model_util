@@ -1,0 +1,13 @@
+[tool.poetry]
+name = "psse-model-util"
+version = "0.0.1"
+description = ""
+authors = ["Chris Advena"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+
+[build-system]
+requires = ["pandas", "appdirs", 'networkx']
+
