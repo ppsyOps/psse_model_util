@@ -382,13 +382,16 @@ class Network(AbstractSection):
         # Replace the default df index with the columns specified in id_cols
         # (optionally specified in rawx_json_template).
         if 'id_cols' in metadata:
-            id_cols = metadata['id_cols']
+            id_cols = [_ for _ in metadata['id_cols'] if _ in df.columns]  # id_cols = metadata['id_cols']
+            ommited_from_index = set(id_cols) - set(df.columns)
+            if len(ommited_from_index) > 0:
+                msg = f'Unable to move columns to index (may be okay for models older than v35): {str(ommited_from_index)}.'
+                warnings.warn(msg)
             # Set the index using the specified id_cols
             try:
                 df.set_index(id_cols, inplace=True)
             except KeyError as e:
-                missing_cols = str(set(id_cols) - set(df.columns))
-                msg = f'Columns expected by missing (may be okay for models oler than v35): {missing_cols}.  {str(e)}'
+                msg = f'Error moving columns {str(id_cols)} to index. {str(e)}'
                 warnings.warn(msg)
                 # raise
 
@@ -1601,18 +1604,8 @@ class Model:
             return FpPickleType(None, None)
 
 
-def rawx_to_model(raw_file_path: Union[str, Path]) -> Model:
-    """
-    Read a PSSE v35 JSON file and return a Model object.
-
-    :param raw_file_path: Path to the PSSE v35 JSON file
-    :return: Model object containing the parsed data
-    """
-    return Model(raw_file_path)
-
-
 if __name__ == '__main__':
-    export_format = 'None'  # 'csv' or 'None'
+    export_format = 'None' # 'csv' or 'None'
 
     print(f'Starting psse_model_util/rawx/model.py...')
     start = perf_counter_ns()
@@ -1626,7 +1619,9 @@ if __name__ == '__main__':
     # filename = 'sample_34.raw'
     # fp = (Path(__file__).parent.parent
     #       / f'tests/data/{filename}')
-    fp = Path(r'C:\Personal\Projects\psse_model_util\tests\data\IDC_23S_sum23idctr6p2.raw')
+    # fp = Path(r'C:\Personal\Projects\psse_model_util\tests\data\IDC_23S_sum23idctr6p2.raw')
+    fp = Path(__file__).parent.parent / r"tests\data\IDC_2324W_win24idctr6p3.raw"
+    # r"D:\Code\Python\psse_model_util\tests\data\IDC_2324W_win24idctr6p3.raw"
     pickle_path = site_cache_dir / fp.with_suffix('.model').name
     if not pickle_path.exists():
         model = Model(file_path_or_json=fp, force_recalculate=True)
