@@ -1,4 +1,5 @@
 import appdirs
+import shutil
 from pathlib import Path
 
 APP_NAME = 'psse_model_util'
@@ -20,8 +21,44 @@ user_data_dir = __user_root / 'data'
 user_cache_dir = __user_root / 'cache'
 user_state_dir = __user_root / 'state'
 
-k = Path('//corp.pjm.com/shares/atc')
-w = Path('//corp.pjm.com/shares/TransmissionServices')
+
+def delete_all_items_in_directory(directory: str):
+    """
+    Delete all items (files and directories) in the specified directory.
+
+    :param directory: The path to the directory to clear.
+    """
+    # Define the target directory using pathlib
+    target_dir = Path(directory)
+
+    if not target_dir.is_dir():
+        raise ValueError(f"The provided path '{directory}' is not a valid directory.")
+
+    # Iterate through each item in the directory
+    for item in target_dir.iterdir():
+        if item.is_dir():
+            # Remove the directory and its contents
+            shutil.rmtree(item)
+        else:
+            # Remove the file
+            item.unlink()
+
+
+def clear_user_cache():
+    """Delete all files from the user_cache_dir directory."""
+    delete_all_items_in_directory(user_cache_dir)
+
+
+def clear_site_cache():
+    """Delete all files from the site_cache_dir directory."""
+    delete_all_items_in_directory(site_cache_dir)
+
+
+def clear_cache():
+    """Delete all files from the user_cache_dir and site_cache_dir directories"""
+    clear_user_cache()
+    clear_site_cache()
+
 
 if __name__ == '__main__':
     paths = {'project_dir:': project_dir,
@@ -36,8 +73,6 @@ if __name__ == '__main__':
              'user_state_dir': user_state_dir,
              'user_cache_dir': user_cache_dir,
              'user_data_dir': user_data_dir,
-             'k': k,
-             'w': w,
              }
 
     for name, path in paths.items():

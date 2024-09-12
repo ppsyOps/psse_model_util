@@ -7,7 +7,7 @@ import time
 import warnings
 import pickle
 
-from psse_model_util.constants import DOWNLOAD_WAIT_SECONDS, RESILIENT
+from psse_model_util.common.constants import DOWNLOAD_WAIT_SECONDS, RESILIENT
 
 import pandas as pd
 
