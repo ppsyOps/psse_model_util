@@ -207,6 +207,8 @@ class ModelComparison:
             - The resulting DataFrame will only include buses that exist in both
                 models (inner join).
         """
+        # If cached results exist and join columns haven't changed, return
+        # cached results.
         # If (1) bus_num_changes has already been run (and results saved to
         # self._bus_num_changes) # and (2) join_columns is the same as used to
         # create that cache, then use the cached results.  Else, start from
@@ -219,7 +221,7 @@ class ModelComparison:
         assert 'ibus' not in join_columns, "'ibus' not permitted in join_columns."
 
         # Remove duplicates from join_columns
-        join_columns[:] = dict.fromkeys(join_columns)
+        join_columns = list(dict.fromkeys(join_columns))
 
         # Get bus dataframes from both models
         bus_df1 = self.model1.network.bus.reset_index()
@@ -243,11 +245,19 @@ class ModelComparison:
         )
 
         # Filter to show only records where bus numbers differ
-        self._bus_num_changes = merged_df[merged_df['ibus_model1'] != merged_df['ibus_model2']]
-        self._bus_num_changes._metadata = {'join_columns': join_columns}
+        changes_df = merged_df[merged_df['ibus_model1'] != merged_df['ibus_model2']]
 
-        return self._bus_num_changes
+        # If there are changes, prepare the result DataFrame
+        if not changes_df.empty:
+            result_columns = ['ibus_model1', 'ibus_model2'] + [f'{col}_model1' for col in join_columns]
+            self._bus_num_changes = changes_df[result_columns].copy()
+            self._bus_num_changes._metadata['join_columns'] = join_columns
+            return self._bus_num_changes
+        else:
+            # If no changes, return None or an empty DataFrame based on your preference
+            return None  # or return pd.DataFrame()
 
+        # Note: The 'presence' column is not added here as it's not relevant for bus number changes
     def compare_network_dfs(self) -> dict[str, pd.DataFrame]:
         """
         Compare network dataframes between the two models.
@@ -299,8 +309,10 @@ class ModelComparison:
                 return (series1 != series2).astype(bool)
 
         result: Dict[str, pd.DataFrame] = {}
-        df1_names = [_ for _ in dir(self.model1.network) if isinstance(getattr(self.model1.network, _), pd.DataFrame)]
-        df2_names = [_ for _ in dir(self.model2.network) if isinstance(getattr(self.model2.network, _), pd.DataFrame)]
+        df1_names = [_ for _ in dir(self.model1.network)
+                     if isinstance(getattr(self.model1.network, _), pd.DataFrame)]
+        df2_names = [_ for _ in dir(self.model2.network)
+                     if isinstance(getattr(self.model2.network, _), pd.DataFrame)]
 
         removed_dfs = set(df1_names) - set(df2_names)
         if removed_dfs:
@@ -326,8 +338,10 @@ class ModelComparison:
                 print(f'Model 1 columns:', df1.columns)
                 print(f'Model 2 columns:', df2.columns)
                 continue
+
             columns = list(set(df1.columns) | set(df2.columns))
             new_columns: Dict[str, Any] = {}
+
             # Add "_delta" columns to merged_df
             for column in columns:
                 col1, col2 = f'{column}_model1', f'{column}_model2'
@@ -335,10 +349,12 @@ class ModelComparison:
                     new_columns[f'{column}_delta'] = _column_delta(merged_df[col1], merged_df[col2])
 
             # Add an indicator column to show which model(s) each row is present in.
-            indicator_col1 = f'{columns[0]}_model1' if f'{columns[0]}_model1' in merged_df.columns else \
-            merged_df.columns[0]
-            indicator_col2 = f'{columns[0]}_model2' if f'{columns[0]}_model2' in merged_df.columns else \
-            merged_df.columns[-1]
+            indicator_col1 = f'{columns[0]}_model1' \
+                if f'{columns[0]}_model1' in merged_df.columns \
+                else merged_df.columns[0]
+            indicator_col2 = f'{columns[0]}_model2' \
+                if f'{columns[0]}_model2' in merged_df.columns \
+                else merged_df.columns[-1]
 
             new_columns['presence'] = np.select(
                 [merged_df[indicator_col1].notna() & merged_df[indicator_col2].notna(),
@@ -349,8 +365,42 @@ class ModelComparison:
             )
 
             # Add all new columns at once
-            merged_df = pd.concat([merged_df, pd.DataFrame(new_columns)], axis=1)
+            try:
+                # Convert new_columns dict to DataFrame, ensuring index alignment
+                new_columns_df = pd.DataFrame(new_columns, index=merged_df.index)
+                # Concatenate the new columns with the merged_df
+                merged_df = pd.concat([merged_df, new_columns_df], axis=1)
+            except ValueError as e:
+                msg = (f"Error adding new columns to merged DataFrame for {df_name}. "
+                       f"Exception: {str(e)}. ")
 
+                # Provide more detailed information about the DataFrames
+                msg += f"\nmerged_df shape: {merged_df.shape}, new_columns shape: {new_columns_df.shape}"
+                msg += f"\nmerged_df index: {merged_df.index}"
+                msg += f"\nnew_columns_df index: {new_columns_df.index}"
+
+                # Check for index misalignment
+                if not merged_df.index.equals(new_columns_df.index):
+                    msg += "\nIndex mismatch detected between merged_df and new_columns_df."
+
+                # Check for duplicate column names
+                duplicate_cols = set(merged_df.columns) & set(new_columns_df.columns)
+                if duplicate_cols:
+                    msg += f"\nDuplicate column names detected: {duplicate_cols}"
+
+                warnings.warn(msg)
+                print(f'Model 1 columns:', df1.columns)
+                print(f'Model 2 columns:', df2.columns)
+                print(f'New columns:', new_columns.keys())
+
+                # Attempt to add columns individually
+                for col, values in new_columns.items():
+                    try:
+                        merged_df[col] = values
+                    except Exception as col_e:
+                        warnings.warn(f"Failed to add column {col}. Error: {str(col_e)}")
+
+                continue
             result[df_name] = merged_df
 
         # Add bus number changes to the result
