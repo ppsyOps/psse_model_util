@@ -662,7 +662,12 @@ class ModelComparison:
                 continue
             sheet_name = f'compare_{section}'
             csv_path = self.csv_folder / f'network_{section}.csv'
-            self._write_csv(csv_path, df)
+            if isinstance(df, pd.DataFrame):
+                if df.empty:
+                    warnings.warn("Dataframe is empty: " + section)
+                self._write_csv(csv_path, df)
+            else:
+                warnings.warn("Dataframe not found: " + section)
 
     def flatten_and_stringify(self, item):
         """Helper method to flatten and stringify complex data structures."""

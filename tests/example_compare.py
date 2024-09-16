@@ -13,27 +13,19 @@ Note: This script assumes the project structure as described in psse_model_util_
 
 from pathlib import Path
 import sys
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from psse_model_util.compare import ModelComparison, Model
 from psse_model_util.common.constants import INCLUDE_AREAS
 
 
-def compare_example(raw1_path = None, raw2_path = None):
-    # -------------------------------------------------------------------------
-    # User inputs
-    # -------------------------------------------------------------------------
-    DEFAULT_DIRECTORY: Path = Path(__file__).parent / "tests/data"
-    raw1_path: Path = raw1_path or DEFAULT_DIRECTORY / r"sample_34.raw"
-    raw2_path: Path = raw2_path or DEFAULT_DIRECTORY / r"sample2_34.raw"
-    # raw1_path: Path = raw1_path or DEFAULT_DIRECTORY / r"idc_23S_sum23idctr6p2.rawx"  # IDC_2324W_win24idctr6p3.rawx
-    # raw2_path: Path = raw2_path or DEFAULT_DIRECTORY / r"data/idc_24s_sum24idctr1p8.raw"
-
-    force_recalculation: bool = True
-    export_format = 'csv'  # 'csv' or 'None'
-    add_bus_info_to_branches = True
-    include_areas = INCLUDE_AREAS
-
+def compare_example(raw1_path=None,
+                    raw2_path=None,
+                    force_recalculation: bool = True,
+                    export_format='csv',  # 'csv' or 'None'
+                    add_bus_info_to_branches=True,
+                    include_areas=INCLUDE_AREAS):
     # -------------------------------------------------------------------------
     # Model Comparison Script Execution
     # -------------------------------------------------------------------------
@@ -107,12 +99,16 @@ def compare_example(raw1_path = None, raw2_path = None):
 
 
 if __name__ == '__main__':
-    DEFAULT_DIRECTORY: Path = Path(__file__).parent
-    raw1_path: Path = DEFAULT_DIRECTORY / r"data/IDC_2324W_win24idctr6p3.raw"
-    raw2_path: Path = DEFAULT_DIRECTORY / r"data/idc_24s_sum24idctr1p8.rawx"
+    DEFAULT_DIRECTORY: Path = Path(__file__).parent / "data"
 
-    # DEFAULT_DIRECTORY: Path = Path(__file__).parent / "data"
-    # raw1_path: Path = DEFAULT_DIRECTORY / r"IDC_2324W_win24idctr6p3.rawx"  # IDC_2324W_win24idctr6p3.rawx
-    # raw2_path: Path = DEFAULT_DIRECTORY / r"IDC_24S_sum24idctr1p8.rawx"
+    raw1_path: Path = DEFAULT_DIRECTORY / r"sample_34.raw"
+    raw2_path: Path = DEFAULT_DIRECTORY / r"sample2_34.raw"
+    # raw1_path: Path = DEFAULT_DIRECTORY / r"idc_23S_sum23idctr6p2.rawx"
+    # raw2_path: Path = DEFAULT_DIRECTORY / r"data/idc_24s_sum24idctr1p8.raw"
 
-    compare_example(raw1_path, raw2_path)
+    compare_example(raw1_path=raw1_path,
+                    raw2_path=raw2_path,
+                    force_recalculation=True,
+                    export_format='csv',
+                    add_bus_info_to_branches=True,
+                    include_areas=INCLUDE_AREAS)
