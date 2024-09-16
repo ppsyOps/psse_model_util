@@ -8,7 +8,7 @@ from psse_model_util.common.constants import INCLUDE_AREAS, NATIVE_AREAS
 
 # Setup the path to the test RAWX file
 TEST_DATA_DIR = Path(__file__).parent.parent / 'tests' / 'data'
-TEST_RAWX_FILE = TEST_DATA_DIR / 'MMWG_2024SUM_2023Series_Assessment_Final.rawx'
+TEST_RAWX_FILE = TEST_DATA_DIR / 'sample_v35.rawx'
 
 
 @pytest.fixture
