@@ -10,13 +10,14 @@ __pycache__/
 *.path_comp
 *.pickle
 *.xlsx
+.idea/*
 /psse_model_util/*example*
 /psse_model_util/old/
 /psse_model_util/dataformat.txt
 /psse_model_util/psse-model_meta_modified.txt
 *deleteme*
-/data/IDC_24S_sum24idctr1p8.raw
-/data/IDC_2324W_win24idctr6p3.raw
-/data/MMWG_2024SUM_2023Series_Assessment_Final.rawx
-/data/MMWG_2024SUM_2023Series_Assessment_Final_v35.raw
-/data/sample_v35.rawx
+# Ignore all files in any directory starting with IDC and containing .raw
+IDC*.*
+MMWG*.*
+/data/IDC*
+/data/MMWG*

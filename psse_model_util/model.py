@@ -1614,14 +1614,9 @@ if __name__ == '__main__':
 
     clear_site_cache()
 
-    # fp = Path(__file__).parent.parent.parent / r'tests/data/sample_v35.rawx'
-    # filename = r'MMWG_2024SUM_2023Series_Assessment_Final.rawx'
-    # filename = 'sample_34.raw'
-    # fp = (Path(__file__).parent.parent
-    #       / f'tests/data/{filename}')
-    # fp = Path(r'C:\Personal\Projects\psse_model_util\tests\data\IDC_23S_sum23idctr6p2.raw')
-    fp = Path(__file__).parent.parent / r"tests\data\IDC_2324W_win24idctr6p3.raw"
-    # r"D:\Code\Python\psse_model_util\tests\data\IDC_2324W_win24idctr6p3.raw"
+
+    fp = Path(__file__).parent.parent / r'tests\data\sample_34.raw'
+
     pickle_path = site_cache_dir / fp.with_suffix('.model').name
     if not pickle_path.exists():
         model = Model(file_path_or_json=fp, force_recalculate=True)

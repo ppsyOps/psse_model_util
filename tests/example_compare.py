@@ -23,9 +23,11 @@ def compare_example(raw1_path = None, raw2_path = None):
     # -------------------------------------------------------------------------
     # User inputs
     # -------------------------------------------------------------------------
-    DEFAULT_DIRECTORY: Path = Path(__file__).parent / "data"
-    raw1_path: Path = raw1_path or DEFAULT_DIRECTORY / r"idc_23S_sum23idctr6p2.rawx"  # IDC_2324W_win24idctr6p3.rawx
-    raw2_path: Path = raw2_path or DEFAULT_DIRECTORY / r"data/idc_24s_sum24idctr1p8.raw"
+    DEFAULT_DIRECTORY: Path = Path(__file__).parent / "tests/data"
+    raw1_path: Path = raw1_path or DEFAULT_DIRECTORY / r"sample_34.raw"
+    raw2_path: Path = raw2_path or DEFAULT_DIRECTORY / r"sample2_34.raw"
+    # raw1_path: Path = raw1_path or DEFAULT_DIRECTORY / r"idc_23S_sum23idctr6p2.rawx"  # IDC_2324W_win24idctr6p3.rawx
+    # raw2_path: Path = raw2_path or DEFAULT_DIRECTORY / r"data/idc_24s_sum24idctr1p8.raw"
 
     force_recalculation: bool = True
     export_format = 'csv'  # 'csv' or 'None'

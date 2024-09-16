@@ -249,8 +249,10 @@ class ModelComparison:
 
         # If there are changes, prepare the result DataFrame
         if not changes_df.empty:
-            result_columns = ['ibus_model1', 'ibus_model2'] + [f'{col}_model1' for col in join_columns]
+            result_columns = ['ibus_model1', 'ibus_model2'] + join_columns
             self._bus_num_changes = changes_df[result_columns].copy()
+            if not self._bus_num_changes._metadata:
+                self._bus_num_changes._metadata = {}
             self._bus_num_changes._metadata['join_columns'] = join_columns
             return self._bus_num_changes
         else:
@@ -258,7 +260,8 @@ class ModelComparison:
             return None  # or return pd.DataFrame()
 
         # Note: The 'presence' column is not added here as it's not relevant for bus number changes
-    def compare_network_dfs(self) -> dict[str, pd.DataFrame]:
+
+    def compare_network_dfs(self) -> Dict[str, pd.DataFrame]:
         """
         Compare network dataframes between the two models.
 
@@ -266,25 +269,12 @@ class ModelComparison:
         identifying changes, additions, and removals.
 
         Returns:
-            dict[str, pd.DataFrame]: A dictionary containing comparison results
+            Dict[str, pd.DataFrame]: A dictionary containing comparison results
                                      for each network component.
-
-        Example:
-            comparison = ModelComparison(model1, model2)
-            df_comparisons = comparison.compare_network_dfs()
-            bus_comparison = df_comparisons['bus']
         """
+
         def _column_delta(column1, column2):
-            """
-            Calculate the difference between two columns.
-
-            Args:
-                column1 (pd.Series | pd.DataFrame): First column
-                column2 (pd.Series | pd.DataFrame): Second column
-
-            Returns:
-                pd.Series | pd.DataFrame: The difference between the two columns
-            """
+            """Calculate the difference between two columns."""
             if isinstance(column1, pd.DataFrame) and isinstance(column2, pd.DataFrame):
                 result = pd.DataFrame(index=column1.index)
                 for col in column1.columns:
@@ -297,9 +287,7 @@ class ModelComparison:
                 return _compare_values(column1, column2)
 
         def _compare_values(series1, series2):
-            """
-            Compare two series element-wise.
-            """
+            """Compare two series element-wise."""
             if series1.dtype != series2.dtype:
                 return series1 != series2
 
@@ -309,10 +297,8 @@ class ModelComparison:
                 return (series1 != series2).astype(bool)
 
         result: Dict[str, pd.DataFrame] = {}
-        df1_names = [_ for _ in dir(self.model1.network)
-                     if isinstance(getattr(self.model1.network, _), pd.DataFrame)]
-        df2_names = [_ for _ in dir(self.model2.network)
-                     if isinstance(getattr(self.model2.network, _), pd.DataFrame)]
+        df1_names = [_ for _ in dir(self.model1.network) if isinstance(getattr(self.model1.network, _), pd.DataFrame)]
+        df2_names = [_ for _ in dir(self.model2.network) if isinstance(getattr(self.model2.network, _), pd.DataFrame)]
 
         removed_dfs = set(df1_names) - set(df2_names)
         if removed_dfs:
@@ -323,18 +309,13 @@ class ModelComparison:
 
         common_df_names = set(df1_names) & set(df2_names)
         for df_name in common_df_names:
-            # Merge dataframes from model1 and model2.
             df1 = getattr(self.model1.network, df_name)
             df2 = getattr(self.model2.network, df_name)
             try:
                 merged_df = pd.merge(df1, df2, how='outer', left_index=True, right_index=True,
                                      suffixes=('_model1', '_model2'))
             except Exception as e:
-                msg = (f'Could not merge dataframes: {df_name}. Exception: '
-                       f'{str(e)}. Columns not shared = ')
-                msg += str((set(df2.columns)-set(df1.columns)) |
-                           (set(df1.columns)-set(df2.columns)))
-                warnings.warn(msg)
+                print(f'Could not merge dataframes: {df_name}. Exception: {str(e)}')
                 print(f'Model 1 columns:', df1.columns)
                 print(f'Model 2 columns:', df2.columns)
                 continue
@@ -349,12 +330,10 @@ class ModelComparison:
                     new_columns[f'{column}_delta'] = _column_delta(merged_df[col1], merged_df[col2])
 
             # Add an indicator column to show which model(s) each row is present in.
-            indicator_col1 = f'{columns[0]}_model1' \
-                if f'{columns[0]}_model1' in merged_df.columns \
-                else merged_df.columns[0]
-            indicator_col2 = f'{columns[0]}_model2' \
-                if f'{columns[0]}_model2' in merged_df.columns \
-                else merged_df.columns[-1]
+            indicator_col1 = f'{columns[0]}_model1' if f'{columns[0]}_model1' in merged_df.columns else \
+            merged_df.columns[0]
+            indicator_col2 = f'{columns[0]}_model2' if f'{columns[0]}_model2' in merged_df.columns else \
+            merged_df.columns[-1]
 
             new_columns['presence'] = np.select(
                 [merged_df[indicator_col1].notna() & merged_df[indicator_col2].notna(),
@@ -366,41 +345,21 @@ class ModelComparison:
 
             # Add all new columns at once
             try:
-                # Convert new_columns dict to DataFrame, ensuring index alignment
                 new_columns_df = pd.DataFrame(new_columns, index=merged_df.index)
-                # Concatenate the new columns with the merged_df
                 merged_df = pd.concat([merged_df, new_columns_df], axis=1)
             except ValueError as e:
-                msg = (f"Error adding new columns to merged DataFrame for {df_name}. "
-                       f"Exception: {str(e)}. ")
-
-                # Provide more detailed information about the DataFrames
-                msg += f"\nmerged_df shape: {merged_df.shape}, new_columns shape: {new_columns_df.shape}"
-                msg += f"\nmerged_df index: {merged_df.index}"
-                msg += f"\nnew_columns_df index: {new_columns_df.index}"
-
-                # Check for index misalignment
-                if not merged_df.index.equals(new_columns_df.index):
-                    msg += "\nIndex mismatch detected between merged_df and new_columns_df."
-
-                # Check for duplicate column names
-                duplicate_cols = set(merged_df.columns) & set(new_columns_df.columns)
-                if duplicate_cols:
-                    msg += f"\nDuplicate column names detected: {duplicate_cols}"
-
-                warnings.warn(msg)
-                print(f'Model 1 columns:', df1.columns)
-                print(f'Model 2 columns:', df2.columns)
-                print(f'New columns:', new_columns.keys())
+                print(f"Error adding new columns to merged DataFrame for {df_name}. Exception: {str(e)}.")
+                print(f"merged_df shape: {merged_df.shape}, new_columns shape: {new_columns_df.shape}")
+                print(f"merged_df index: {merged_df.index}")
+                print(f"new_columns_df index: {new_columns_df.index}")
 
                 # Attempt to add columns individually
                 for col, values in new_columns.items():
                     try:
                         merged_df[col] = values
                     except Exception as col_e:
-                        warnings.warn(f"Failed to add column {col}. Error: {str(col_e)}")
+                        print(f"Failed to add column {col}. Error: {str(col_e)}")
 
-                continue
             result[df_name] = merged_df
 
         # Add bus number changes to the result
@@ -408,7 +367,6 @@ class ModelComparison:
 
         self.network_df_comparison = result
         return self.network_df_comparison
-
     def compare_graph(self, max_path_length: int = None, sort: bool = True, regenerate=False) -> dict:
         """
         Compare graph structures between the two models.
