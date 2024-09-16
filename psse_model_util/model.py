@@ -69,7 +69,6 @@ from psse_model_util.common.constants import INCLUDE_AREAS
 from psse_model_util.rawx_json_template import rawx_json_template
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
-# from psse_model_util.common.classes import ModelDF
 # from psse_model_util.common.dirs import site_data_dir
 # from psse_model_util.common.classes import (BusId, IdStr, IdInt,
 #                                             ZoneId, AreaId, OwnerId, SwShID)

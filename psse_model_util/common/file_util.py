@@ -1,3 +1,4 @@
+import msvcrt
 from copy import deepcopy
 import csv
 import glob
@@ -8,6 +9,7 @@ import warnings
 import pickle
 
 from psse_model_util.common.constants import DOWNLOAD_WAIT_SECONDS, RESILIENT
+from psse_model_util.common.dirs import site_temp_dir
 
 import pandas as pd
 
@@ -82,9 +84,7 @@ def uneven_lists_to_df(list_of_lists: list, columns: list =[],
     return df
 
 
-def read_uneven_csv_file(file_path, columns=[],
-                         header_rows: list | int | None = None,
-                         as_dataframe=False):
+def read_uneven_csv_file(file_path, columns=[], header_rows: list | int | None = 0, as_dataframe=False):
     """
     Reads a CSV file that may have rows with variable numbers of columns. It
     can return the results either as a pandas DataFrame or as a list of lists,
@@ -93,15 +93,12 @@ def read_uneven_csv_file(file_path, columns=[],
     :param file_path: The path to the CSV file to be read.
     :type file_path: str
     :param columns: A list specifying the names of the columns. If not
-                provided, and `header_rows` is not specified, columns will be
-                auto-named based on their order. If `header_rows` is specified,
-                names from the specified rows will be used.
+                provided, and `header_rows` is not None, the first row will be used as header.
     :type columns: list, optional
     :param header_rows: Specifies one or more rows from the CSV to be used as
                 header(s) for column names. Can be a single integer (for one
                 header row) or a list of integers (for multiple header rows).
-                If `None`, no row is treated as a header unless `columns` is
-                explicitly provided.
+                If None, no row is treated as a header. Default is 0 (first row as header).
     :type header_rows: list | int | None, optional
     :param as_dataframe: Determines the return type. If `True`, returns the
                 data as a pandas DataFrame. If `False`, returns the data as a
@@ -109,40 +106,35 @@ def read_uneven_csv_file(file_path, columns=[],
     :type as_dataframe: bool, optional
 
     :return: Depending on the `as_dataframe` flag, returns either a pandas
-                DataFrame or a list of lists containing the CSV data. If
-                `as_dataframe` is True and either `columns` is provided or
-                header rows are defined, the DataFrame will have column names
-                accordingly. Otherwise, it returns a list of lists with raw
-                CSV row data.
+                DataFrame or a list of lists containing the CSV data.
     :rtype: pandas.DataFrame or list
-
-    **Example**::
-
-        # Read CSV data into a DataFrame with auto-named columns
-        df = read_uneven_csv_file('path/to/file.csv', as_dataframe=True)
-
-        # Read CSV, specifying a single header row and returning a list of lists
-        data = read_uneven_csv_file('path/to/file.csv', header_rows=0)
     """
     data = []
-    assert isinstance(header_rows, int) \
-           or isinstance(header_rows, list) \
-           or isinstance(header_rows, tuple) \
-           or header_rows is None
+    assert isinstance(header_rows, int) or isinstance(header_rows, list) or isinstance(header_rows,
+                                                                                       tuple) or header_rows is None
 
     with open(file_path, 'r') as file:
         csv_reader = csv.reader(file)
+        data = list(csv_reader)
 
-        # Iterate over each row in the CSV filea
-        for row in csv_reader:
-            data.append(row)
-
-    # If `as_dataframe` is False, return the list of lists
     if not as_dataframe:
         return data
 
-    return uneven_lists_to_df(list_of_lists=data, columns=columns, header_rows=header_rows)
+    if header_rows is None:
+        return uneven_lists_to_df(list_of_lists=data, columns=columns)
+    elif isinstance(header_rows, int):
+        header_rows = [header_rows]
 
+    # Use the specified row(s) as header
+    headers = []
+    for row in sorted(header_rows):
+        headers.extend(data[row])
+
+    # Remove header rows from data
+    for row in sorted(header_rows, reverse=True):
+        data.pop(row)
+
+    return uneven_lists_to_df(list_of_lists=data, columns=headers)
 
 def write_bytesio_to_disk(bytes_io, file_path: Path, overwrite: bool = True):
     """
@@ -213,20 +205,31 @@ def write_bytesio_to_disk(bytes_io, file_path: Path, overwrite: bool = True):
         warnings.warn(f"Error: {e}")
 
 
+# def is_file_locked(filepath):
+#     """
+#     Check if the file at 'filepath' is locked or not.
+#     The approach is to try opening the file in append mode.
+#     If the file is locked, it should raise an exception.
+#     """
+#     try:
+#         # Attempt to open the file in append mode. If it's locked, this should fail.
+#         with open(filepath, 'a'):
+#             pass
+#         return False  # File is not locked
+#     except Exception as e:
+#         return True  # File is likely locked or another error occurred preventing access
 def is_file_locked(filepath):
-    """
-    Check if the file at 'filepath' is locked or not.
-    The approach is to try opening the file in append mode.
-    If the file is locked, it should raise an exception.
-    """
     try:
-        # Attempt to open the file in append mode. If it's locked, this should fail.
-        with open(filepath, 'a'):
-            pass
-        return False  # File is not locked
-    except Exception as e:
-        return True  # File is likely locked or another error occurred preventing access
-
+        # Try to open the file in exclusive mode
+        with open(filepath, 'r+b') as f:
+            try:
+                msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+            except OSError:
+                return True  # File is locked
+    except PermissionError:
+        return True  # File is locked
+    return False  # File is not locked
 
 def to_pickle(pickle_path: Path | str, data, resilient: bool = RESILIENT) -> bool:
     try:

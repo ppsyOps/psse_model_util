@@ -1,95 +1,175 @@
 import pytest
+from datetime import datetime
+from typing import List, Set, Any
+from typing import Any, Type, List, Set, Tuple, Dict
+
+from psse_model_util.common.classes import dict_to_dataclass, DictToClassConverter, infer_type
+
 import pandas as pd
-from copy import deepcopy
-
-from psse_model_util.common.classes import ModelDF
 
 
-def test_modeldf_initialization():
-    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    meta = {'bus_cols': ['A'], 'id_cols': ['B'], 'data_type': ['int', 'int']}
-    model_df = ModelDF(df, meta=meta)
+def test_dict_to_class_converter():
+    test_dict = {
+        "a": 123,
+        "prop2": 456,
+        "list_example": [1, 2, 3],
+        "set_example": {"a", "b"},
+        "complex_example": {"nested": "dict"},
+        "dtdt_example": datetime.now()
+    }
 
-    assert isinstance(model_df, ModelDF)
-    assert model_df.meta == meta
-    assert model_df.bus_cols == ['A']
-    assert model_df.id_cols == ['B']
-    assert model_df.data_type == ['int', 'int']
-
-
-def test_modeldf_setters():
-    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    model_df = ModelDF(df)
-
-    model_df.bus_cols = ['A', 'B']
-    model_df.id_cols = ['A']
-    model_df.data_type = ['int', 'int']
-
-    assert model_df.bus_cols == ['A', 'B']
-    assert model_df.id_cols == ['A']
-    assert model_df.data_type == ['int', 'int']
+    class_obj = DictToClassConverter(test_dict)
+    assert class_obj.a == 123
+    assert class_obj.prop2 == 456
+    assert class_obj.list_example == [1, 2, 3]
+    assert class_obj.set_example == {"a", "b"}
+    assert class_obj.complex_example == {"nested": "dict"}
+    assert class_obj.dtdt_example == test_dict["dtdt_example"]
 
 
-def test_modeldf_copy():
-    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    meta = {'bus_cols': ['A'], 'id_cols': ['B'], 'data_type': ['int', 'int']}
-    model_df = ModelDF(df, meta=meta)
-
-    model_df_copy = model_df.copy(deep=True)
-
-    # Check that the copy is a new instance
-    assert model_df_copy is not model_df
-
-    # Check that the dataframes are equal
-    pd.testing.assert_frame_equal(model_df, model_df_copy)
-
-    # Check that meta data is deeply copied
-    assert model_df_copy.meta == model_df.meta
-    assert model_df_copy.meta is not model_df.meta
-
-    # Modify original meta and check that the copy's meta remains unchanged
-    model_df.meta['bus_cols'] = ['B']
-    assert model_df_copy.meta['bus_cols'] == ['A']
-
-
-def test_modeldf_filter_preserves_meta():
-    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    meta = {'bus_cols': ['A'], 'id_cols': ['B'], 'data_type': ['int', 'int']}
-    model_df = ModelDF(df, meta=meta)
-    model_df = model_df[model_df['A'] > 1]
-    assert len(model_df) == 2
-    assert model_df.meta == meta
+@pytest.mark.parametrize("input_value, expected_type", [
+    ([1, 2, 3], list[int]),
+    ({"a", "b"}, set[str]),
+    ((1, 2), tuple[int, ...]),
+    (123, int),
+    (datetime.now(), datetime),
+    ([1, 2, 3, 4.5, True], list[Any]),
+    ([1, 2, '3', 4.5, True], list[Any]),
+    ([1, 2, 3, 4.5, datetime.now()], list[Any]),
+    ([1, 2, 3, 4.5, datetime.now(), True], list[Any]),
+    ([1, 2, 3, 4.5, datetime.now(), True, None], list[Any]),
+    ([1, 2, 3, 4.5, datetime.now(), True, None, object()], list[Any]),
+    ([], list[Any]),
+    (set(), set[Any]),
+    ((), tuple[Any, ...]),
+    ({}, dict[Any, Any]),
+    (None, Any),
+    ([], list[Any]),
+    ([None], list[Any]),
+    ([None, None], list[Any]),
+    ([None, None, None], list[Any]),
+])
 
 
-def test_modeldf_merge_preserves_meta():
-    df1 = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    meta1 = {'bus_cols': ['A'], 'id_cols': ['B'], 'data_type': ['int', 'int']}
-    model_df1 = ModelDF(df1, meta=meta1)
-
-    df2 = pd.DataFrame({'A': [1, 2, 3], 'C': [7, 8, 9]})
-    meta2 = {'bus_cols': ['A'], 'id_cols': ['C'], 'data_type': ['int', 'str']}
-    model_df2 = ModelDF(df2, meta=meta2)
-
-    # Merge the two ModelDFs
-    merged_model_df = model_df1.merge(model_df2, on='A')
-
-    # Check that the merged object is a ModelDF and meta is preserved
-    assert isinstance(merged_model_df, ModelDF)
-    assert merged_model_df.meta == model_df1.meta
+def test_infer_type(input_value, expected_type):
+    assert infer_type(input_value) == expected_type
 
 
-def test_modeldf_query_preserves_meta():
-    df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-    meta = {'bus_cols': ['A'], 'id_cols': ['B'], 'data_type': ['int', 'int']}
-    model_df = ModelDF(df, meta=meta)
+def test_dict_to_dataclass_basic():
+    input_dict = {
+        "int_field": 123,
+        "float_field": 3.14,
+        "str_field": "hello",
+        "bool_field": True
+    }
+    result = dict_to_dataclass(input_dict)
 
-    # Query the ModelDF
-    queried_model_df = model_df.query('A > 1')
+    assert result.int_field == 123
+    assert isinstance(result.int_field, int)
+    assert result.float_field == 3.14
+    assert isinstance(result.float_field, float)
+    assert result.str_field == "hello"
+    assert isinstance(result.str_field, str)
+    assert result.bool_field is True
+    assert isinstance(result.bool_field, bool)
 
-    # Check that the queried object is a ModelDF and meta is preserved
-    assert isinstance(queried_model_df, ModelDF)
-    assert queried_model_df.meta == meta
 
+def test_dict_to_dataclass_collections():
+    input_dict = {
+        "list_field": [1, 2, 3],
+        "set_field": {"a", "b", "c"},
+        "tuple_field": (4, 5, 6)
+    }
+    result = dict_to_dataclass(input_dict)
+
+    assert result.list_field == [1, 2, 3]
+    assert isinstance(result.list_field, List)
+    assert result.set_field == {"a", "b", "c"}
+    assert isinstance(result.set_field, Set)
+    assert result.tuple_field == (4, 5, 6)
+    assert isinstance(result.tuple_field, tuple)
+
+
+def test_dict_to_dataclass_nested():
+    input_dict = {
+        "nested_dict": {"key": "value"},
+        "nested_list": [{"a": 1}, {"b": 2}]
+    }
+    result = dict_to_dataclass(input_dict)
+
+    assert result.nested_dict == {"key": "value"}
+    assert isinstance(result.nested_dict, dict)
+    assert result.nested_list == [{"a": 1}, {"b": 2}]
+    assert isinstance(result.nested_list, List)
+
+
+def test_dict_to_dataclass_datetime():
+    now = datetime.now()
+    input_dict = {
+        "date_field": now
+    }
+    result = dict_to_dataclass(input_dict)
+
+    assert result.date_field == now
+    assert isinstance(result.date_field, datetime)
+
+
+def test_dict_to_dataclass_empty():
+    input_dict = {}
+    result = dict_to_dataclass(input_dict)
+
+    assert hasattr(result, '__annotations__')  # The dataclass will have __annotations__, even if empty
+    assert result.__annotations__ == {}  # But the annotations should be an empty dict
+    assert vars(result) == {}  # The instance should have no attributes
+
+
+def test_dict_to_dataclass_mixed_types():
+    input_dict = {
+        "mixed_list": [1, "two", 3.0],
+        "mixed_set": {1, "two", 3.0}
+    }
+    result = dict_to_dataclass(input_dict)
+
+    assert result.mixed_list == [1, "two", 3.0]
+    assert isinstance(result.mixed_list, List)
+    assert result.mixed_set == {1, "two", 3.0}
+    assert isinstance(result.mixed_set, Set)
+
+
+def test_dict_to_dataclass_mutable_default():
+    input_dict = {
+        "mutable_list": [1, 2, 3]
+    }
+    result1 = dict_to_dataclass(input_dict)
+    result2 = dict_to_dataclass(input_dict)
+
+    result1.mutable_list.append(4)
+    assert result1.mutable_list == [1, 2, 3, 4]
+    assert result2.mutable_list == [1, 2, 3]  # result2 should not be affected
+
+    # Test that new instances get a fresh copy
+    result3 = dict_to_dataclass(input_dict)
+    assert result3.mutable_list == [1, 2, 3]  # New instance should have the original list
+
+
+def test_dict_to_dataclass_multiple_instances():
+    input_dict = {
+        "mutable_list": [1, 2, 3],
+        "mutable_dict": {"a": 1}
+    }
+    result1 = dict_to_dataclass(input_dict)
+    result2 = dict_to_dataclass(input_dict)
+
+    result1.mutable_list.append(4)
+    result1.mutable_dict["b"] = 2
+
+    assert result1.mutable_list == [1, 2, 3, 4]
+    assert result1.mutable_dict == {"a": 1, "b": 2}
+    assert result2.mutable_list == [1, 2, 3]
+    assert result2.mutable_dict == {"a": 1}
+
+if __name__ == "__main__":
+    pytest.main()
 
 if __name__ == "__main__":
     pytest.main()

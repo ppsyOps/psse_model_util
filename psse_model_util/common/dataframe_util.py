@@ -8,20 +8,18 @@ import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
 
-from psse_model_util.common.classes import ModelDF
-
 import numpy as np
 import pandas as pd
 import arrow
 
 
 def convert_df_column_dtypes(
-        df_in: pd.DataFrame | ModelDF,
+        df_in: pd.DataFrame,
         new_dtypes: dict = None,
         convert_all_columns: bool = True,
         inplace: bool = False,
         default_types: Tuple[Union[Callable, type]] = (pd.to_datetime, int, float),
-) -> pd.DataFrame | ModelDF:
+) -> pd.DataFrame:
     """
     Converts the column types of a dataframe from str to datetime, float, or int if possible.
 
@@ -44,13 +42,13 @@ def convert_df_column_dtypes(
 
     :raises AssertionError: If df is not a pandas DataFrame.
     """
-    assert isinstance(df_in, (pd.DataFrame, ModelDF)), \
+    assert isinstance(df_in, pd.DataFrame), \
         (f"Expected df_in to be a pandas DataFrame; got {type(df_in)}.")
 
     # default_types: Tuple[Union[Callable, type]] = pd.to_datetime, int, float
     new_dtypes = new_dtypes or {}
     metadata = df_in._metadata
-    if isinstance(df_in, ModelDF):
+    if isinstance(df_in, pd.DataFrame):
         meta = df_in.meta
 
     df_out = df_in if inplace else df_in.copy()

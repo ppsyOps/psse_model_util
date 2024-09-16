@@ -1,6 +1,7 @@
 from collections import namedtuple
 from dataclasses import make_dataclass, field
-from typing import Any, get_type_hints, List
+from typing import get_type_hints, List
+from typing import Any, Type, List, Set, Tuple, Dict
 import datetime  # Make sure to import datetime
 import copy
 import builtins
@@ -10,210 +11,6 @@ import pandas as pd
 
 TxNode = namedtuple('TxNode', ['i', 'j', 'k', 'ckt'])
 Node = namedtuple('Node', ['i'])
-
-
-class ModelDF(pd.DataFrame):
-    def __init__(self, *args, meta: dict = None, **kwargs):
-        raise NotImplementedError
-        # TODO: Inherting from pd.DataFrame did not work well.  Consider having a "df" argument instead.
-        super().__init__(*args, **kwargs)
-        self.meta: dict[str, Any] = meta or dict()
-
-    @property
-    def meta(self):
-        return self._metadata
-
-    @meta.setter
-    def meta(self, new_dict):
-        assert isinstance(new_dict, dict), f'new_dict must be a dict, not {type(new_dict)}.'
-        if 'data_type' in new_dict and not isinstance(new_dict['data_type'], dict):
-            assert 'fields' in new_dict, f'Cannot set new_dict["data_type"] in ModelDF unless it is a dict or new_dict["field"] exists.'
-            assert len(new_dict['fields']) == len(new_dict['data_type'])
-            new_dict['data_type'] = {k: v for k, v in zip(new_dict['fields'], new_dict['data_type'])}
-        self._metadata = new_dict
-
-    @property
-    def _constructor(self):
-        return ModelDF
-
-    @property
-    def bus_cols(self) -> List[str]:
-        self.meta.setdefault('bus_cols', [])
-        return self.meta['bus_cols']
-
-    @bus_cols.setter
-    def bus_cols(self, cols: List[str]):
-        self.meta['bus_cols'] = cols
-
-    @property
-    def id_cols(self) -> List[str]:
-        self.meta.setdefault('id_cols', [])
-        return self.meta['id_cols']
-
-    @id_cols.setter
-    def id_cols(self, cols: List[str]):
-        self.meta['id_cols'] = cols
-
-    @property
-    def data_type(self) -> dict[str, Any]:
-        self.meta.setdefault('data_type', {})
-        return self.meta['data_type']
-
-    @data_type.setter
-    def data_type(self, types: List[str] | dict[str, Any]):
-        if not isinstance(types, dict):
-            types = {k: v for k, v in zip(self.columns, types)}
-        self.meta['data_type'] = types
-
-    def copy(self, deep: bool = True) -> 'ModelDF':
-        """Create a deep copy of the ModelDF instance, including meta data."""
-        if deep:
-            new_obj = ModelDF(super().copy(deep=True), meta=copy.deepcopy(self.meta))
-        else:
-            new_obj = ModelDF(super().copy(deep=False), meta=self.meta.copy())
-        new_obj._metadata = copy.deepcopy(self._metadata)
-        return new_obj
-
-    def __getitem__(self, key):
-        result = super().__getitem__(key)
-        if isinstance(result, pd.DataFrame):
-            result = self._constructor(result).__finalize__(self)
-        return result
-
-    def __finalize__(self, other, method=None, **kwargs):
-        if isinstance(other, ModelDF):
-            self.meta = copy.deepcopy(other.meta)
-        return self
-
-    def merge(self, *args, **kwargs):
-        result = super().merge(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def query(self, expr, *args, **kwargs):
-        result = super().query(expr, *args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def loc(self, *args, **kwargs):
-        result = super().loc(*args, **kwargs)
-        if isinstance(result, pd.DataFrame):
-            result = self._constructor(result).__finalize__(self)
-        return result
-
-    def iloc(self, *args, **kwargs):
-        result = super().iloc(*args, **kwargs)
-        if isinstance(result, pd.DataFrame):
-            result = self._constructor(result).__finalize__(self)
-        return result
-
-    def head(self, *args, **kwargs):
-        result = super().head(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def tail(self, *args, **kwargs):
-        result = super().tail(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def sample(self, *args, **kwargs):
-        result = super().sample(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def drop(self, *args, **kwargs):
-        result = super().drop(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def reset_index(self, *args, **kwargs):
-        result = super().reset_index(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def sort_values(self, *args, **kwargs):
-        result = super().sort_values(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def sort_index(self, *args, **kwargs):
-        result = super().sort_index(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def filter(self, *args, **kwargs):
-        result = super().filter(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def rename(self, *args, **kwargs):
-        result = super().rename(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def join(self, *args, **kwargs):
-        result = super().join(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def combine_first(self, other):
-        result = super().combine_first(other)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def update(self, other, *args, **kwargs):
-        super().update(other, *args, **kwargs)
-        self.meta.update(other.meta if isinstance(other, ModelDF) else {})
-        return self
-
-    def set_index(self, *args, **kwargs):
-        result = super().set_index(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-    def reindex(self, *args, **kwargs):
-        result = super().reindex(*args, **kwargs)
-        result = self._constructor(result).__finalize__(self)
-        return result
-
-# class ModelDF:
-#     def __init__(self, df: pd.DataFrame = None, meta: dict = None):
-#         self.df: pd.DataFrame = df or pd.DataFrame()
-#         assert isinstance(self.df, pd.DataFrame)
-#         self.meta: dict = meta or dict()
-#         assert isinstance(self.meta, dict)
-#
-#     @property
-#     def bus_cols(self) -> List[str]:
-#         self.meta.setdefault('bus_cols', {})
-#         return self.meta['bus_cols']
-#
-#     @bus_cols.setter
-#     def bus_cols(self, cols: List[str]):
-#         self.meta['bus_cols'] = cols
-#
-#     @property
-#     def id_cols(self) -> List[str]:
-#         self.meta.setdefault('id_cols', {})
-#         return self.meta['id_cols']
-#
-#     @id_cols.setter
-#     def id_cols(self, cols: List[str]):
-#         self.meta['id_cols'] = cols
-#
-#     @property
-#     def data_type(self) -> List[str]:
-#         self.meta.setdefault('data_type', {})
-#         return self.meta['data_type']
-#
-#     @data_type.setter
-#     def data_type(self, types: List[str]):
-#         self.meta['data_type'] = types
-#
-#     def copy(self) -> 'ModelDF':
-#         """Create a deep copy of the ModelDF instance."""
-#         return ModelDF(copy.deepcopy(self.df), copy.deepcopy(self.meta))
 
 
 def get_builtin_base_type(cls):
@@ -362,25 +159,17 @@ def dict_to_dataclass(input_dict: dict) -> Any:
     The function uses type inference for setting up dataclass fields. It defaults to `typing.Any`
     for complex types or where type inference is not feasible.
     """
-    # Define a function to infer type or assign Any if complex
-
     fields = []
     for key, value in input_dict.items():
-        if isinstance(value, (list, set, tuple, dict)):
-            # Create a separate function to ensure the lambda captures the current value
-            def make_default_factory(v):
-                return lambda: v
-
-            field_type = infer_type(value)
-            fields.append((key, field_type, field(default_factory=make_default_factory(value))))
+        if isinstance(value, (list, set, dict)):
+            # Use default_factory for mutable types
+            fields.append((key, type(value), field(default_factory=lambda v=value: copy.deepcopy(v))))
         else:
             # Use default for immutable types
-            inferred_type = infer_type(value)
-            fields.append((key, inferred_type, field(default=value)))
+            fields.append((key, type(value), field(default=value)))
 
     DynamicDataClass = make_dataclass('DynamicDataClass', fields)
-    dataclass_instance = DynamicDataClass()
-    return dataclass_instance
+    return DynamicDataClass()
 
 
 class ActivePower(float):
@@ -400,6 +189,7 @@ class Admittance(complex):
     def __sub__(self, other):
         return Admittance(self.real - other.real, self.imag - other.imag)
 
+
 class Impedance(complex):
     def __new__(cls, real, imag=0.0):
         return super().__new__(cls, real, imag)
@@ -413,6 +203,7 @@ class Impedance(complex):
     def __sub__(self, other):
         return Impedance(self.real - other.real, self.imag - other.imag)
 
+
 class Status(int):
     def __new__(cls, value):
         if value not in (0, 1):
@@ -424,8 +215,6 @@ class Status(int):
 
     def __sub__(self, other):
         raise TypeError("Cannot perform arithmetic operations on Status objects")
-
-# ... (rest of the classes remain the same)
 
 
 class Angle(float):  # theta
