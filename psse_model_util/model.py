@@ -69,6 +69,7 @@ from psse_model_util.common.constants import INCLUDE_AREAS
 from psse_model_util.rawx_json_template import rawx_json_template
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
+# from psse_model_util.common.classes import ModelDF
 # from psse_model_util.common.dirs import site_data_dir
 # from psse_model_util.common.classes import (BusId, IdStr, IdInt,
 #                                             ZoneId, AreaId, OwnerId, SwShID)
@@ -1185,6 +1186,16 @@ class Model:
             # Input is already a dictionary
             self.json_data = file_path_or_json
             self.raw_file_path = None
+        elif Path(file_path_or_json).suffix.lower() == '.model':
+            self.raw_file_path = Path(file_path_or_json).with_suffix('.raw')
+            if not self.raw_file_path.exists():
+                self.raw_file_path = self.raw_file_path.with_suffix('.raw')
+
+            # Set the name attribute based on the file name
+            self.name = self.raw_file_path.stem
+
+            self.read_pickle()
+            # return self.json_data
         else:
             # Assume input is a file path
             self.raw_file_path = Path(file_path_or_json)
@@ -1223,16 +1234,16 @@ class Model:
         # Filter the model.network by specified areas.
         if not hasattr(model.network, 'filter_by_area'):
             raise AttributeError("The 'network' object does not have a 'filter_by_area' method")
-        model.network = model.network.filter_by_area(areas, inplace=inplace)
+        model.network.filter_by_area(areas, inplace=True)
 
-        if model.network.graph(regenerate=False, empty_ok=True):
-            print(f'Model filter_by_area building graph...')
+        if model.network._graph:
+            print(f'Model.filter_by_area(): building graph...')
             # Rebuild the network graph only if it existed
             model.network.graph(regenerate=True, empty_ok=False)  # Rebuild the graph (this calls the property getter)
-            print(f'Model filter_by_area elapsed time: '
+            print(f'Model.filter_by_area(): elapsed time: '
                   f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
-        print(f'Model filter_by_area finished: '
+        print(f'Model.filter_by_area: finished in '
               f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
         return model
@@ -1447,7 +1458,7 @@ class Model:
         print(f'Exporting model ({self.pickle_path}) ...')
 
         # Create the folder to store CSV files
-        csv_folder = self.csv_folder
+        csv_folder = self.csv_folder()
         csv_folder.mkdir(parents=True, exist_ok=True)
 
         # Export general information
@@ -1620,6 +1631,14 @@ if __name__ == '__main__':
     if not pickle_path.exists():
         model = Model(file_path_or_json=fp, force_recalculate=True)
         if 'sample' in model.name:
+            # Dictionary of native PJM areas with their area numbers as keys and names as values
+            NATIVE_AREAS = {101: 'CENTRAL', 206: 'EAST', 301: 'CENTRAL_DC'}
+
+            # Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
+            NEIGHBOR_AREAS = {401: 'EAST_COGEN1', 3011: 'WEST', 402: 'EAST_COGEN2'}
+
+            # Combined dictionary of native and neighboring areas, used for filtering models
+            INCLUDE_AREAS = NEIGHBOR_AREAS.copy() | NATIVE_AREAS.copy()
             native_model = model.copy(deep=True)
         else:
             native_model = model.filter_by_area(areas=INCLUDE_AREAS, inplace=False)
@@ -1641,3 +1660,4 @@ if __name__ == '__main__':
 
     print(f'Finished psse_model_util/rawx/model.py: '
           f'{((perf_counter_ns() - start) / 1e9):.9f} seconds')
+
