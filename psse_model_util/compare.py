@@ -727,7 +727,7 @@ class ModelComparison:
         load_buses = load_df.index.get_level_values('ibus') if 'ibus' in load_df.index.names else pd.Series()
 
         # Combine generator and load buses
-        all_buses = gen_buses.union(load_buses)
+        all_buses = set(gen_buses) | set(load_buses)
 
         # Filter buses based on voltage criteria
         mask = (((bus_df['baskv_model1'] >= DEFAULT_KV_FILTER.min) &
@@ -926,3 +926,4 @@ if __name__ == '__main__':
          args.force_recalculation,
          export_format,
          args.add_bus_info_to_branches)
+
