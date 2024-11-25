@@ -14,8 +14,8 @@ from psse_model_util.common.dirs import site_temp_dir
 import pandas as pd
 
 
-def uneven_lists_to_df(list_of_lists: list, columns: list =[],
-                       header_rows: list | int| None=None) -> pd.DataFrame:
+def uneven_lists_to_df(list_of_lists: list, columns: list = [],
+                       header_rows: list | int | None = None) -> pd.DataFrame:
     """
     Converts a list of lists with uneven lengths into a pandas DataFrame,
     optionally using specified rows as headers.
@@ -136,6 +136,7 @@ def read_uneven_csv_file(file_path, columns=[], header_rows: list | int | None =
 
     return uneven_lists_to_df(list_of_lists=data, columns=headers)
 
+
 def write_bytesio_to_disk(bytes_io, file_path: Path, overwrite: bool = True):
     """
     Writes the contents of a BytesIO object to a file on disk.
@@ -205,20 +206,12 @@ def write_bytesio_to_disk(bytes_io, file_path: Path, overwrite: bool = True):
         warnings.warn(f"Error: {e}")
 
 
-# def is_file_locked(filepath):
-#     """
-#     Check if the file at 'filepath' is locked or not.
-#     The approach is to try opening the file in append mode.
-#     If the file is locked, it should raise an exception.
-#     """
-#     try:
-#         # Attempt to open the file in append mode. If it's locked, this should fail.
-#         with open(filepath, 'a'):
-#             pass
-#         return False  # File is not locked
-#     except Exception as e:
-#         return True  # File is likely locked or another error occurred preventing access
 def is_file_locked(filepath):
+    """
+    Check if the file at 'filepath' is locked or not.
+    The approach is to try opening the file in append mode.
+    If the file is locked, it should raise an exception.
+    """
     try:
         # Try to open the file in exclusive mode
         with open(filepath, 'r+b') as f:
@@ -230,6 +223,7 @@ def is_file_locked(filepath):
     except PermissionError:
         return True  # File is locked
     return False  # File is not locked
+
 
 def to_pickle(pickle_path: Path | str, data, resilient: bool = RESILIENT) -> bool:
     try:
@@ -246,7 +240,7 @@ def to_pickle(pickle_path: Path | str, data, resilient: bool = RESILIENT) -> boo
 
 
 def read_pickle(pickle_path: Path | str = None,
-                 mode: str = 'rb', resilient: bool = RESILIENT):
+                mode: str = 'rb', resilient: bool = RESILIENT):
     if not pickle_path.exists():
         if resilient:
             return None
@@ -264,3 +258,4 @@ def read_pickle(pickle_path: Path | str = None,
             raise e
 
     return obj
+    

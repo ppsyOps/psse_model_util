@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 import json
 
-SECTION_MAP_CSV = Path(__file__).parent / r"common/raw_rawx_section_map.csv"
-RAW_RAWX_MAP_CSV = Path(__file__).parent / r"common/rawx_raw_map.csv"
+SECTION_MAP_CSV = Path(__file__).parent / r"dataformat/raw_rawx_section_map.csv"
+RAW_RAWX_MAP_CSV = Path(__file__).parent / r"dataformat/rawx_raw_map.csv"
 _PATTERNS = {'column_names': r'^(?!@!\s*IC|^@!\s*IC\s).*@!(?!.*BEGIN\s+SUBSTATION).*,.+$',
              # Column name lines except for case identification lines.
              'column_names_case_id': r'^@!\s*IC.*',
@@ -284,7 +284,7 @@ def _raw_to_rawx_section_name(section_raw: str,
         section_map_df = read_section_map(Path(section_map_csv))
 
     section_raw = section_raw.upper() if section_raw else None
-    subsection_raw = subsection_raw.upper() if subsection_raw else np.nan
+    subsection_raw = subsection_raw.upper() if subsection_raw else np.NaN
     df = section_map_df[(section_map_df['section_raw'] == section_raw) &
                         ((section_map_df['subsection_raw'].isna()) |
                          (section_map_df['subsection_raw'] == subsection_raw))]
@@ -431,7 +431,7 @@ if __name__ == "__main__":
     from pathlib import Path
     from psse_model_util.common.dirs import site_temp_dir
 
-    fp = Path(__file__).absolute().parent.parent / 'tests/data/sample_34.raw'
+    fp = Path(__file__).absolute().parent.parent.parent / 'tests/data/sample_34.raw'
     fp.parent.mkdir(parents=True, exist_ok=True)
     result = raw_file_to_rawx_dict(fp)
     print('\n\nresult')
@@ -441,7 +441,7 @@ if __name__ == "__main__":
     save_rawx_dict_to_json(rawx_dict=result, output_file=json_temp_file, compact=True)
     print(json_temp_file)
 
-    fp = Path(__file__).absolute().parent.parent / 'tests/data/sample_v35.raw'
+    fp = Path(__file__).absolute().parent.parent.parent / 'tests/data/sample_v35.raw'
     result = raw_file_to_rawx_dict(fp)
     print('\n\nresult')
     print(result)

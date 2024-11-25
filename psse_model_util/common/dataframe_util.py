@@ -1,12 +1,13 @@
-from typing import Union
 import re
 from datetime import datetime as dtdt
 import pytz
 from pathlib import Path
-from typing import List, Union, Callable, Tuple, Optional, Any
+from typing import List, Union, Callable, Tuple, Any
 import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
+
+from psse_model_util.dataformat.classes import ModelDF
 
 import numpy as np
 import pandas as pd
@@ -14,12 +15,12 @@ import arrow
 
 
 def convert_df_column_dtypes(
-        df_in: pd.DataFrame,
+        df_in: pd.DataFrame | ModelDF,
         new_dtypes: dict = None,
         convert_all_columns: bool = True,
         inplace: bool = False,
         default_types: Tuple[Union[Callable, type]] = (pd.to_datetime, int, float),
-) -> pd.DataFrame:
+) -> pd.DataFrame | ModelDF:
     """
     Converts the column types of a dataframe from str to datetime, float, or int if possible.
 
@@ -42,13 +43,13 @@ def convert_df_column_dtypes(
 
     :raises AssertionError: If df is not a pandas DataFrame.
     """
-    assert isinstance(df_in, pd.DataFrame), \
+    assert isinstance(df_in, (pd.DataFrame, ModelDF)), \
         (f"Expected df_in to be a pandas DataFrame; got {type(df_in)}.")
 
     # default_types: Tuple[Union[Callable, type]] = pd.to_datetime, int, float
     new_dtypes = new_dtypes or {}
     metadata = df_in._metadata
-    if isinstance(df_in, pd.DataFrame):
+    if isinstance(df_in, ModelDF):
         meta = df_in.meta
 
     df_out = df_in if inplace else df_in.copy()
@@ -448,3 +449,4 @@ if __name__ == '__main__':
     # # Drop columns.
     # df = pd.DataFrame(np.random.rand(10, 4), columns=['A', 'B', 'C', 'D'])
     # df.drop(['C', 'D'], axis=1)
+    

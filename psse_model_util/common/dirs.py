@@ -31,6 +31,9 @@ def delete_all_items_in_directory(directory: str):
     # Define the target directory using pathlib
     target_dir = Path(directory)
 
+    if not target_dir.exists():
+        return
+
     if not target_dir.is_dir():
         raise ValueError(f"The provided path '{directory}' is not a valid directory.")
 

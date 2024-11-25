@@ -55,10 +55,10 @@ from psse_model_util.common.dirs import site_cache_dir, site_data_dir
 
 # Define named tuples for storing comparison results
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
-PathComparison = namedtuple('PathComparison', ['path_splits', 'path_merges',
+PathComparison = namedtuple('PathComparison', ['path_sectionalizations', 'path_bypasses',
                                                'added_edges', 'removed_edges',
                                                'added_nodes', 'removed_nodes'])
-GraphComparison = namedtuple('GraphComparison', ['path_splits', 'path_merges',
+GraphComparison = namedtuple('GraphComparison', ['path_sectionalizations', 'path_bypasses',
                                                  'added_edges', 'removed_edges',
                                                  'added_nodes', 'removed_nodes'])
 ComparisonDF = namedtuple('ComparisonDF', ['changed', 'added', 'removed'])
@@ -197,7 +197,7 @@ class ModelComparison:
             Columns are prefixed with 'model1_' or 'model2_' as applicable.
 
         Performance Considerations:
-            - Uses pandas merge for efficient joining of DataFrames.
+            - Uses pandas bypass for efficient joining of DataFrames.
             - Applies filtering after merging to reduce data processing.
             - Renames columns in a single operation for efficiency.
 
@@ -237,7 +237,7 @@ class ModelComparison:
                              f"names not found in bus dataframes.")
 
         # Perform inner join on 'name' and 'area'
-        merged_df = pd.merge(
+        bypassd_df = pd.merge(
             bus_df1,
             bus_df2,
             on=join_columns,
@@ -245,7 +245,7 @@ class ModelComparison:
         )
 
         # Filter to show only records where bus numbers differ
-        changes_df = merged_df[merged_df['ibus_model1'] != merged_df['ibus_model2']]
+        changes_df = bypassd_df[bypassd_df['ibus_model1'] != bypassd_df['ibus_model2']]
 
         # If there are changes, prepare the result DataFrame
         if not changes_df.empty:
@@ -312,10 +312,10 @@ class ModelComparison:
             df1 = getattr(self.model1.network, df_name)
             df2 = getattr(self.model2.network, df_name)
             try:
-                merged_df = pd.merge(df1, df2, how='outer', left_index=True, right_index=True,
+                bypassd_df = pd.merge(df1, df2, how='outer', left_index=True, right_index=True,
                                      suffixes=('_model1', '_model2'))
             except Exception as e:
-                print(f'Could not merge dataframes: {df_name}. Exception: {str(e)}')
+                print(f'Could not bypass dataframes: {df_name}. Exception: {str(e)}')
                 print(f'Model 1 columns:', df1.columns)
                 print(f'Model 2 columns:', df2.columns)
                 continue
@@ -323,44 +323,45 @@ class ModelComparison:
             columns = list(set(df1.columns) | set(df2.columns))
             new_columns: Dict[str, Any] = {}
 
-            # Add "_delta" columns to merged_df
+            # Add "_delta" columns to bypassd_df
             for column in columns:
                 col1, col2 = f'{column}_model1', f'{column}_model2'
-                if col1 in merged_df.columns and col2 in merged_df.columns:
-                    new_columns[f'{column}_delta'] = _column_delta(merged_df[col1], merged_df[col2])
+                if col1 in bypassd_df.columns and col2 in bypassd_df.columns:
+                    try:
+                        new_columns[f'{column}_delta'] = _column_delta(bypassd_df[col1], bypassd_df[col2])
+                    except ValueError as e:
+                        print(f'Dataframe "{df_name}" comparison error. {str(e)}')
+                        raise e
 
             # Add an indicator column to show which model(s) each row is present in.
-            indicator_col1 = f'{columns[0]}_model1' if f'{columns[0]}_model1' in merged_df.columns else \
-            merged_df.columns[0]
-            indicator_col2 = f'{columns[0]}_model2' if f'{columns[0]}_model2' in merged_df.columns else \
-            merged_df.columns[-1]
+            indicator_col1 = f'{columns[0]}_model1' if f'{columns[0]}_model1' in bypassd_df.columns else \
+            bypassd_df.columns[0]
+            indicator_col2 = f'{columns[0]}_model2' if f'{columns[0]}_model2' in bypassd_df.columns else \
+            bypassd_df.columns[-1]
 
             new_columns['presence'] = np.select(
-                [merged_df[indicator_col1].notna() & merged_df[indicator_col2].notna(),
-                 merged_df[indicator_col1].notna(),
-                 merged_df[indicator_col2].notna()],
+                [bypassd_df[indicator_col1].notna() & bypassd_df[indicator_col2].notna(),
+                 bypassd_df[indicator_col1].notna(),
+                 bypassd_df[indicator_col2].notna()],
                 ['both', 'model1_only', 'model2_only'],
                 default='neither'
             )
 
             # Add all new columns at once
             try:
-                new_columns_df = pd.DataFrame(new_columns, index=merged_df.index)
-                merged_df = pd.concat([merged_df, new_columns_df], axis=1)
+                new_columns_df = pd.DataFrame(new_columns, index=bypassd_df.index)
+                bypassd_df = pd.concat([bypassd_df, new_columns_df], axis=1)
             except ValueError as e:
-                print(f"Error adding new columns to merged DataFrame for {df_name}. Exception: {str(e)}.")
-                print(f"merged_df shape: {merged_df.shape}, new_columns shape: {new_columns_df.shape}")
-                print(f"merged_df index: {merged_df.index}")
-                print(f"new_columns_df index: {new_columns_df.index}")
+                print(f"Error adding new columns to bypassed DataFrame for {df_name}. Exception: {str(e)}.")
 
                 # Attempt to add columns individually
                 for col, values in new_columns.items():
                     try:
-                        merged_df[col] = values
+                        bypassd_df[col] = values
                     except Exception as col_e:
                         print(f"Failed to add column {col}. Error: {str(col_e)}")
 
-            result[df_name] = merged_df
+            result[df_name] = bypassd_df
 
         # Add bus number changes to the result
         result['bus_num_changes'] = self.bus_num_changes()
@@ -372,7 +373,7 @@ class ModelComparison:
         Compare graph structures between the two models.
 
         This method identifies changes in network topology, including added and
-        removed edges and nodes, as well as path splits and merges.
+        removed edges and nodes, as well as path sectionalizes and bypass.
 
         Args:
             max_path_length (int, optional): Maximum path length for alternative path search.
@@ -403,16 +404,16 @@ class ModelComparison:
             return [(u, v) for u, v in graph2.edges
                     if not graph1.has_edge(u, v)]
 
-        def _find_alt_paths(split_edges, g1: nx.Graph = None, g2: nx.Graph = None,
+        def _find_alt_paths(sectionalize_edges, g1: nx.Graph, g2: nx.Graph,
                             max_path_length=max_path_length,
                             sort=sort, as_dataframe: bool = True) -> pd.DataFrame:
             """Find alternative paths in g2 for edges in g1 that are not in g2."""
             max_path_length = max_path_length or self.max_path_length
 
-            splits_dict = {}
-            for idx, edge in enumerate(split_edges):
+            sectionalizes_dict = {}
+            for idx, edge in enumerate(sectionalize_edges):
                 if not idx % 1000:
-                    print(f'    alt paths: evaluating {idx} of {len(split_edges) + 1} paths')
+                    print(f'    alt paths: evaluating {idx} of {len(sectionalize_edges) + 1} paths')
                 node_a, node_b, *_ = edge
                 if node_a not in g2.nodes or node_b not in g2.nodes:
                     continue
@@ -433,19 +434,19 @@ class ModelComparison:
                     if sort:
                         valid_paths.sort(key=len)
                     edge['type'] = section
-                    splits_dict[(node_a, node_b)] = valid_paths
+                    sectionalizes_dict[(node_a, node_b)] = valid_paths
 
-            # Update splits_dict to keep only the shortest paths for each edge
-            for edge, paths in splits_dict.items():
+            # Update sectionalizes_dict to keep only the shortest paths for each edge
+            for edge, paths in sectionalizes_dict.items():
                 shortest_length = min(len(path) for path in paths)
-                splits_dict[edge] = [path for path in paths if len(path) == shortest_length]
+                sectionalizes_dict[edge] = [path for path in paths if len(path) == shortest_length]
 
             if as_dataframe:
-                # Convert splits_dict to DataFrame
-                df = pd.DataFrame(list(splits_dict.items()), columns=['path', 'alt_paths'])
+                # Convert sectionalizes_dict to DataFrame
+                df = pd.DataFrame(list(sectionalizes_dict.items()), columns=['path', 'alt_paths'])
                 return df
 
-            return splits_dict
+            return sectionalizes_dict
 
         max_path_length = max_path_length or self.max_path_length
         graph1 = self.model1.network.graph(regenerate=regenerate, empty_ok=False)
@@ -459,14 +460,15 @@ class ModelComparison:
         result['added_edges'] = _get_added_edges()
         result['added_nodes'] = set(graph2.nodes) - set(graph1.nodes)
 
-        print('Finding path splits...')
+        print('Finding path sectionalizes...')
         df = _find_alt_paths(result['removed_edges'], g1=graph1, g2=graph2)
         df.columns = [self.model1.name, self.model2.name]
-        result['path_splits'] = df
-        print('Finding path merges...')
+        result['path_sectionalizations'] = df
+
+        print('Finding path bypass...')
         df = _find_alt_paths(result['added_edges'], g1=graph2, g2=graph1)
         df.columns = [self.model2.name, self.model1.name]
-        result['path_merges'] = df[[self.model1.name, self.model2.name]]
+        result['path_bypasses'] = df
 
         self.graph_comparison = result
         return self.graph_comparison
@@ -688,7 +690,7 @@ class ModelComparison:
         return processed_data
 
     def _graph_comparison_to_csv(self):
-        """Export path splits and merges to CSV."""
+        """Export path sectionalizes and bypass to CSV."""
         if not self.graph_comparison:
             self.compare_graph()
 
@@ -727,7 +729,7 @@ class ModelComparison:
         load_buses = load_df.index.get_level_values('ibus') if 'ibus' in load_df.index.names else pd.Series()
 
         # Combine generator and load buses
-        all_buses = gen_buses.union(load_buses)
+        all_buses = set(gen_buses) | set(load_buses)
 
         # Filter buses based on voltage criteria
         mask = (((bus_df['baskv_model1'] >= DEFAULT_KV_FILTER.min) &
@@ -919,7 +921,7 @@ if __name__ == '__main__':
     export_format = None if args.export_format.lower() == 'none' else args.export_format
 
     # Parse the areas argument
-    areas = [int(area.strip()) for area in args.areas.split(',')] if args.areas else []
+    areas = [int(area.strip()) for area in args.areas.sectionalize(',')] if args.areas else []
 
     main(args.raw1_path,
          args.raw2_path,

@@ -54,31 +54,83 @@ large power system models such as MMWG or IDC cases used in the Eastern Intercon
 # Rest of the module code follows...
 import json
 import warnings
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from typing import Dict, Any, List, Union, Callable  # Union
 from pathlib import Path
 from datetime import datetime as dtdt
 import copy
 from time import perf_counter_ns
+import pickle
 
 from psse_model_util.common.dataframe_util import convert_df_column_dtypes
 from psse_model_util.common.dirs import site_cache_dir, site_data_dir
 from psse_model_util.common.file_util import to_pickle, read_pickle
 from psse_model_util.common.json_util import load_and_clean_json
 from psse_model_util.common.constants import INCLUDE_AREAS
-from psse_model_util.rawx_json_template import rawx_json_template
+from psse_model_util.dataformat.rawx_json_template import rawx_json_template
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
+from psse_model_util.common.logging_config import setup_logger, get_log_file_path
 
+# from psse_model_util.common.classes import ModelDF
 # from psse_model_util.common.dirs import site_data_dir
 # from psse_model_util.common.classes import (BusId, IdStr, IdInt,
 #                                             ZoneId, AreaId, OwnerId, SwShID)
 
+import numpy as np
 import pandas as pd
 import networkx as nx
-import pickle
-import numpy as np
+import plotly.graph_objects as go
 
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
+logger = setup_logger('model')
+
+
+class ModelEncoder(json.JSONEncoder):
+    """
+    Custom JSON encoder for Model class data.
+
+    Handles serialization of:
+    - NumPy types (integer, floating, arrays)
+    - Pandas DataFrames
+    - None/NaN values
+    - Other objects via string representation
+
+    This encoder is used for both saving models to JSON and internal JSON conversion.
+    """
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, pd.DataFrame):
+            return obj.to_dict(orient='split')
+        elif pd.isna(obj):
+            return None
+        try:
+            return super().default(obj)
+        except TypeError:
+            return str(obj)
+
+
+class ModelDecoder(json.JSONDecoder):
+    """
+    Custom JSON decoder for Model class data.
+
+    Handles deserialization of specially formatted model data, converting
+    back from the JSON-safe format produced by ModelEncoder.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(object_hook=self.object_hook, *args, **kwargs)
+
+    def object_hook(self, dct):
+        # Handle DataFrame reconstruction if the dict has the pandas split-format structure
+        if all(key in dct for key in ('index', 'columns', 'data')):
+            return pd.DataFrame(**dct)
+        return dct
 
 
 class General:
@@ -185,10 +237,11 @@ class AbstractSection:
             df = pd.DataFrame(padded_values, columns=fields)
             # If 'id_cols' is provided, then set the index to those columns.
         except ValueError as e:
-            print('subsection:', self.subsection)
-            print('fields:', len(fields), fields)
-            print('data:', len(data), data)
-            print('meta:', len(meta), meta)
+            logger.warning(f'Error loading model section to pd.DataFrame.  {str(e)}')
+            logger.warning(f'    subsection: {self.subsection}')
+            logger.warning(f'    fields: {len(fields)} {fields}')
+            logger.warning(f'    data: {len(data)} {data}')
+            logger.warning(f'    meta: {len(meta)} {meta}')
             raise
 
         # Get metadata like data_type, bus_cols, and id_cols from rawx_json_template.
@@ -232,8 +285,52 @@ class AbstractSection:
 
 
 class Network(AbstractSection):
-    """
-    Represents the 'network' section of the PSSE v35 RAWX (JSON) file.
+    """Manages power system network component data and topology analysis.
+
+    The Network class encapsulates all power system equipment data (buses, branches,
+    generators, etc.) and provides methods for filtering, analysis and topology
+    exploration. It serves as the primary interface for accessing and manipulating
+    network data within a Model instance.
+
+    Args:
+        section (Dict[str, Any]): Raw network data from RAWX/JSON format
+        generate_graph (bool, optional): Pre-generate network topology graph
+
+    Attributes:
+        acline (pd.DataFrame): AC transmission line data
+        bus (pd.DataFrame): Bus data and properties
+        generator (pd.DataFrame): Generator unit data
+        load (pd.DataFrame): Load data
+        transformer (pd.DataFrame): Transformer data
+        swshunt (pd.DataFrame): Switched shunt data
+        fixshunt (pd.DataFrame): Fixed shunt data
+        area (pd.DataFrame): Area definitions
+        zone (pd.DataFrame): Zone definitions
+        owner (pd.DataFrame): Equipment ownership data
+        _graph (nx.Graph): Network topology representation
+
+    Methods:
+        filter_by_area: Filter network to specified areas
+        graph: Generate/retrieve network topology graph
+        append_bus_info_to_dfs: Add bus data to related equipment
+        section_with_bus: Join equipment data with associated bus info
+        copy: Create independent copy of network data
+
+    Example:
+        >>> from model import Model
+        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> model = Model(fp, name="Summer_Peak")
+        >>> network = model.network
+        >>>
+        >>> # Access equipment data
+        >>> critical_buses = network.bus[network.bus['baskv'] >= 345]
+        >>>
+        >>> # Filter network
+        >>> filtered = network.filter_by_area(['AREA1', 'AREA2'])
+        >>>
+        >>> # Analyze topology
+        >>> g = network.graph()
+        >>> paths = nx.all_pairs_shortest_path(g)
     """
 
     def __init__(self, section: Dict[str, Any], generate_graph: bool = False):
@@ -243,22 +340,48 @@ class Network(AbstractSection):
         :param section: Dictionary containing the 'network' section data
         """
         start_time = perf_counter_ns()
-        print(f'Network.__init__ starting...')
+
+        # These initializations are not needed as they are set in the loop below,
+        # but helps developers using IDEs to see the structure.
+        self.acline: pd.DataFrame = pd.DataFrame()
+        self.adjust: pd.DataFrame = pd.DataFrame()
+        self.area: pd.DataFrame = pd.DataFrame()
+        self.bus: pd.DataFrame = pd.DataFrame()
+        self.caseid: pd.DataFrame = pd.DataFrame()
+        self.facts: pd.DataFrame = pd.DataFrame()
+        self.fixshunt: pd.DataFrame = pd.DataFrame()
+        self.general: pd.DataFrame = pd.DataFrame()
+        self.generator: pd.DataFrame = pd.DataFrame()
+        self.load: pd.DataFrame = pd.DataFrame()
+        self.msline: pd.DataFrame = pd.DataFrame()
+        self.newton: pd.DataFrame = pd.DataFrame()
+        self.owner: pd.DataFrame = pd.DataFrame()
+        self.rating: pd.DataFrame = pd.DataFrame()
+        self.solver: pd.DataFrame = pd.DataFrame()
+        self.swshunt: pd.DataFrame = pd.DataFrame()
+        self.sysswd: pd.DataFrame = pd.DataFrame()
+        self.transformer: pd.DataFrame = pd.DataFrame()
+        self.twotermdc: pd.DataFrame = pd.DataFrame()
+        self.tysl: pd.DataFrame = pd.DataFrame()
+        self.vscdc: pd.DataFrame = pd.DataFrame()
+        self.zone: pd.DataFrame = pd.DataFrame()
+
+        logger.info(f'Network.__init__ starting...')
         for subsection, data in section.items():
-            print(f'Network.__init__ creating dataframe {subsection}...')
+            logger.info(f'Network.__init__ creating dataframe {subsection}...')
             self.subsection = subsection  # Added to aid in debugging
             df = self._create_dataframe(data)
             setattr(self, subsection, df)
-            print(f'Network.__init__ elapsed: '
-                  f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+            logger.info(f'Network.__init__ elapsed: '
+                        f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
         self._orig_dfs_cache: dict[str, pd.DataFrame] = dict()
         self._orig_dfs_cache['bus'] = copy.deepcopy(self.bus)
         self._orig_dfs_cache['bus']._metadata = self.bus._metadata
 
         self._graph: nx.Graph = self.graph(regenerate=True) if generate_graph else nx.Graph()
-        print(f'Network.__init__  finished: '
-              f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Network.__init__  finished: '
+                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
     def _create_dataframe(self, data: Dict[str, Union[List[str], List[Any]]]) -> pd.DataFrame:
         """
@@ -313,6 +436,11 @@ class Network(AbstractSection):
             setattr(self.network, section_name, df)
         """
         orig_keys = tuple(data.keys())
+        if 'fields' not in data.keys():
+            logger.info(f'data keys: {list(data.keys())}')
+            logger.info(f'data[:100]: {str(data)[:100]} ...')
+            logger.error('Error creating Model.network dataframe.  data does not contain "fields".')
+            raise ValueError('Error creating Model.network dataframe.  data does not contain "fields".')
         fields: list = data.pop('fields')
         values: list = data.pop('data')
         meta: dict = data
@@ -350,10 +478,11 @@ class Network(AbstractSection):
             df = pd.DataFrame(padded_values, columns=fields)
             # If 'id_cols' is provided, then set the index to those columns.
         except ValueError as e:
-            print('network subsection:', self.subsection)
-            print('fields:', len(fields), fields)
-            print('data:', len(data), data)
-            print('meta:', len(meta), meta)
+            logger.warning(f'Error creating pd.DataFrame for model section, {self.subsection}.  {str(e)}')
+            logger.warning(f'network subsection:, {self.subsection}')
+            logger.warning(f'fields: {len(fields)} {fields}')
+            logger.warning(f'data:, {len(data)}, {data}')
+            logger.warning(f'meta: {len(meta)}, {meta}')
             raise
 
         # Get metadata like data_type, bus_cols, and id_cols from rawx_json_template.
@@ -366,7 +495,6 @@ class Network(AbstractSection):
             for key in template:
                 metadata[key] = template[key]
                 # id_cols = data['id_cols'] if 'id_cols' in data else None
-
 
         if 'data_type' in metadata:
             # new_dtypes = metadata['data_type']
@@ -424,7 +552,7 @@ class Network(AbstractSection):
             for adding multiple columns to a DataFrame.
         """
         start_time = perf_counter_ns()
-        print(f'Adding bus information to {section} starting...')
+        logger.info(f'Adding bus information to {section} starting...')
         # Get the specified section's DataFrame
         df = getattr(self, section)
         metadata = df._metadata
@@ -479,8 +607,8 @@ class Network(AbstractSection):
         if inplace:
             setattr(self, section, df)
 
-        print(f'Finished adding bus information to {section}: '
-              f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Finished adding bus information to {section}: '
+                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
         return df
 
@@ -580,6 +708,221 @@ class Network(AbstractSection):
                              f'Expected one of "clear", "regenerate" or "leave".')
 
         return network
+
+    def filter_section(self, section: str, where_clause: str,
+                       inplace: bool = False,
+                       graph_effect: str = 'clear') -> Union['Network', pd.DataFrame]:
+        """
+        Filter a specific section's DataFrame using a where clause.
+
+        This method allows SQL-like filtering of any section DataFrame in the Network object.
+        It can either modify the Network in place or return a filtered copy of just the
+        section DataFrame or the entire Network.
+
+        Args:
+            section (str): Name of the section/DataFrame to filter (e.g., 'bus', 'acline')
+            where_clause (str): SQL-like where clause to filter the DataFrame (e.g., 'baskv >= 345')
+            inplace (bool): If True, modify Network in place. If False, return filtered copy.
+                Defaults to False.
+            graph_effect (str): How to handle the network graph after filtering:
+                - 'clear': Clear the graph (must be regenerated when needed)
+                - 'regenerate': Regenerate the graph immediately
+                - 'leave': Leave the graph unchanged
+                Defaults to 'clear'.
+
+        Returns:
+            Union[Network, pd.DataFrame]: If inplace=True, returns filtered DataFrame.
+            If inplace=False, returns new Network instance with filtered data.
+
+        Raises:
+            ValueError: If section doesn't exist or where_clause is invalid
+            AttributeError: If section exists but is not a DataFrame
+
+        Examples:
+            >>> # Filter buses to voltage >= 345 kV
+            >>> filtered_buses = network.filter_section('bus', 'baskv >= 345')
+            >>>
+            >>> # Filter generators to certain statuses in place
+            >>> network.filter_section('generator', 'stat == 1', inplace=True)
+            >>>
+            >>> # Create new Network with only large transformers
+            >>> new_net = network.filter_section('transformer', 'mbase > 1000',
+            ...                                 inplace=False)
+
+        Notes:
+            - The where_clause is passed directly to pandas.DataFrame.query()
+            - For complex conditions, use parentheses: '(col1 > 0) & (col2 < 100)'
+            - Column names in where_clause must exist in the section DataFrame
+            - The method preserves the DataFrame's metadata
+        """
+        # Validate section exists and is a DataFrame
+        if not hasattr(self, section):
+            raise ValueError(f"Section '{section}' does not exist in Network")
+
+        df = getattr(self, section)
+        if not isinstance(df, pd.DataFrame):
+            raise AttributeError(f"'{section}' is not a DataFrame")
+
+        # Save metadata before filtering
+        metadata = df._metadata if hasattr(df, '_metadata') else {}
+
+        try:
+            # Apply the filter using pandas query
+            filtered_df = df.query(where_clause)
+            filtered_df._metadata = metadata
+        except Exception as e:
+            raise ValueError(f"Invalid where clause: '{where_clause}'. Error: {str(e)}")
+
+        if inplace:
+            # Update the section in place
+            setattr(self, section, filtered_df)
+
+            # Handle graph effects
+            self._handle_graph_effect(graph_effect)
+
+            return filtered_df
+        else:
+            # Create a new Network instance with the filtered section
+            new_network = self.copy(deep=True)
+            setattr(new_network, section, filtered_df)
+
+            # Handle graph effects for the new network
+            new_network._handle_graph_effect(graph_effect)
+
+            return new_network
+
+    def filter_by_kv(self, low_value: float = 0.0,
+                     high_value: float = float('inf'),
+                     inplace: bool = False,
+                     graph_effect: str = 'clear') -> 'Network':
+        """
+        Filter network equipment based on voltage level criteria.
+
+        This method filters buses and related equipment based on a voltage range.
+        For buses, it uses their base kV. For branches and transformers, it uses
+        the highest voltage level of connected buses.
+
+        Args:
+            low_value (float): Minimum voltage in kV (inclusive). Defaults to 0.0.
+            high_value (float): Maximum voltage in kV (exclusive). Defaults to infinity.
+            inplace (bool): If True, modify Network in place. If False, return filtered copy.
+                Defaults to False.
+            graph_effect (str): How to handle the network graph after filtering:
+                - 'clear': Clear the graph (must be regenerated when needed)
+                - 'regenerate': Regenerate the graph immediately
+                - 'leave': Leave the graph unchanged
+                Defaults to 'clear'.
+
+        Returns:
+            Network: Filtered Network instance (same instance if inplace=True)
+
+        Raises:
+            ValueError: If low_value >= high_value or if values are negative
+
+        Examples:
+            >>> # Get network with only 230-500 kV equipment
+            >>> high_voltage = network.filter_by_kv(230, 500)
+            >>>
+            >>> # Filter network to sub-transmission (69-230 kV)
+            >>> network.filter_by_kv(69, 230, inplace=True)
+            >>>
+            >>> # Get EHV network (345+ kV)
+            >>> ehv = network.filter_by_kv(345)
+
+        Notes:
+            - Buses are filtered based on their base kV (baskv column)
+            - Equipment connected to multiple buses (e.g., branches) are kept if any
+              connected bus is within the voltage range and exists in filtered network
+            - Filtering is done efficiently using vectorized operations
+            - The method preserves DataFrame metadata
+        """
+        # Input validation
+        if low_value < 0:
+            raise ValueError("low_value cannot be negative")
+        if high_value <= low_value:
+            raise ValueError("high_value must be greater than low_value")
+
+        # Work on a copy if not inplace
+        network = self if inplace else self.copy(deep=True)
+
+        # First filter buses by voltage
+        bus_df = network.bus
+        voltage_mask = (bus_df['baskv'] >= low_value) & (bus_df['baskv'] < high_value)
+        filtered_buses = bus_df[voltage_mask]
+
+        # Save the filtered bus indices for equipment filtering
+        valid_buses = set(filtered_buses.index)
+
+        # Update bus DataFrame
+        network.bus = filtered_buses
+        network.bus._metadata = bus_df._metadata
+
+        # Filter other equipment based on bus connections
+        for section_name, df in network.model_dfs().items():
+            if section_name == 'bus':
+                continue
+
+            metadata = df._metadata
+            if not metadata or 'bus_cols' not in metadata:
+                continue
+
+            # Get bus columns for this equipment type
+            bus_cols = metadata['bus_cols']
+
+            # Reset index if necessary to access bus columns
+            if isinstance(df.index, pd.MultiIndex):
+                df_reset = df.reset_index()
+            else:
+                df_reset = df.copy()
+
+            # Create mask for equipment connected to valid buses
+            mask = np.zeros(len(df_reset), dtype=bool)
+            for bus_col in bus_cols:
+                if bus_col in df_reset.columns:
+                    # Only consider connections to buses that exist in filtered network
+                    valid_connections = df_reset[bus_col].isin(valid_buses)
+                    mask |= valid_connections
+
+            # Apply filter
+            filtered_df = df_reset[mask]
+
+            # Restore index if needed
+            if isinstance(df.index, pd.MultiIndex):
+                filtered_df.set_index(df.index.names, inplace=True)
+
+            # Preserve metadata
+            filtered_df._metadata = metadata
+
+            # Update section in network
+            setattr(network, section_name, filtered_df)
+
+        # Handle graph effect
+        network._handle_graph_effect(graph_effect)
+
+        return network
+
+    def _handle_graph_effect(self, graph_effect: str):
+        """
+        Handle graph modifications based on the specified effect.
+
+        Args:
+            graph_effect (str): The graph effect to apply:
+                - 'clear': Clear the graph
+                - 'regenerate': Regenerate the graph
+                - 'leave': Leave the graph unchanged
+
+        Raises:
+            ValueError: If graph_effect is not one of the allowed values
+        """
+        if graph_effect == 'clear':
+            self._graph = nx.Graph()
+        elif graph_effect == 'regenerate':
+            self.graph(regenerate=True)
+        elif graph_effect == 'leave':
+            pass
+        else:
+            raise ValueError(f"Invalid graph_effect '{graph_effect}'. "
+                             f"Must be 'clear', 'regenerate', or 'leave'")
 
     def copy(self, deep: bool = True):
         """
@@ -750,8 +1093,22 @@ class Network(AbstractSection):
         self._graph: nx.Graph = nx.Graph()
 
         # 1) Add buses
-        bus_df = getattr(self, 'bus')
-        bus_dict = bus_df.to_dict('index')
+        bus_df: pd.DataFrame = getattr(self, 'bus')
+        try:
+            bus_dict = bus_df.to_dict('index')
+        except ValueError as e:
+            logger.warning('df head')
+            logger.warning(bus_df.head())
+            logger.warning('df describe')
+            logger.warning(bus_df.describe())
+            logger.warning('df info')
+            logger.warning(bus_df.info())
+            logger.warning('bus_df.index')
+            logger.warning(bus_df.index.names)
+            logger.warning(bus_df.index.values)
+            logger.error(f'Error adding buses to network graph {str(e)}')
+            raise e
+
         nodes = [(('bus', ibus), props) for ibus, props in bus_dict.items()]
         self._graph.add_nodes_from(nodes)
 
@@ -764,7 +1121,7 @@ class Network(AbstractSection):
                 # Do not add substations to model
                 continue
 
-            # print(f'{section}._metadata:', df._metadata)
+            logger.debug(f'{section}._metadata: {df._metadata}')
 
             # Skip rawx sections that do not have bus information, as they
             # do nto get added to the network graph.
@@ -811,15 +1168,425 @@ class Network(AbstractSection):
                     for row in df.itertuples():
                         props = row._asdict()
                         props.update({'section': section, 'id_cols': id_cols, 'bus_cols': bus_cols})
-                        i, j, k = row.Index[:3]
-                        i, j, k, ckt = row.Index
-                        tx_node = (section, i, j, k)
+                        i, j, k, ckt = row.Index  # for 2-winding transformer, k = 0.
+                        # 3 nodes for 3-winding and 2 nodes for 2-winding transformers.
+                        tx_node = (section, i, j, k) if k else (section, i, j)
                         self._graph.add_node(tx_node, **props)
-                        self._graph.add_edge(tx_node, ('bus', i), **{'section': section})
-                        self._graph.add_edge(tx_node, ('bus', j), **{'section': section})
-                        self._graph.add_edge(tx_node, ('bus', k), **{'section': section})
+                        self._graph.add_edge(tx_node, ('bus', i), **props)
+                        self._graph.add_edge(tx_node, ('bus', j), **props)
+                        if k:
+                            tx_node = (section, i, j)
+                            self._graph.add_edge(tx_node, ('bus', k), **props)
 
         return self._graph
+
+    def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
+                      load_positions: dict = None, save_positions: bool = True) -> None:
+        """
+        Create an interactive visualization of the network graph centered around a specific node.
+
+        Parameters
+        ----------
+        node_id : tuple
+            The identifier of the central node, e.g. ('bus', 201)
+        distance : int, optional
+            Number of edges to traverse from central node (default=2)
+        theme : str, optional
+            Color theme - 'light' or 'dark' (default='light')
+        load_positions : dict, optional
+            Dictionary of pre-saved node positions {node_id: (x, y)}
+        save_positions : bool, optional
+            Whether to save positions after dragging (default=True)
+
+        Returns
+        -------
+        None
+            Displays an interactive plotly figure
+
+        Examples
+        --------
+        >>> model = Model('path/to/model.raw')
+        >>> # Basic draw
+        >>> model.network.draw_one_line(('bus', 201), distance=3)
+        >>>
+        >>> # Dark theme
+        >>> model.network.draw_one_line(('bus', 201), theme='dark')
+        >>>
+        >>> # Load saved positions
+        >>> saved_pos = model.network.load_node_positions()
+        >>> model.network.draw_one_line(('bus', 201), load_positions=saved_pos)
+        """
+
+        # Color themes
+        themes = {
+            'light': {
+                'bg_color': 'white',
+                'text_color': 'black',
+                'edge_color': '#888',
+                'grid_color': '#eee',
+                'node_colors': {
+                    'default': '#808080',  # Medium gray for non-bus nodes
+                    'node_line': '#404040'  # Darker gray for node borders
+                }
+            },
+            'dark': {
+                'bg_color': '#1a1a1a',
+                'text_color': 'white',
+                'edge_color': '#666',
+                'grid_color': '#333',
+                'node_colors': {
+                    'default': '#808080',  # Medium gray for non-bus nodes
+                    'node_line': '#a0a0a0'  # Lighter gray for node borders in dark mode
+                }
+            }
+        }
+
+        # Voltage level colors - from low to high voltage
+        voltage_colors = [
+            (0, '#add8e6'),  # Light blue for low voltage
+            (69, '#6495ed'),  # Corn flower blue for sub-transmission
+            (115, '#0000ff'),  # Blue for transmission
+            (230, '#000080'),  # Navy for high transmission
+            (500, '#800080'),  # Purple for extra high voltage
+            (765, '#4b0082'),  # Indigo for ultra high voltage
+        ]
+
+        def get_voltage_color(kv):
+            """Get color based on voltage level"""
+            if not kv:
+                return themes[theme]['node_colors']['default']
+            for i, (volt, color) in enumerate(voltage_colors):
+                if kv < volt:
+                    if i == 0:
+                        return voltage_colors[0][1]
+                    # Interpolate between colors
+                    prev_volt, prev_color = voltage_colors[i - 1]
+                    ratio = (kv - prev_volt) / (volt - prev_volt)
+                    return color
+            return voltage_colors[-1][1]  # Return highest voltage color if above all levels
+
+        # Save/load positions functionality
+        def get_positions_file():
+            """Get path to positions cache file"""
+            cache_dir = Path.home() / '.cache' / 'psse_model_util'
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            return cache_dir / 'node_positions.json'
+
+        def save_node_positions(positions):
+            """Save node positions to file"""
+            if not save_positions:
+                return
+            pos_file = get_positions_file()
+            # Convert positions to serializable format
+            serializable_pos = {str(k): (float(v[0]), float(v[1]))
+                                for k, v in positions.items()}
+            with open(pos_file, 'w') as f:
+                json.dump(serializable_pos, f)
+
+        def load_saved_positions():
+            """Load saved positions from file"""
+            pos_file = get_positions_file()
+            if pos_file.exists():
+                with open(pos_file) as f:
+                    return json.load(f)
+            return {}
+
+        # Ensure graph exists
+        if not self._graph or self._graph.number_of_nodes() == 0:
+            self.graph(regenerate=True)
+
+        # Get subgraph of nodes within distance
+        nodes_in_range = {node_id}
+        current_nodes = {node_id}
+
+        for _ in range(distance):
+            next_nodes = set()
+            for node in current_nodes:
+                next_nodes.update(self._graph.neighbors(node))
+            nodes_in_range.update(next_nodes)
+            current_nodes = next_nodes
+
+        subgraph = self._graph.subgraph(nodes_in_range)
+
+        # Use provided positions or load saved ones or generate new layout
+        if load_positions:
+            pos = {node: load_positions[str(node)]
+                   for node in subgraph.nodes()
+                   if str(node) in load_positions}
+            # Generate positions for any missing nodes
+            missing_nodes = set(subgraph.nodes()) - set(pos.keys())
+            if missing_nodes:
+                temp_pos = nx.spring_layout(subgraph.subgraph(missing_nodes))
+                pos.update(temp_pos)
+        else:
+            pos = nx.spring_layout(subgraph)
+
+        # Prepare node traces by type
+        node_traces = defaultdict(lambda: {"x": [], "y": [], "text": [],
+                                           "hovertext": [], "ids": [], "color": []})
+
+        # Get central node properties for title
+        center_props = subgraph.nodes[node_id]
+        title = f"One-line Diagram: {node_id}"
+        if 'name' in center_props:
+            title = f"One-line Diagram: {center_props['name']} {node_id}"
+
+        theme_colors = themes[theme]
+
+        for node in subgraph.nodes():
+            x, y = pos[node]
+            node_type = node[0] if isinstance(node, tuple) else str(node)
+
+            # Get node properties for hover text
+            props = subgraph.nodes[node]
+            hover_text = "<br>".join([f"{k}: {v}" for k, v in props.items()])
+
+            if 'name' in props:
+                display_text = f"{props['name']}\n({str(node)})"
+            else:
+                display_text = str(node)
+
+            # Determine node color
+            if node_type == 'bus' and 'baskv' in props:
+                node_color = get_voltage_color(float(props['baskv']))
+            else:
+                node_color = theme_colors['node_colors']['default']
+
+            node_traces[node_type]["x"].append(x)
+            node_traces[node_type]["y"].append(y)
+            node_traces[node_type]["text"].append(str(display_text))
+            node_traces[node_type]["hovertext"].append(hover_text)
+            node_traces[node_type]["ids"].append(str(node))
+            node_traces[node_type]["color"].append(node_color)
+
+        # Node styling
+        node_style = {
+            "bus": dict(
+                symbol="circle-dot",
+                size=20,
+                line=dict(color=theme_colors['node_colors']['node_line'], width=2)
+            ),
+            "generator": dict(
+                symbol="star",
+                size=20,
+                line=dict(color=theme_colors['node_colors']['node_line'], width=2)
+            ),
+            "load": dict(
+                symbol="triangle-down",
+                size=20,
+                line=dict(color=theme_colors['node_colors']['node_line'], width=2)
+            ),
+            "transformer": dict(
+                symbol="square-x",
+                size=20,
+                line=dict(color=theme_colors['node_colors']['node_line'], width=2)
+            ),
+            "fixshunt": dict(
+                symbol="diamond",
+                size=15,
+                line=dict(color=theme_colors['node_colors']['node_line'], width=2)
+            )
+        }
+
+        default_style = dict(
+            symbol="circle",
+            size=15,
+            line=dict(color=theme_colors['node_colors']['node_line'], width=1)
+        )
+
+        traces = []
+
+        for node_type, nodes in node_traces.items():
+            style = node_style.get(node_type, default_style)
+            style['color'] = nodes["color"]  # Use calculated colors
+
+            # Special handling for transformers
+            if node_type == 'transformer':
+                hovertemplate = "%{hovertext}<extra></extra>"  # Force hover text display
+            else:
+                hovertemplate = None
+
+            trace = go.Scatter(
+                x=nodes["x"],
+                y=nodes["y"],
+                mode='markers+text',
+                text=nodes["text"],
+                ids=nodes["ids"],
+                textposition="top center",
+                hovertext=nodes["hovertext"],
+                hoverinfo="text",
+                hovertemplate=hovertemplate,  # Add hover template for transformers
+                marker=style,
+                name=node_type,
+                customdata=nodes["ids"],
+            )
+            traces.append(trace)
+
+        # Create edge traces
+        edge_x = []
+        edge_y = []
+        edge_text = []
+
+        for edge in subgraph.edges(data=True):
+            x0, y0 = pos[edge[0]]
+            x1, y1 = pos[edge[1]]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+            edge_props = "<br>".join([f"{k}: {v}" for k, v in edge[2].items()])
+            edge_text.extend([edge_props, edge_props, None])  # We add None for the line break
+
+        edge_trace = go.Scatter(
+            x=edge_x,
+            y=edge_y,
+            mode='lines',
+            line=dict(width=1.5, color=theme_colors['edge_color']),
+            hoverinfo='text',
+            hovertext=edge_text,
+            name='connections'
+        )
+
+        traces.append(edge_trace)
+
+        # Add voltage color key before creating the figure:
+        voltage_key_y = np.linspace(0, 1, len(voltage_colors))
+        voltage_key_text = [f"{int(volt)} kV" for volt, _ in voltage_colors]
+        # Add "< " to first and "> " to last value
+        voltage_key_text[0] = f"< {voltage_key_text[0]}"
+        voltage_key_text[-1] = f"> {voltage_key_text[-1]}"
+
+        voltage_key = go.Scatter(
+            x=[-1.2] * len(voltage_colors),  # Place on far left
+            y=np.linspace(-0.2, 0.5, len(voltage_colors)),
+            mode='markers+text',
+            text=voltage_key_text,
+            textposition="middle right",
+            marker=dict(
+                size=20,
+                color=[color for _, color in voltage_colors],
+                symbol='square',
+                line=dict(color=theme_colors['text_color'], width=1)
+            ),
+            name="Bus Voltage",
+            hoverinfo='none',
+            legendgroup='voltage',
+            legendgrouptitle_text='Bus Voltage Levels',  # Add group title
+            showlegend=False
+        )
+
+        traces.append(voltage_key)
+
+        # Create figure with theme-aware layout
+        fig = go.Figure(
+            data=traces,
+            layout=go.Layout(
+                title=dict(
+                    text=title,
+                    x=0.5,
+                    y=0.95,
+                    xanchor='center',
+                    yanchor='top',
+                    font=dict(size=16, color=theme_colors['text_color'])
+                ),
+                showlegend=True,
+                legend=dict(
+                    x=0.02,  # Position legend on left side
+                    y=1,  # Position at top
+                    xanchor='left',
+                    yanchor='top',
+                    bgcolor='rgba(255,255,255,0.8)' if theme == 'light' else 'rgba(0,0,0,0.8)',
+                    bordercolor=theme_colors['text_color'],
+                    borderwidth=1,
+                    title=dict(
+                        text='Network Components',  # Add legend title
+                        side='top'
+                    )
+                ),
+                hovermode='closest',
+                margin=dict(b=20, l=120, r=50, t=40),  # Increased left margin for legend
+                xaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    showticklabels=False,
+                    gridcolor=theme_colors['grid_color'],
+                    range=[-1.3, 1.3],  # Adjust range to show voltage key
+                ),
+                yaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    showticklabels=False,
+                    gridcolor=theme_colors['grid_color']
+                ),
+                plot_bgcolor=theme_colors['bg_color'],
+                paper_bgcolor=theme_colors['bg_color'],
+                dragmode='select',  # 'pan'
+                modebar=dict(
+                    orientation='v',
+                    bgcolor='rgba(0,0,0,0)',
+                    color=theme_colors['text_color'],
+                    activecolor=theme_colors['edge_color']
+                ),
+                annotations=[
+                    dict(
+                        text="",  # Bus Voltage Levels
+                        x=-1.2,
+                        y=1.05,
+                        xref="x",
+                        yref="y",
+                        showarrow=False,
+                        font=dict(color=theme_colors['text_color']),
+                        xanchor='center'
+                    )
+                ],
+                newshape=dict(line_color='cyan'),
+                font=dict(color=theme_colors['text_color'])
+            )
+        )
+
+        # Save final positions
+        if save_positions:
+            save_node_positions(pos)
+
+        # Show with config
+        # Show figure with corrected config
+        fig.show(config={
+            'editable': True,
+            'displaylogo': False,
+            'modeBarButtonsToAdd': [
+                'select',
+                'pan2d',
+                'drawopenpath',
+                'select2d',
+                'eraseshape',
+                'dragmode'  # Add drag mode button
+            ],
+            'modeBarButtonsToRemove': [
+                'lasso2d',
+                'zoomIn2d',
+                'zoomOut2d',
+                'autoScale2d'
+            ],
+            'scrollZoom': True,
+            'displayModeBar': True,
+            'toImageButtonOptions': {
+                'format': 'svg',
+                'filename': f'one_line_{node_id}'
+            }
+        })
+
+    def load_node_positions(self) -> dict:
+        """
+        Load previously saved node positions from cache.
+
+        Returns
+        -------
+        dict
+            Dictionary of node positions {node_id: (x, y)}
+        """
+        cache_file = Path.home() / '.cache' / 'psse_model_util' / 'node_positions.json'
+        if cache_file.exists():
+            with open(cache_file) as f:
+                return json.load(f)
+        return {}
 
 
 class Harmonics(AbstractSection):
@@ -855,110 +1622,49 @@ class TimeSeries(AbstractSection):
 
 
 class Model:
-    """
-    A comprehensive representation of a PSSE v35 power system model from a RAW or RAWX file.
+    """Comprehensive representation of a PSS/E power system model from RAW/RAWX files.
 
-    The Model class serves as the primary interface for loading, processing, and
-    analyzing PSSE v35 RAWX (JSON) files or PSSE v33-35 RAW files. It provides 
-    a structured, object-oriented representation of the entire power system 
-    model, with methods for data manipulation, filtering, and analysis.
+    The Model class serves as the primary interface for loading, processing, and analyzing
+    PSS/E v33-35 power system models. It provides structured access to network topology,
+    equipment data, and analysis capabilities.
 
     Attributes:
-    -----------
-    name : str
-        Name of the model, typically derived from the input file name.
-    raw_file_path : Path
-        Path to the source RAW or RAWX file.
-    json_data : dict
-        RAWX-like JSON data loaded from the RAWX file.  Or, loaded from a RAW
-        file with the rawx_to_raw.raw_file_to_rawx_dict function.
-    general : General
-        Object representing the 'general' section of the RAWX file.
-    network : Network
-        Object representing the 'network' section, containing all power system components.
-    harmonics : Harmonics
-        Object representing the 'harmonics' section of the RAWX file.
-    timeseries : TimeSeries
-        Object representing the 'timeseries' section of the RAWX file.
-    version : float
-        Version number of the PSSE model.
+        name (str): Identifier for the model, derived from input file or user-specified
+        raw_file_path (Path): Source RAW/RAWX file location
+        json_data (dict): Structured representation of model data
+        general (General): Model metadata and version information
+        network (Network): Power system component data and topology
+        harmonics (Harmonics): Harmonic analysis data if present
+        timeseries (TimeSeries): Time-dependent data if present
+        version (float): PSS/E version number of the model
 
-    Methods:
-    --------
-    __init__(file_path_or_json: Union[str, dict, Path] = None, name: str = None,
-             force_recalculate: bool = False)
-        Initialize the Model object by loading and processing the RAW or RAWX file.
+    Args:
+        file_path_or_json (Union[str, dict, Path]): Input source - either file path or
+            pre-loaded data
+        name (str, optional): Custom identifier for the model
+        force_recalculate (bool, optional): Force reprocessing even if cache exists
 
-    filter_by_area(areas: dict | list[str] = INCLUDE_AREAS, inplace: bool = False)
-        Filter the model to include only specified areas.
+    Raises:
+        FileNotFoundError: If specified input file does not exist
+        JSONDecodeError: If JSON data is invalid
+        ValueError: If input format is unrecognized
 
-    copy(deep: bool = True)
-        Create a deep or shallow copy of the Model object.
-
-    network_dfs()
-        Return a dictionary of all DataFrames in the network section.
-
-    to_csv()
-        Export the model data to CSV files.
-
-    to_pickle(resilient: bool = True)
-        Save the Model object to a pickle file for faster future loading.
-
-    read_pickle(mode: str = 'rb', resilient: bool = True)
-        Load a Model object from a pickle file.
-
-    Key Features:
-    -------------
-    1. Comprehensive Data Representation:
-       Stores all aspects of the power system model in structured Python objects,
-       allowing easy access and manipulation of model components.
-
-    2. Efficient Data Processing:
-       Utilizes pandas DataFrames for storing component data, enabling fast
-       data operations and analyses.
-
-    3. Network Topology Analysis:
-       The Network object includes methods to generate a NetworkX graph representation
-       of the power system, facilitating topological analyses.
-
-    4. Flexible Filtering:
-       Provides methods to filter the model based on areas, allowing focus on
-       specific parts of the power system.
-
-    5. Data Persistence:
-       Includes methods for saving and loading the processed model to/from pickle
-       files, significantly reducing load times for subsequent analyses.
-
-    6. Export Capabilities:
-       Offers methods to export model data to various formats (CSV) for
-       external analysis or reporting.
-
-    Usage Example:
-    --------------
-    # Load a RAW or  RAWX file into a Model object
-    model = Model('path/to/rawx/file.rawx')
-
-    # Create a filtered copy of the model including only specific areas.
-    filtered_model = model.filter_by_area({101: 'AREA1', 102: 'AREA2'}, inplace=False)
-    -- or --
-    filtered_model = model.filter_by_area([101, 102], inplace=False)
-
-    # Access the network graph for topological analysis
-    network_graph = model.network.graph()
-
-    # Export the model data to CSV
-    model.to_csv('output_model.csv')
-
-    # Save the processed model for faster future loading
-    model.to_pickle()
-
-    Notes:
-    ------
-    - The Model class is designed to handle large power system models efficiently.
-    - It's recommended to use the pickle functionality for faster loading of
-      previously processed models.
-    - The network graph generation can be computationally intensive for very large
-      models; consider using it judiciously.
+    Example:
+        >>> # Load from RAW file
+        >>> from model import Model
+        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> model = Model(fp, name="Summer_Peak")
+        >>>
+        >>> # Filter to specific areas
+        >>> filtered = model.filter_by_area({101: 'AREA1', 102: 'AREA2'})
+        >>>
+        >>> # Access network data
+        >>> buses = model.network.bus
+        >>> lines = model.network.acline
+        >>>
+        >>> # Analyze network topology
+        >>> graph = model.network.graph()
+        >>> path = nx.shortest_path(graph, ('bus', 201), ('bus', 205))
     """
 
     def __init__(self, file_path_or_json: Union[str, dict, Path],
@@ -1054,7 +1760,7 @@ class Model:
 
         # Record the start time for performance tracking
         start_time = perf_counter_ns()
-        print(f'Model __init__ starting.')
+        logger.info(f'Model __init__ starting.')
 
         # Initialize basic attributes
         self.name: str = name  # If not name, self._read_json will set a name.
@@ -1062,7 +1768,7 @@ class Model:
         self.json_data = {}
 
         # Load the RAW or RAWX data
-        print(f'Model __init__ loading model from disk...')
+        logger.info(f'Model __init__ loading model from disk...')
         self._read_json(file_path_or_json, force_recalculate=force_recalculate)
 
         # Set up the pickle path for caching
@@ -1072,17 +1778,17 @@ class Model:
         # Check if we can load from a cached pickle file
         if not force_recalculate and self.pickle_path and self.pickle_path.exists():
             self.read_pickle()
-            print(f'Model __init__ ({self.pickle_path}) finished: '
-                  f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+            logger.info(f'Model __init__ ({self.pickle_path}) finished: '
+                        f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
             return
 
         # Set up the pickle path for caching
         self._csv_folder = None
         self.csv_folder  # This calls the property setter to initialize the path
 
-        print(f'Model __init__ elapsed time: '
-              f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
-        print(f'Model __init__ building pd.DataFrames...')
+        logger.info(f'Model __init__ elapsed time: '
+                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Model __init__ building pd.DataFrames...')
 
         # Initialize section objects
         self.general: General = None
@@ -1125,17 +1831,69 @@ class Model:
             # self.name = self.
 
         # Cache the processed model for future use
-        print(f'Model __init__ caching to disk...')
+        logger.info(f'Model __init__ caching to disk...')
         self.to_pickle()
 
-        print(f'Model __init__ elapsed time: '
-              f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
-        print(f'Model __init__ ({self.raw_file_path}) finished: '
-              f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Model __init__ elapsed time: '
+                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Model __init__ ({self.raw_file_path}) finished: '
+                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+
+    def _prepare_json_data(self, data: dict) -> dict:
+        """
+        Prepare dictionary data for JSON serialization.
+
+        Args:
+            data: Dictionary containing model data
+
+        Returns:
+            Dictionary with all values converted to JSON-serializable format
+        """
+        serializable_data = {}
+        for key, value in data.items():
+            if isinstance(value, dict):
+                serializable_data[key] = {}
+                for subkey, subvalue in value.items():
+                    if isinstance(subvalue, dict):
+                        # Handle nested dictionary structure
+                        if 'fields' in subvalue and 'data' in subvalue:
+                            serializable_data[key][subkey] = {
+                                'fields': subvalue['fields'],
+                                'data': [
+                                    [str(item) if item is not None else None for item in row]
+                                    if isinstance(row, list) else str(row)
+                                    for row in subvalue['data']
+                                ]
+                            }
+                    else:
+                        serializable_data[key][subkey] = subvalue
+            else:
+                serializable_data[key] = value
+        return serializable_data
+
+    def to_json(self, file_path: Path = None) -> str:
+        """
+        Convert the model to a JSON string or save to a file.
+
+        Args:
+            file_path: Optional path to save JSON file
+
+        Returns:
+            JSON string representation of the model
+        """
+        serializable_data = self._prepare_json_data(self.json_data)
+        json_str = json.dumps(serializable_data, cls=ModelEncoder)
+
+        if file_path:
+            file_path = Path(file_path)
+            file_path.parent.mkdir(parents=True, exist_ok=True)
+            file_path.write_text(json_str)
+
+        return json_str
 
     def _read_json(self, file_path_or_json: Union[str, Path], force_recalculate: bool = False) -> Dict[str, Any]:
         """
-        Called by __init__, this method reads and process the RAW or RAWX data 
+        Called by __init__, this method reads and process the RAW or RAWX data
         from various input formats.
 
         This method is responsible for loading the RAWX data into the Model object.
@@ -1178,13 +1936,27 @@ class Model:
         """
         # Check if input is a JSON string
         if isinstance(file_path_or_json, str) and "{" in file_path_or_json:
-            # Attempt to parse the string as JSON
-            self.json_data = json.loads(file_path_or_json)
+            # Attempt to parse the string as JSON using custom decoder
+            try:
+                self.json_data = json.loads(file_path_or_json, cls=ModelDecoder)
+            except TypeError as e:
+                warnings.warn(str(e))
+                self.json_data = json.loads(file_path_or_json)
             self.raw_file_path = None
         elif isinstance(file_path_or_json, dict):
             # Input is already a dictionary
             self.json_data = file_path_or_json
             self.raw_file_path = None
+        elif Path(file_path_or_json).suffix.lower() == '.model':
+            self.raw_file_path = Path(file_path_or_json).with_suffix('.raw')
+            if not self.raw_file_path.exists():
+                self.raw_file_path = self.raw_file_path.with_suffix('.raw')
+
+            # Only set name if not explicitly provided in __init__
+            if not self.name:
+                self.name = self.raw_file_path.stem
+
+            self.read_pickle()
         else:
             # Assume input is a file path
             self.raw_file_path = Path(file_path_or_json)
@@ -1196,7 +1968,8 @@ class Model:
                 return self.json_data
 
             # Set the name attribute based on the file name
-            self.name = self.raw_file_path.stem
+            if not self.name:
+                self.name = self.raw_file_path.stem
 
             if self.raw_file_path.suffix == ".rawx":
                 # Load and clean the JSON data from the file
@@ -1207,15 +1980,38 @@ class Model:
 
     def filter_by_area(self, areas: dict | list[str] = INCLUDE_AREAS,
                        inplace: bool = False):
-        """
-        Filter the Model.network data by specified areas.
+        """Filter network data to include only specified areas.
 
-        :param areas: Dict or list of area names or IDs to include in the filtered model. Defaults to INCLUDE_AREAS.
-        :param inplace: If True, modify the current model. If False, return a new filtered model. Defaults to False.
-        :return: A Model instance with data filtered by the specified areas.
+        Removes all equipment not associated with the specified areas while maintaining
+        network connectivity and relationships between remaining components.
+
+        Args:
+            areas (Union[dict, list]): Areas to retain, specified either as:
+                - dict: Mapping of area numbers to names
+                - list: List of area numbers
+                Defaults to pre-defined INCLUDE_AREAS
+            inplace (bool, optional): If True, modify existing network. If False,
+                return filtered copy. Defaults to False.
+
+        Returns:
+            Network: Filtered network instance (same instance if inplace=True)
+
+        Raises:
+            ValueError: If areas list is empty or no matching areas found
+
+        Example:
+            >>> from model import Model
+            >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+            >>> model = Model(fp, name="Summer_Peak")
+            >>> # Filter to specific areas
+            >>> areas = {101: 'AREA1', 102: 'AREA2'}
+            >>> filtered = model.network.filter_by_area(areas)
+            >>>
+            # >>> # Filter in-place
+            # >>> model.network.filter_by_area(['AREA1'], inplace=True)
         """
         start_time = perf_counter_ns()
-        print(f'Model filter_by_area ({self.raw_file_path}) starting...')
+        logger.info(f'Model filter_by_area ({self.raw_file_path}) starting...')
 
         # If inplace == True, work with a copy of the model.
         model = self if inplace else self.copy(deep=True)
@@ -1223,17 +2019,17 @@ class Model:
         # Filter the model.network by specified areas.
         if not hasattr(model.network, 'filter_by_area'):
             raise AttributeError("The 'network' object does not have a 'filter_by_area' method")
-        model.network = model.network.filter_by_area(areas, inplace=inplace)
+        model.network.filter_by_area(areas, inplace=True)
 
-        if model.network.graph(regenerate=False, empty_ok=True):
-            print(f'Model filter_by_area building graph...')
+        if model.network._graph:
+            logger.info(f'Model.filter_by_area(): building graph...')
             # Rebuild the network graph only if it existed
             model.network.graph(regenerate=True, empty_ok=False)  # Rebuild the graph (this calls the property getter)
-            print(f'Model filter_by_area elapsed time: '
-                  f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+            logger.info(f'Model.filter_by_area(): elapsed time: '
+                        f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
-        print(f'Model filter_by_area finished: '
-              f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Model.filter_by_area: finished in '
+                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
         return model
 
@@ -1282,7 +2078,7 @@ class Model:
 
         return new_model
 
-    def network_dfs(self):
+    def network_dfs(self) -> Dict[str, pd.DataFrame]:
         """
         Retrieve all pandas DataFrames stored as attributes in the Network instance.
 
@@ -1372,8 +2168,14 @@ class Model:
         csv_filepath : Property that determines the base directory for exports.
         """
         if not hasattr(self, '_csv_folder') or self._csv_folder is None:
+            if not self.pickle_path:
+                logger.warning("Unable to set Model.csv_folder, because pickle_path is None.")
+                self._csv_folder = None
+                return self._csv_folder
             self._csv_folder = site_data_dir / f"{self.pickle_path.stem}"
             self._csv_folder.parent.mkdir(parents=True, exist_ok=True)
+        if self._csv_folder and not isinstance(self._csv_folder, Path):
+            self._csv_folder = Path(self._csv_folder)
         return self._csv_folder
 
     @csv_folder.setter
@@ -1444,7 +2246,7 @@ class Model:
         # ... and so on for each DataFrame in the network section.
         """
         start_time = perf_counter_ns()
-        print(f'Exporting model ({self.pickle_path}) ...')
+        logger.info(f'Exporting model ({self.pickle_path}) ...')
 
         # Create the folder to store CSV files
         csv_folder = self.csv_folder
@@ -1452,18 +2254,18 @@ class Model:
 
         # Export general information
         csv_path = csv_folder / 'general.csv'
-        print(f'Exporting {str(csv_path)}...')
+        logger.info(f'Exporting {str(csv_path)}...')
         general_df = pd.DataFrame([self.version], columns=['version'])
         general_df.to_csv(csv_path)
-        print(f'Elapsed export time: {((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        logger.info(f'Elapsed export time: {((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
         # Export each DataFrame from the network section
         for section, df in self.network_dfs().items():
             csv_path = csv_folder / f'network_{section}.csv'
-            print(f'Exporting {str(csv_path)}...')
+            logger.info(f'Exporting {str(csv_path)}...')
             df.to_csv(csv_path, index=True)
-            print(f'Elapsed export time: {((perf_counter_ns() - start_time) / 1e9):.9f} seconds...')
-        print(f'Finished exporting to CSV files: {csv_path.parent}')
+            logger.info(f'Elapsed export time: {((perf_counter_ns() - start_time) / 1e9):.9f} seconds...')
+        logger.info(f'Finished exporting to CSV files: {csv_path.parent}')
 
     @property
     def pickle_path(self) -> Path:
@@ -1491,9 +2293,11 @@ class Model:
 
         Example:
         --------
-        >>> model = Model('path/to/rawx/file.rawx')
+        >>> from model import Model
+        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> model = Model(fp)
         >>> print(model.pickle_path)
-        /path/to/site_cache_dir/file.model
+        C:\Personal\Projects\psse_model_util\cache\Model_1.model
         """
         if not hasattr(self, '_pickle_path'):
             self._pickle_path = None
@@ -1503,7 +2307,8 @@ class Model:
             elif hasattr(self, 'name') and self.name:
                 self._pickle_path = site_cache_dir / f'{self.name}.model'
             else:
-                raise ValueError("Unable to determine pickle path. Neither raw_file_path nor name is set.")
+                logger.warning("Unable to determine pickle path. Neither raw_file_path nor name is set.")
+                return None
             self._pickle_path.parent.mkdir(parents=True, exist_ok=True)
         return self._pickle_path
 
@@ -1533,7 +2338,9 @@ class Model:
 
         Example:
         --------
-        >>> model = Model('path/to/rawx/file.rawx')
+         >>> from model import Model
+        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> model = Model(fp)
         >>> model.pickle_path = '/custom/path/mymodel.model'
         >>> print(model.pickle_path)
         /custom/path/mymodel.model
@@ -1554,7 +2361,7 @@ class Model:
             bool: True if caching was successful, False otherwise
         """
         pickled: bool = to_pickle(pickle_path=self.pickle_path, data=self, resilient=resilient)
-        print('Saved: ', self.pickle_path)
+        logger.info(f'Saved: {self.pickle_path}')
         return self.pickle_path if pickled else None
 
     def read_pickle(self, mode: str = 'rb', resilient: bool = True):
@@ -1568,12 +2375,7 @@ class Model:
         Raises:
             FileNotFoundError: If the pickle file is not found and resilient is False
         """
-        # read_pickle(pickle_path=file_path, resilient=resilient)
-        """
-        Read the model from a pickle file.
-        :param mode: Should always be 'rb'.
-        :return: FpPickleType(pickle_path, obj), where obj is the unpickled object.
-        """
+
         if not self.pickle_path.exists():
             # Pickle file not found.  Retrun (None, None).
             if resilient:
@@ -1584,19 +2386,28 @@ class Model:
         try:
             with open(self.pickle_path, mode) as file:
                 obj = pickle.load(file)
-            attr_names = [attr for attr in dir(obj) if not attr.startswith('__')]
-            for attr_name in attr_names:
-                try:
-                    setattr(self, attr_name, getattr(obj, attr_name))
-                except Exception as e:
-                    warnings.warn(f'Unable to load attribute "{attr_name}" '
-                                  f'from cache. {str(e)}')
-            print(f'Data loaded from cache: "{self.pickle_path}".')
         except Exception as e:
             if resilient:
                 warnings.warn(f'Could not load file {str(self.pickle_path)}. {str(e)}')
             else:
-                raise e
+                raise
+
+        # Save current name before loading attributes
+        original_name = self.name
+
+        # Load attributes from pickled object
+        attr_names = [attr for attr in dir(obj) if not attr.startswith('__')]
+        for attr_name in attr_names:
+            try:
+                setattr(self, attr_name, getattr(obj, attr_name))
+            except Exception as e:
+                warnings.warn(f'Unable to load attribute "{attr_name}" from cache. {str(e)}')
+
+        # Restore original name if one was provided
+        if original_name:
+            self.name = original_name
+
+        logger.info(f'Data loaded from cache: "{self.pickle_path}".')
         if obj:
             return FpPickleType(self.pickle_path, obj)
         else:
@@ -1604,22 +2415,30 @@ class Model:
 
 
 if __name__ == '__main__':
-    export_format = 'None' # 'csv' or 'None'
+    export_format = 'None'  # 'csv' or 'None'
 
-    print(f'Starting psse_model_util/rawx/model.py...')
+    logger.info(f'Starting psse_model_util/model.py...')
     start = perf_counter_ns()
 
     from psse_model_util.common.dirs import clear_site_cache
 
     clear_site_cache()
 
-
-    fp = Path(__file__).parent.parent / r'tests\data\sample_34.raw'
+    # fp = Path(__file__).parent.parent / r'tests\data\sample_34.raw'
+    fp = Path(__file__).parent.parent / r'tests\data\Model_1.raw'
 
     pickle_path = site_cache_dir / fp.with_suffix('.model').name
     if not pickle_path.exists():
         model = Model(file_path_or_json=fp, force_recalculate=True)
         if 'sample' in model.name:
+            # Dictionary of native PJM areas with their area numbers as keys and names as values
+            NATIVE_AREAS = {101: 'CENTRAL', 206: 'EAST', 301: 'CENTRAL_DC'}
+
+            # Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
+            NEIGHBOR_AREAS = {401: 'EAST_COGEN1', 3011: 'WEST', 402: 'EAST_COGEN2'}
+
+            # Combined dictionary of native and neighboring areas, used for filtering models
+            INCLUDE_AREAS = NEIGHBOR_AREAS.copy() | NATIVE_AREAS.copy()
             native_model = model.copy(deep=True)
         else:
             native_model = model.filter_by_area(areas=INCLUDE_AREAS, inplace=False)
@@ -1629,15 +2448,18 @@ if __name__ == '__main__':
     else:
         native_model = read_pickle(pickle_path=pickle_path)
         native_graph = native_model.network.graph(regenerate=False,
-                                                      empty_ok=False)
+                                                  empty_ok=False)
 
-    print(f"Native Network graph: {native_graph.number_of_nodes()} nodes, "
-          f"{native_graph.number_of_edges()} edges.")
+    native_model.network.draw_one_line(node_id=('bus', 201), distance=2)
+
+    logger.info(f"Native Network graph: {native_graph.number_of_nodes()} nodes, "
+                f"{native_graph.number_of_edges()} edges.")
 
     if export_format == 'csv':
         csv_folder = native_model.csv_folder
-        print('CSV:', csv_folder)
+        logger.info(f'CSV: {csv_folder}')
         native_model.to_csv()
 
-    print(f'Finished psse_model_util/rawx/model.py: '
-          f'{((perf_counter_ns() - start) / 1e9):.9f} seconds')
+    logger.info(f'Finished psse_model_util/rawx/model.py: '
+                f'{((perf_counter_ns() - start) / 1e9):.9f} seconds')
+    print(f'Log file: {get_log_file_path(logger)}')
