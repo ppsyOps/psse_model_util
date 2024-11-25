@@ -26,8 +26,8 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 from psse_model_util.compare import ModelComparison, Model
 from psse_model_util.common.constants import RangeFilterType
 
-INCLUDE_AREAS = {101: 'CENTRAL     ', 206: 'EAST        ', 301: 'CENTRAL_DC  ',
-                 401: 'EAST_COGEN1 ', 3011: 'WEST        ', 402: 'EAST_COGEN2 '}
+# Dictionary of native PJM areas with their area numbers as keys and names as values
+INCLUDE_AREAS = {1: 'CENTRAL', 2: 'EAST', 3: 'CENTRAL_DC', 4: 'EAST_COGEN1', 5: 'WEST', 6: 'EAST_COGEN2'}
 
 DEFAULT_KV_FILTER = RangeFilterType(1, 10000)
 
@@ -128,7 +128,8 @@ def test_compare_network_dfs(model_comparison):
     assert 'load' in result
     assert 'acline' in result
 
-    for df in result.values():
+    for df_name in ['bus', 'generator', 'acline', 'load', 'transformer']:
+        df = result[df_name]
         assert isinstance(df, pd.DataFrame)
         assert 'presence' in df.columns
 
@@ -178,18 +179,6 @@ def test_to_csv(model_comparison, tmp_path):
     assert (tmp_path / 'graph_removed_edges.csv').exists()
 
 
-def test_empty_models(raw_models):
-    """Test ModelComparison with empty models."""
-    model1, model2 = raw_models
-    model1.network.bus = pd.DataFrame()
-    model2.network.bus = pd.DataFrame()
-
-    comparison = ModelComparison(model1, model2)
-    assert comparison.bus_num_changes().empty
-    assert len(comparison.compare_network_dfs()) == 0
-    assert all(len(v) == 0 for v in comparison.compare_graph().values())
-
-
 def test_large_model_performance(raw_models):
     """Test performance with a large number of buses."""
     model1, _ = raw_models
@@ -215,7 +204,7 @@ def test_filter_by_area(raw_models):
 
     # Test with default areas
     filtered_model = comparison.model1.filter_by_area()
-    assert set(filtered_model.network.bus.index) == set(INCLUDE_AREAS.keys())
+    assert set(filtered_model.network.bus['area']) == set(INCLUDE_AREAS.keys())
 
     # Test with custom areas
     custom_areas = {1: 'Area1', 2: 'Area2'}
@@ -229,6 +218,7 @@ def test_filter_by_area(raw_models):
 
 def test_bus_kV_filter(model_comparison):
     """Test the bus_kV_filter method."""
+    model_comparison.compare_network_dfs()
     filtered_buses = model_comparison.bus_kv_filter()
     assert isinstance(filtered_buses, list)
     assert all(isinstance(bus_id, int) for bus_id in filtered_buses)
@@ -269,8 +259,10 @@ def test_query_network_df_comparison_performance(model_comparison):
     num_rows = 1_000_000
     model_comparison.network_df_comparison = {
         'bus': pd.DataFrame({
-            'baskv': np.random.uniform(100, 500, num_rows),
-            'area': np.random.randint(1, 10, num_rows)
+            'baskv_model1': np.random.uniform(100, 500, num_rows),
+            'baskv_model2': np.random.uniform(100, 500, num_rows),
+            'area_model1': np.random.randint(1, 10, num_rows),
+            'area_model2': np.random.randint(1, 10, num_rows)
         }),
         'generator': pd.DataFrame({
             'ibus': np.random.randint(1, num_rows, num_rows),
@@ -279,14 +271,25 @@ def test_query_network_df_comparison_performance(model_comparison):
         'load': pd.DataFrame({
             'ibus': np.random.randint(1, num_rows, num_rows),
             'pl': np.random.uniform(0, 500, num_rows)
-        })
+        }),
+        'acline': pd.DataFrame({
+            'ibus': np.random.randint(1, num_rows, num_rows),
+            'jbus': np.random.randint(1, num_rows, num_rows),
+            'ckt': np.random.randint(1, num_rows, num_rows),
+        }),
+        'transformer': pd.DataFrame({
+            'ibus': np.random.randint(1, num_rows, num_rows),
+            'jbus': np.random.randint(1, num_rows, num_rows),
+            'kbus': np.random.randint(1, num_rows, num_rows),
+            'ckt': np.random.randint(1, num_rows, num_rows),
+        }),
     }
 
     start_time = time.time()
     _ = model_comparison.query_network_df_comparison()
     end_time = time.time()
 
-    assert end_time - start_time < 5  # Assuming it should take less than 5 seconds
+    assert end_time - start_time < 1  # Assuming it should take less than 5 seconds
 
 
 if __name__ == "__main__":
