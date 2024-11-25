@@ -907,8 +907,9 @@ if __name__ == '__main__':
     #     sys.exit(0)
 
     parser = argparse.ArgumentParser(description='Compare two PSSE RAW or RAWX models.', add_help=False)
-    parser.add_argument('raw1_path', metavar='p1', type=str, help='Path to the first RAW or RAWX file')
-    parser.add_argument('raw2_path', metavar='p2', type=str, help='Path to the second RAW or RAWX file')
+    # make p1 optional
+    parser.add_argument('-p1', '--raw1_path', type=str, default='', help='Path to the first RAW or RAWX file')
+    parser.add_argument('-p2', '--raw2_path', type=str, help='Path to the second RAW or RAWX file', default='')
     parser.add_argument('-f', '--force_recalculation', action='store_true', help='Force recalculation even if cached results exist')
     parser.add_argument('-e', '--export_format', type=str, choices=['csv', 'none'], default='csv', help='Format to export results')
     parser.add_argument('-b', '--add_bus_info_to_branches', action='store_true', help='Add bus information to branch DataFrames')
@@ -916,6 +917,12 @@ if __name__ == '__main__':
     parser.add_argument('-h', '--help', action='store_true', help=COMMAND_LINE_HELP_TEXT)
 
     args = parser.parse_args()
+
+    # If p1 or p2 not provided, prompt user to enter p1 and/or p2.
+    if args.raw1_path == '':
+        args.raw1_path = input('Enter the path to the first RAW or RAWX file: ').strip()
+    if args.raw2_path == '':
+        args.raw2_path = input('Enter the path to the second RAW or RAWX file: ').strip()
 
     # Convert 'none' to None for export_format
     export_format = None if args.export_format.lower() == 'none' else args.export_format

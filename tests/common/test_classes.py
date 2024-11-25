@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime
 from typing import Any, List, Set
+from psse_model_util.dataformat.classes import ModelDF
 
 from psse_model_util.dataformat.classes import dict_to_dataclass, DictToClassConverter, infer_type
 
@@ -46,8 +47,6 @@ def test_dict_to_class_converter():
     ([None, None], list[Any]),
     ([None, None, None], list[Any]),
 ])
-
-
 def test_infer_type(input_value, expected_type):
     assert infer_type(input_value) == expected_type
 
@@ -165,8 +164,38 @@ def test_dict_to_dataclass_multiple_instances():
     assert result2.mutable_list == [1, 2, 3]
     assert result2.mutable_dict == {"a": 1}
 
-if __name__ == "__main__":
-    pytest.main()
+    # ModelDF initialization test
+def test_init():
+    df = ModelDF({'a': [1, 2, 3]})
+    assert hasattr(df, '_metadata')
+    assert df._metadata == {}
+
+# Test metadata persistence through copy
+def test_copy():
+    df = ModelDF({'a': [1, 2, 3]})
+    df._metadata['test'] = 'value'
+    df2 = df.copy()
+    assert df2._metadata == {'test': 'value'}
+
+# Test metadata persistence through operations
+def test_operations():
+    df1 = ModelDF({'a': [1, 2, 3]})
+    df1._metadata['source'] = 'df1'
+
+    df2 = ModelDF({'b': [4, 5, 6]})
+    df2._metadata['source'] = 'df2'
+
+    # Test various operations
+    merged = df1.merge(df2, left_index=True, right_index=True)
+    assert merged._metadata == {'source': 'df1'}
+
+    filtered = df1[df1.a > 1]
+    assert filtered._metadata == {'source': 'df1'}
+
+    sorted_df = df1.sort_values('a')
+    assert sorted_df._metadata == {'source': 'df1'}
+
 
 if __name__ == "__main__":
     pytest.main()
+

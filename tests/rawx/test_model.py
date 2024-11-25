@@ -15,7 +15,7 @@ def sample_model():
 
 def test_general_section(sample_model):
     assert hasattr(sample_model.general, 'version')
-    assert sample_model.general.version == "35.4"
+    assert sample_model.general.version == 35.4
 
 
 def test_network_section(sample_model):
