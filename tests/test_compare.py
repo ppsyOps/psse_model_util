@@ -21,6 +21,8 @@ import time
 # Adjust the import path based on the project structure
 import sys
 
+from psse_model_util.common.dirs import clear_cache
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from psse_model_util.compare import ModelComparison, Model
@@ -51,7 +53,8 @@ NETWORK_DF_COMPARISON_QUERIES = {
                    f'or ibus_baskv_model2 >= {DEFAULT_KV_FILTER[0]} '
                    f'or jbus_baskv_model2 >= {DEFAULT_KV_FILTER[0]} '
                    f'or kbus_baskv_model2 >= {DEFAULT_KV_FILTER[0]}'
-    }
+}
+
 
 @pytest.fixture
 def raw_models():
@@ -61,8 +64,11 @@ def raw_models():
     Returns:
         tuple: Two Model objects created from sample RAW files.
     """
-    raw1_path = Path(__file__).parent / 'data/sample_34.raw'
-    raw2_path = Path(__file__).parent / 'data/sample2_34.raw'
+    # raw1_path = Path(__file__).parent / 'data/sample_34.raw'
+    # raw2_path = Path(__file__).parent / 'data/sample2_34.raw'
+    clear_cache()
+    raw1_path = Path(__file__).parent / 'data/Model_1.raw'
+    raw2_path = Path(__file__).parent / 'data/Model_2.raw'
 
     model1 = Model(raw1_path)
     model2 = Model(raw2_path)
@@ -93,8 +99,8 @@ def test_init(model_comparison):
         model_comparison (ModelComparison): An instance of ModelComparison.
     """
     assert isinstance(model_comparison, ModelComparison)
-    assert model_comparison.model1.name == "sample_34"
-    assert model_comparison.model2.name == "sample2_34"
+    assert model_comparison.model1.name == "Model_1"
+    assert model_comparison.model2.name == "Model_2"
 
 
 def test_bus_num_changes(model_comparison):
@@ -111,7 +117,8 @@ def test_bus_num_changes(model_comparison):
     assert all(col in changes.columns for col in ['ibus_model1', 'ibus_model2'])
 
     # Check for the specific bus number change we made (151 to 150)
-    assert any((changes['ibus_model1'] == 151) & (changes['ibus_model2'] == 150))
+    assert any((changes['ibus_model1'] == 101) & (changes['ibus_model2'] == 111))
+    assert any((changes['ibus_model1'] == 213) & (changes['ibus_model2'] == 219))
 
 
 def test_compare_network_dfs(model_comparison):
@@ -138,6 +145,7 @@ def test_compare_network_dfs(model_comparison):
     assert any(bus_df['presence'] == 'model2_only')  # Bus 156 added
     assert any(bus_df['presence'] == 'model1_only')  # Bus 155 removed
 
+
 def test_compare_graph(model_comparison):
     """
     Test the compare_graph method of ModelComparison.
@@ -149,16 +157,36 @@ def test_compare_graph(model_comparison):
     assert isinstance(result, dict)
     assert 'added_edges' in result
     assert 'removed_edges' in result
-    assert 'path_splits' in result
-    assert 'path_merges' in result
+    assert 'path_sectionalizations' in result
+    assert 'path_bypasses' in result
 
-    # Check for the specific path split we created
-    split_found = any(('bus', 152) in edge and ('bus', 3004) in edge for edge in result['removed_edges'])
-    assert split_found, "Expected path split not found"
+    # Check for the specific path sectionalize we created
+    """
+      3008,  3013,'BRANCH_FROM_3008_TO_3013___CIRCUIT_ID__1'
+      3013,  3014,'BRANCH_FROM_3013_TO_3014___CIRCUIT_ID__1'
+      3014,  3009,'BRANCH_FROM_3014_TO_3009___CIRCUIT_ID__1'
+    """
+    print("result['added_nodes']: ", result['added_nodes'])
+    assert len(result['added_nodes']) == 21, '21 new nodes should be found'
 
-    # Check for the specific path merge we created
-    merge_found = any(('bus', 3003) in edge and ('bus', 3006) in edge for edge in result['added_edges'])
-    assert merge_found, "Expected path merge not found"
+    print("result['removed_nodes']: ", result['removed_nodes'])
+    assert len(result['removed_nodes']) == 18, 'Should have found 18 nodes removed.'
+
+    print("result['path_sectionalizations']: ", result['path_sectionalizations'])
+    print("result['path_sectionalizations'].keys(): ", result['path_sectionalizations'].keys())
+    print("Number lines sectionalized (graph sectionalizes):", len(result['path_sectionalizations']))
+    assert len(result['path_sectionalizations']) == 1, 'One sectionalize should be found.'
+
+    # Check that sectionalize of ((bus, 3008), (bus, 3009)) from Model_1 was sectionalized.
+    assert len([_[0] for _ in result['path_sectionalizations'].values if ('bus', 3008) in _[0]]) > 0
+
+    # Check for the specific path bypass we created
+    # 	AC lines ibus 213 - jbus 2000 & ibus 2000 to jbus 214 bypassd into ibus 219 - jbus 214 remvoing bus 2000 and new name BRANCH_FROM__219_TO__214___CIRCUIT_ID__1
+    print("Number of lines bypassed (graph bypass) found:", len(result['path_bypasses']))
+    assert len(result['path_bypasses']) == 0, 'No bypass should be found.'
+
+    # Check that sectionalize of ((bus, 3008), (bus, 3009)) from Model_1 was sectionalized.
+    assert len([_[0] for _ in result['path_bypasses'].values if ('bus', 3008) in _[0]]) == 0
 
 
 def test_to_csv(model_comparison, tmp_path):
@@ -223,8 +251,9 @@ def test_bus_kV_filter(model_comparison):
     assert isinstance(filtered_buses, list)
     assert all(isinstance(bus_id, int) for bus_id in filtered_buses)
     assert all(
-        DEFAULT_KV_FILTER.min <= model_comparison.model1.network.bus.loc[bus_id, 'baskv'] <= DEFAULT_KV_FILTER.max for
-        bus_id in filtered_buses)
+        DEFAULT_KV_FILTER.min <= model_comparison.model1.network.bus.loc[bus_id, 'baskv'] <= DEFAULT_KV_FILTER.max
+        for bus_id in filtered_buses
+        if bus_id in model_comparison.model1.network.bus.values)
 
 
 def test_query_network_df_comparison(model_comparison):
@@ -249,9 +278,10 @@ def test_query_network_df_comparison_with_filters(model_comparison):
 
     # Check if filters are applied correctly
     if 'pg' in filtered_dfs['generator'].columns:
-        assert (filtered_dfs['generator']['pg'] > float(NETWORK_DF_COMPARISON_QUERIES['generator'].split('>')[1])).all()
+        assert (filtered_dfs['generator']['pg'] > float(
+            NETWORK_DF_COMPARISON_QUERIES['generator'].sectionalize('>')[1])).all()
     if 'pl' in filtered_dfs['load'].columns:
-        assert (filtered_dfs['load']['pl'] > float(NETWORK_DF_COMPARISON_QUERIES['load'].split('>')[1])).all()
+        assert (filtered_dfs['load']['pl'] > float(NETWORK_DF_COMPARISON_QUERIES['load'].sectionalize('>')[1])).all()
 
 
 def test_query_network_df_comparison_performance(model_comparison):

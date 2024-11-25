@@ -1,9 +1,8 @@
 # TODO: This file if built per PSSE version 34 .raw files.  Update to version 35.
 from collections import namedtuple
 # from psse_model_util.common.classes import *
-from psse_model_util.common.classes import (AreaId, BusId, IdInt, IdStr, Impedance, Name, PowerFactor, Resistance,
-                                            Reactance, OwnerId, OwnerFraction, Rating, ReactivePower, ActivePower,
-                                            Status, Susceptance, Voltage, ZoneId, SwShID)
+from psse_model_util.dataformat.classes import (AreaId, BusId, IdInt, IdStr, Name, Resistance,
+                                                Reactance, OwnerId, OwnerFraction, Rating, Status, Susceptance, Voltage, ZoneId, SwShID)
 
 FormatType = namedtuple('FormatType', ['category', 'column', 'dtype', 'prop_type'])
 

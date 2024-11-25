@@ -14,6 +14,8 @@ Note: This script assumes the project structure as described in psse_model_util_
 from pathlib import Path
 import sys
 
+from psse_model_util.common.dirs import clear_site_cache
+
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from psse_model_util.compare import ModelComparison, Model
@@ -33,12 +35,14 @@ def compare_example(raw1_path=None,
     print(raw1_path)
     print(raw2_path)
 
+    comparison: ModelComparison
+
     # Path to the model comparison cache file (.modcomp).
     model_comparison_file = Path(
         f'/cache/{raw1_path.stem}_{raw1_path.stem}.modcomp')
     if not force_recalculation and model_comparison_file.exists():
         # Get the cached model comparison object from disk.
-        comparison = ModelComparison(model_comp_file=model_comparison_file)
+        comparison: ModelComparison = ModelComparison(model_comp_file=model_comparison_file)
     else:
         # Load the
         # Load & filter your RAW or RAWX models from disk to Model objects.
@@ -65,7 +69,7 @@ def compare_example(raw1_path=None,
 
         # Load the models into a ModelComparison instance
         print('Comparing models...')
-        comparison = ModelComparison(native_model1, native_model2)
+        comparison: ModelComparison = ModelComparison(native_model1, native_model2)
 
     if force_recalculation or not comparison.network_df_comparison or not comparison.graph_comparison:
         # Run the comparison of the Model.network pandas dataframes.
@@ -80,6 +84,9 @@ def compare_example(raw1_path=None,
         # nodes (built from the dataframes)
         print('Comparing graphs...')
         comparison.compare_graph()
+
+        print('comparison.graph_comparison type', type(comparison.graph_comparison))
+        print('comparison.graph_comparison.keys()', comparison.graph_comparison.keys())
 
         # Cache the updated ModelComparison object to a pickle file (.modcomp)
         print(f'Saving model comparison to {comparison.pickle_path}...')
@@ -99,10 +106,13 @@ def compare_example(raw1_path=None,
 
 
 if __name__ == '__main__':
+    clear_site_cache()
     DEFAULT_DIRECTORY: Path = Path(__file__).parent / "data"
 
-    raw1_path: Path = DEFAULT_DIRECTORY / r"sample_34.raw"
-    raw2_path: Path = DEFAULT_DIRECTORY / r"sample2_34.raw"
+    raw1_path: Path = DEFAULT_DIRECTORY / r"Model_1.raw"
+    raw2_path: Path = DEFAULT_DIRECTORY / r"Model_2.raw"
+    # raw1_path: Path = DEFAULT_DIRECTORY / r"sample_34.raw"
+    # raw2_path: Path = DEFAULT_DIRECTORY / r"sample2_34.raw"
     # raw1_path: Path = DEFAULT_DIRECTORY / r"idc_23S_sum23idctr6p2.rawx"
     # raw2_path: Path = DEFAULT_DIRECTORY / r"data/idc_24s_sum24idctr1p8.raw"
 

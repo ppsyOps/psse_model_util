@@ -1,8 +1,8 @@
 import pytest
-from psse_model_util.common.classes import (ActivePower, Admittance, AreaId, BusId, Capacitance, Current,
-                                            IdInt, IdStr, Impedance, Inductance, Name, OwnerId, OwnerFraction,
-                                            PowerFactor, Rating, ReactivePower, Resistance, Status, Susceptance,
-                                            Voltage, ZoneId, SwShID)
+from psse_model_util.dataformat.classes import (ActivePower, Admittance, AreaId, BusId, Capacitance, Current,
+                                                IdInt, IdStr, Impedance, Inductance, Name, OwnerId, OwnerFraction,
+                                                PowerFactor, Rating, ReactivePower, Resistance, Status, Susceptance,
+                                                Voltage, ZoneId, SwShID)
 
 
 @pytest.mark.parametrize("cls, value", [

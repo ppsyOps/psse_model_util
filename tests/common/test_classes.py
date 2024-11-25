@@ -1,11 +1,8 @@
 import pytest
 from datetime import datetime
-from typing import List, Set, Any
-from typing import Any, Type, List, Set, Tuple, Dict
+from typing import Any, List, Set
 
-from psse_model_util.common.classes import dict_to_dataclass, DictToClassConverter, infer_type
-
-import pandas as pd
+from psse_model_util.dataformat.classes import dict_to_dataclass, DictToClassConverter, infer_type
 
 
 def test_dict_to_class_converter():

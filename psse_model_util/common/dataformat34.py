@@ -1,5 +1,4 @@
-from collections import namedtuple
-from psse_model_util.common.classes import *
+from psse_model_util.dataformat.classes import *
 # from psse_model_util.common.classes import (AreaId, BusId, IdInt, IdStr, Impedance, Name, PowerFactor, Resistance,
 #                                             Reactance, OwnerId, OwnerFraction, Rating, ReactivePower, ActivePower,
 #                                             Status, Susceptance, Voltage, ZoneId)

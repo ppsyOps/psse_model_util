@@ -284,7 +284,7 @@ def _raw_to_rawx_section_name(section_raw: str,
         section_map_df = read_section_map(Path(section_map_csv))
 
     section_raw = section_raw.upper() if section_raw else None
-    subsection_raw = subsection_raw.upper() if subsection_raw else np.NaN
+    subsection_raw = subsection_raw.upper() if subsection_raw else np.nan
     df = section_map_df[(section_map_df['section_raw'] == section_raw) &
                         ((section_map_df['subsection_raw'].isna()) |
                          (section_map_df['subsection_raw'] == subsection_raw))]
