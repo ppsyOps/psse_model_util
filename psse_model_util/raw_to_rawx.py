@@ -15,8 +15,9 @@ import numpy as np
 import pandas as pd
 import json
 
-SECTION_MAP_CSV = Path(__file__).parent / r"dataformat/raw_rawx_section_map.csv"
+# SECTION_MAP_CSV = Path(__file__).parent / r"dataformat/raw_rawx_section_map.csv"
 RAW_RAWX_MAP_CSV = Path(__file__).parent / r"dataformat/rawx_raw_map.csv"
+_raw_rawx_map = pd.DataFrame(   )
 _PATTERNS = {'column_names': r'^(?!@!\s*IC|^@!\s*IC\s).*@!(?!.*BEGIN\s+SUBSTATION).*,.+$',
              # Column name lines except for case identification lines.
              'column_names_case_id': r'^@!\s*IC.*',
@@ -267,23 +268,45 @@ def _read_syswide(lines):
 
 def _raw_to_rawx_section_name(section_raw: str,
                               subsection_raw: str | None = None,
-                              section_map_csv: Path = SECTION_MAP_CSV):
+                              raw_rawx_map_csv: Path = RAW_RAWX_MAP_CSV):
     """Get the RAWX section name that corresponds to a specific section
     and subsection of a RAW file. subsection_raw can be None.
     :param section_raw: section name from RAW file, like 'SUBSTATION'
     :param subsection_raw: section name from RAW file, like 'SUBSTATION NODE DATA'
-    :param section_map_csv: optional Path to the file containing the mapping data.
+    :param raw_rawx_map_csv: optional Path to the file containing the mapping data.
     :return: RAWX section name or None (if not found).
     """
-
-    def read_section_map(filepath: Path = SECTION_MAP_CSV) -> Tuple:
-        return pd.read_csv(filepath)
-
     global section_map_df
-    if section_map_csv and section_map_df.empty:
-        section_map_df = read_section_map(Path(section_map_csv))
 
-    section_raw = section_raw.upper() if section_raw else None
+    def read_section_map(filepath: Path = RAW_RAWX_MAP_CSV) -> pd.DataFrame:
+        global _raw_rawx_map
+        if not _raw_rawx_map.empty():
+            return _raw_rawx_map
+
+        # Read the raw_rawx_section_map.csv file
+        df = pd.read_csv(filepath)
+        
+        # Create section_raw column from v35 or v34
+        df['section_raw'] = df['section_raw_35'].fillna(df['section_raw_34'])
+        
+        # Create subsection_raw column from v35 or v34
+        df['subsection_raw'] = df['subsection_raw_35'].fillna(df['subsection_raw_34'])
+        
+        # Group by required columns and check for duplicates
+        _raw_rawx_map = df[['section_raw', 'subsection_raw', 'section_rawx']].drop_duplicates()
+        
+        # Check for multiple mappings
+        duplicates = _raw_rawx_map.groupby(['section_raw', 'subsection_raw'])['section_rawx'].nunique()
+        if (duplicates > 1).any():
+            problem_sections = duplicates[duplicates > 1].index
+            raise ValueError(f"Found multiple section_rawx values for section_raw,subsection_raw pairs: {problem_sections.tolist()}")
+        
+        return _raw_rawx_map
+
+    if raw_rawx_map_csv and section_map_df.empty:
+        section_map_df = read_section_map(Path(raw_rawx_map_csv))
+
+    section_raw = section_raw.upper().strip() if section_raw else None
     subsection_raw = subsection_raw.upper() if subsection_raw else np.nan
     df = section_map_df[(section_map_df['section_raw'] == section_raw) &
                         ((section_map_df['subsection_raw'].isna()) |
