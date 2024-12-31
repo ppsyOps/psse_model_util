@@ -116,6 +116,7 @@ class ModelComparison:
         read_pickle: Load comparison results from a pickle file.
         to_csv: Export comparison results to CSV files.
     """
+
     def __init__(self, model1: Model = None,
                  model2: Model = None,
                  model_comp_file: Path | str = None,
@@ -313,7 +314,7 @@ class ModelComparison:
             df2 = getattr(self.model2.network, df_name)
             try:
                 bypassd_df = pd.merge(df1, df2, how='outer', left_index=True, right_index=True,
-                                     suffixes=('_model1', '_model2'))
+                                      suffixes=('_model1', '_model2'))
             except Exception as e:
                 print(f'Could not bypass dataframes: {df_name}. Exception: {str(e)}')
                 print(f'Model 1 columns:', df1.columns)
@@ -335,9 +336,9 @@ class ModelComparison:
 
             # Add an indicator column to show which model(s) each row is present in.
             indicator_col1 = f'{columns[0]}_model1' if f'{columns[0]}_model1' in bypassd_df.columns else \
-            bypassd_df.columns[0]
+                bypassd_df.columns[0]
             indicator_col2 = f'{columns[0]}_model2' if f'{columns[0]}_model2' in bypassd_df.columns else \
-            bypassd_df.columns[-1]
+                bypassd_df.columns[-1]
 
             new_columns['presence'] = np.select(
                 [bypassd_df[indicator_col1].notna() & bypassd_df[indicator_col2].notna(),
@@ -368,6 +369,7 @@ class ModelComparison:
 
         self.network_df_comparison = result
         return self.network_df_comparison
+
     def compare_graph(self, max_path_length: int = None, sort: bool = True, regenerate=False) -> dict:
         """
         Compare graph structures between the two models.
@@ -388,6 +390,7 @@ class ModelComparison:
             graph_changes = comparison.compare_graph(max_path_length=5)
             added_edges = graph_changes['added_edges']
         """
+
         def _get_removed_edges() -> list:
             """Get edges that exist in graph1 but not in graph2."""
             # graph1 = self.model1.network_graph
@@ -736,7 +739,7 @@ class ModelComparison:
                  (bus_df['baskv_model1'] <= DEFAULT_KV_FILTER.max)) |
                 ((bus_df['baskv_model2'] >= DEFAULT_KV_FILTER.min) &
                  (bus_df['baskv_model2'] <= DEFAULT_KV_FILTER.max))
-               ) & (bus_df.index.isin(all_buses))
+                ) & (bus_df.index.isin(all_buses))
 
         return bus_df[mask].index.tolist()
 
@@ -899,7 +902,7 @@ def main(raw1_path: Path | str,
 if __name__ == '__main__':
     """
     Run "python compare.py -h" for help.
-    
+
     For sample use inside of an IDE, run "tests/example_compare.py"
     """
     # if len(sys.argv) > 1 and sys.argv[1] in ['-h', '--help', '?']:
@@ -910,10 +913,14 @@ if __name__ == '__main__':
     # make p1 optional
     parser.add_argument('-p1', '--raw1_path', type=str, default='', help='Path to the first RAW or RAWX file')
     parser.add_argument('-p2', '--raw2_path', type=str, help='Path to the second RAW or RAWX file', default='')
-    parser.add_argument('-f', '--force_recalculation', action='store_true', help='Force recalculation even if cached results exist')
-    parser.add_argument('-e', '--export_format', type=str, choices=['csv', 'none'], default='csv', help='Format to export results')
-    parser.add_argument('-b', '--add_bus_info_to_branches', action='store_true', help='Add bus information to branch DataFrames')
-    parser.add_argument('-a', '--areas', type=str, default='', help='Comma-separated list of area numbers to include (e.g., "101,102,103")')
+    parser.add_argument('-f', '--force_recalculation', action='store_true',
+                        help='Force recalculation even if cached results exist')
+    parser.add_argument('-e', '--export_format', type=str, choices=['csv', 'none'], default='csv',
+                        help='Format to export results')
+    parser.add_argument('-b', '--add_bus_info_to_branches', action='store_true',
+                        help='Add bus information to branch DataFrames')
+    parser.add_argument('-a', '--areas', type=str, default='',
+                        help='Comma-separated list of area numbers to include (e.g., "101,102,103")')
     parser.add_argument('-h', '--help', action='store_true', help=COMMAND_LINE_HELP_TEXT)
 
     args = parser.parse_args()

@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import make_dataclass, field
+from types import NoneType
 from typing import get_type_hints, List
 from typing import Any, Type, List, Set, Tuple, Dict
 import datetime  # Make sure to import datetime
@@ -12,125 +13,172 @@ import pandas as pd
 TxNode = namedtuple('TxNode', ['i', 'j', 'k', 'ckt'])
 Node = namedtuple('Node', ['i'])
 
-from typing import Any, TypeVar, cast
-from functools import wraps
-import copy
-import pandas as pd
 
-DFType = TypeVar('DFType', bound=pd.DataFrame)
-
-
-def with_metadata(cls: type[DFType]) -> type[DFType]:
-    """Decorator that adds metadata support to pandas DataFrame classes.
-
-    This decorator adds a _metadata attribute and related functionality to track
-    metadata across DataFrame operations. The metadata persists through operations
-    like copy, merge, etc.
-
-    Args:
-        cls: The DataFrame class to decorate
-
-    Returns:
-        The decorated class with metadata support
-
-    Example:
-    ```python
-    @with_metadata
-    class MyDF(pd.DataFrame):
-        pass
-
-    # Create DataFrame with metadata
-    df = MyDF({'a': [1,2,3]})
-    df._metadata = {'source': 'test'}
-
-    # Metadata persists through operations
-    df2 = df.copy()
-    assert df2._metadata == {'source': 'test'}
-    ```
-    """
-    # Add _metadata to the list of properties to be preserved
-    if not hasattr(cls, '_metadata'):
-        cls._metadata = ['_metadata_dict']
-    else:
-        cls._metadata = cls._metadata + ['_metadata_dict']
-
-    orig_init = cls.__init__
-
-    @wraps(cls.__init__)
-    def init(self, *args, **kwargs):
-        """Initialize with empty metadata dict."""
-        orig_init(self, *args, **kwargs)
-        object.__setattr__(self, '_metadata_dict', {})
-
-    def finalize(self, other, method=None, **kwargs):
-        """Propagate metadata during operations."""
-        # Get the DataFrame from parent class finalization
-        df = super(cls, self).__finalize__(other, method=method, **kwargs)
-
-        # Copy metadata if present
-        if hasattr(other, '_metadata_dict'):
-            object.__setattr__(df, '_metadata_dict',
-                               copy.deepcopy(other._metadata_dict))
-        return df
-
-    def merge(self, right, **kwargs):
-        """Override merge to ensure metadata propagation."""
-        result = super(cls, self).merge(right, **kwargs)
-        if isinstance(result, pd.DataFrame):
-            # Convert result to ModelDF if it isn't already
-            if not isinstance(result, cls):
-                result = cls(result)
-            # Copy metadata from left DataFrame (self)
-            result._metadata_dict = copy.deepcopy(self._metadata_dict)
-        return result
-
-    # TODO: Do we need to add similar methods (to merge) for other DataFrame operations:
-    #     append, query, drop, reset_index, reindex, set_index, sort_values, sort_index,
-    #     groupby, pivot, pivot_table, melt, filter, rename, join, combine_first, update
-    #     - Add a couple test cases to test_clases.py to see if these work or need to be added
+class ModelDF(pd.DataFrame):
+    def __init__(self, *args, meta: dict = None, **kwargs):
+        raise NotImplementedError
+        # TODO: Inherting from pd.DataFrame did not work well.
+        #       Consider having a "df" argument instead.
+        super().__init__(*args, **kwargs)
+        self.meta: dict[str, Any] = meta or dict()
 
     @property
-    def _metadata(self):
-        """Property getter for metadata."""
-        return self._metadata_dict
+    def meta(self):
+        return self._metadata
 
-    @_metadata.setter
-    def _metadata(self, value):
-        """Property setter for metadata."""
-        self._metadata_dict = value
-
-    # Add all methods to class
-    cls.__init__ = init
-    cls.__finalize__ = finalize
-    cls._metadata = property(_metadata.fget, _metadata.fset)
-    cls.merge = merge
-
-    return cls
-
-
-@with_metadata
-class ModelDF(pd.DataFrame):
-    """A pandas DataFrame subclass with metadata support.
-
-    This class extends pandas DataFrame to maintain metadata across operations
-    like copy, merge, etc. The metadata persists through all DataFrame operations
-    including merge operations.
-
-    Example:
-    ```python
-    df1 = ModelDF({'a': [1,2,3]})
-    df2 = ModelDF({'b': [4,5,6]})
-    df1._metadata['source'] = 'test'
-
-    merged = df1.merge(df2, left_index=True, right_index=True)
-    assert merged._metadata['source'] == 'test'
-    ```
-    """
+    @meta.setter
+    def meta(self, new_dict):
+        assert isinstance(new_dict, dict), f'new_dict must be a dict, not {type(new_dict)}.'
+        if 'data_type' in new_dict and not isinstance(new_dict['data_type'], dict):
+            assert 'fields' in new_dict, f'Cannot set new_dict["data_type"] in ModelDF unless it is a dict or new_dict["field"] exists.'
+            assert len(new_dict['fields']) == len(new_dict['data_type'])
+            new_dict['data_type'] = {k: v for k, v in zip(new_dict['fields'], new_dict['data_type'])}
+        self._metadata = new_dict
 
     @property
     def _constructor(self):
-        """Return the class to use for construction."""
         return ModelDF
+
+    @property
+    def bus_cols(self) -> List[str]:
+        self.meta.setdefault('bus_cols', [])
+        return self.meta['bus_cols']
+
+    @bus_cols.setter
+    def bus_cols(self, cols: List[str]):
+        self.meta['bus_cols'] = cols
+
+    @property
+    def id_cols(self) -> List[str]:
+        self.meta.setdefault('id_cols', [])
+        return self.meta['id_cols']
+
+    @id_cols.setter
+    def id_cols(self, cols: List[str]):
+        self.meta['id_cols'] = cols
+
+    @property
+    def data_type(self) -> dict[str, Any]:
+        self.meta.setdefault('data_type', {})
+        return self.meta['data_type']
+
+    @data_type.setter
+    def data_type(self, types: List[str] | dict[str, Any]):
+        if not isinstance(types, dict):
+            types = {k: v for k, v in zip(self.columns, types)}
+        self.meta['data_type'] = types
+
+    def copy(self, deep: bool = True) -> 'ModelDF':
+        """Create a deep copy of the ModelDF instance, including meta data."""
+        if deep:
+            new_obj = ModelDF(super().copy(deep=True), meta=copy.deepcopy(self.meta))
+        else:
+            new_obj = ModelDF(super().copy(deep=False), meta=self.meta.copy())
+        new_obj._metadata = copy.deepcopy(self._metadata)
+        return new_obj
+
+    def __getitem__(self, key):
+        result = super().__getitem__(key)
+        if isinstance(result, pd.DataFrame):
+            result = self._constructor(result).__finalize__(self)
+        return result
+
+    def __finalize__(self, other, method=None, **kwargs):
+        if isinstance(other, ModelDF):
+            self.meta = copy.deepcopy(other.meta)
+        return self
+
+    def merge(self, *args, **kwargs):
+        result = super().merge(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def query(self, expr, *args, **kwargs):
+        result = super().query(expr, *args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def loc(self, *args, **kwargs):
+        result = super().loc(*args, **kwargs)
+        if isinstance(result, pd.DataFrame):
+            result = self._constructor(result).__finalize__(self)
+        return result
+
+    def iloc(self, *args, **kwargs):
+        result = super().iloc(*args, **kwargs)
+        if isinstance(result, pd.DataFrame):
+            result = self._constructor(result).__finalize__(self)
+        return result
+
+    def head(self, *args, **kwargs):
+        result = super().head(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def tail(self, *args, **kwargs):
+        result = super().tail(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def sample(self, *args, **kwargs):
+        result = super().sample(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def drop(self, *args, **kwargs):
+        result = super().drop(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def reset_index(self, *args, **kwargs):
+        result = super().reset_index(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def sort_values(self, *args, **kwargs):
+        result = super().sort_values(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def sort_index(self, *args, **kwargs):
+        result = super().sort_index(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def filter(self, *args, **kwargs):
+        result = super().filter(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def rename(self, *args, **kwargs):
+        result = super().rename(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def join(self, *args, **kwargs):
+        result = super().join(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def combine_first(self, other):
+        result = super().combine_first(other)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def update(self, other, *args, **kwargs):
+        super().update(other, *args, **kwargs)
+        self.meta.update(other.meta if isinstance(other, ModelDF) else {})
+        return self
+
+    def set_index(self, *args, **kwargs):
+        result = super().set_index(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
+
+    def reindex(self, *args, **kwargs):
+        result = super().reindex(*args, **kwargs)
+        result = self._constructor(result).__finalize__(self)
+        return result
 
 
 def get_builtin_base_type(cls):
@@ -215,25 +263,29 @@ def infer_type(value):
     mixed-type collections, the specific collection type (List, Set, Tuple) without
     element type information is returned.
     """
+    def none_to_any(value):
+        if value is None or value is NoneType or isinstance(value, type(None)):
+            return Any
+        return value
+
     # Basic type inference; extend this as needed
-    if isinstance(value, set) and value:
-        # Convert the set to a list or use an iterator to get the first element's type
-        first_element = next(iter(value))
-        element_type = type(first_element)
-        if all(isinstance(x, element_type) for x in value):
-            return set[element_type]  # type: ignore
-    elif isinstance(value, (
-            list,
-            tuple)):  # isinstance(value, (list, set, tuple, datetime.date, datetime.datetime, datetime.time)) and value:
+    if isinstance(value, type(None)):
+        return Any
+    if isinstance(value, (list, tuple, set)):
         # Assume all elements are of the same type for simplicity
-        element_type = type(value[0])
+        if not value:
+            return type(value)[Any]
+        element_type = type(list(value)[0])
         if all(isinstance(x, element_type) for x in value):
             if isinstance(value, list):
-                return list[element_type]  # type: ignore
+                return list[none_to_any(element_type)]  # type: ignore
             elif isinstance(value, set):
-                return set[element_type]  # type: ignore
+                return set[none_to_any(element_type)]  # type: ignore
             elif isinstance(value, tuple):
-                return tuple[element_type, ...]  # type: ignore
+                return tuple[none_to_any(element_type), ...]  # type: ignore
+            elif isinstance(value, tuple):
+                return tuple[none_to_any(element_type), ...]  # type: ignore
+        return list[Any]
     else:  # isinstance(value, (int, float, str, bool)):
         return type(value)
     # Default to Any for complex types or empty sequences
@@ -422,31 +474,34 @@ class ZoneId(int):
 
 
 if __name__ == '__main__':
-    # Example usage
-    my_dict = {
-        "a": 123,
-        "prop2": 456,
-        "list_example": [1, 2, 3],
-        "set_example": {"a", "b"},
-        "complex_example": {"nested": "dict"},
-        "dtdt_example": datetime.datetime.now()
-    }
+    t = infer_type({None,})
+    print(t)
 
-    # Example DictToClassConverter
-    class_obj = DictToClassConverter(my_dict)
-    print(class_obj, type(class_obj))
-    print(class_obj.a, type(class_obj.a))
-    print(class_obj.prop2, type(class_obj.prop2))
-    print(class_obj.list_example, type(class_obj.list_example))
-    print(class_obj.set_example, type(class_obj.set_example))
-    print(class_obj.dtdt_example, type(class_obj.dtdt_example))
-
-    # Example dict_to_dataclass
-    dataclass_obj = dict_to_dataclass(my_dict)
-    print('\n\n')
-    print(dataclass_obj, type(dataclass_obj))
-    print(dataclass_obj.a, type(dataclass_obj.a))
-    print(dataclass_obj.prop2, type(dataclass_obj.prop2))
-    print(dataclass_obj.list_example, type(dataclass_obj.list_example))
-    print(dataclass_obj.set_example, type(dataclass_obj.set_example))
-    print(dataclass_obj.dtdt_example, type(dataclass_obj.dtdt_example))
+    # # Example usage
+    # my_dict = {
+    #     "a": 123,
+    #     "prop2": 456,
+    #     "list_example": [1, 2, 3],
+    #     "set_example": {"a", "b"},
+    #     "complex_example": {"nested": "dict"},
+    #     "dtdt_example": datetime.datetime.now()
+    # }
+    #
+    # # Example DictToClassConverter
+    # class_obj = DictToClassConverter(my_dict)
+    # print(class_obj, type(class_obj))
+    # print(class_obj.a, type(class_obj.a))
+    # print(class_obj.prop2, type(class_obj.prop2))
+    # print(class_obj.list_example, type(class_obj.list_example))
+    # print(class_obj.set_example, type(class_obj.set_example))
+    # print(class_obj.dtdt_example, type(class_obj.dtdt_example))
+    #
+    # # Example dict_to_dataclass
+    # dataclass_obj = dict_to_dataclass(my_dict)
+    # print('\n\n')
+    # print(dataclass_obj, type(dataclass_obj))
+    # print(dataclass_obj.a, type(dataclass_obj.a))
+    # print(dataclass_obj.prop2, type(dataclass_obj.prop2))
+    # print(dataclass_obj.list_example, type(dataclass_obj.list_example))
+    # print(dataclass_obj.set_example, type(dataclass_obj.set_example))
+    # print(dataclass_obj.dtdt_example, type(dataclass_obj.dtdt_example))

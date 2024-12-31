@@ -385,8 +385,8 @@ class Network(AbstractSection):
 
     def _create_dataframe(self, data: Dict[str, Union[List[str], List[Any]]]) -> pd.DataFrame:
         """
-        Create a pandas DataFrame from the given RAWX section data (RAW files must be 
-        converted to a rawx-like dict structure using the raw_to_rawxraw_file_to_rawx_dict 
+        Create a pandas DataFrame from the given RAWX section data (RAW files must be
+        converted to a rawx-like dict structure using the raw_to_rawxraw_file_to_rawx_dict
         function) with appropriate metadata.
 
         This method is a crucial part of the RAWX parsing process. It takes raw data from a
@@ -1671,7 +1671,7 @@ class Model:
                  name: str = None,
                  force_recalculate: bool = False):
         """
-        Initialize a Model instance by loading and processing a PSSE v35 RAWX 
+        Initialize a Model instance by loading and processing a PSSE v35 RAWX
         file or a PSSE v33-35 RAW file.
 
         This method is the entry point for creating a Model object. It handles the
@@ -2463,4 +2463,3 @@ if __name__ == '__main__':
     logger.info(f'Finished psse_model_util/rawx/model.py: '
                 f'{((perf_counter_ns() - start) / 1e9):.9f} seconds')
     print(f'Log file: {get_log_file_path(logger)}')
-    
