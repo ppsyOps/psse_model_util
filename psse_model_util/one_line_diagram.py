@@ -30,50 +30,71 @@ logger = setup_logger(__name__)
 # Custom node styles for different equipment types
 NODE_STYLES = {
     'bus': {
-        'shape': 'ellipse',
+        'shape': 'rectangle',  # Buses as horizontal bars
         'background-color': '#2B7CE9',  # Blue
-        'width': 40,
-        'height': 40,
+        'width': 60,  # Wider than tall for horizontal bar
+        'height': 20,
+        'border-width': 2,
+        'border-color': '#000000',
     },
     'generator': {
-        'shape': 'triangle',
+        'shape': 'ellipse',  # Generators as circles
         'background-color': '#FFA500',  # Orange
-        'width': 50,
-        'height': 50,
+        'width': 40,
+        'height': 40,
+        'border-width': 2,
+        'border-color': '#000000',
     },
     'load': {
-        'shape': 'rectangle',
+        'shape': 'triangle',  # Loads as triangles
         'background-color': '#28A745',  # Green
-        'width': 50,
-        'height': 30,
+        'width': 40,
+        'height': 40,
+        'border-width': 2,
+        'border-color': '#000000',
+        'shape-polygon-points': '-0.5 -0.8, 0.5 -0.8, 0 0.8'  # Pointing up
     },
     'transformer': {
         'shape': 'diamond',
         'background-color': '#6F42C1',  # Purple
-        'width': 50,
-        'height': 50,
+        'width': 40,
+        'height': 40,
+        'border-width': 2,
+        'border-color': '#000000',
     },
     'shunt': {
         'shape': 'octagon',
         'background-color': '#DC3545',  # Red
         'width': 40,
         'height': 40,
+        'border-width': 2,
+        'border-color': '#000000',
     },
     'default': {
         'shape': 'ellipse',
         'background-color': '#6C757D',  # Gray
         'width': 30,
         'height': 30,
+        'border-width': 2,
+        'border-color': '#000000',
     }
 }
 
-# Default edge style
+# Default edge style for bus-to-bus connections
 EDGE_STYLE = {
-    'width': 2,
-    'line-color': '#666666',
-    'target-arrow-color': '#666666',
-    'target-arrow-shape': 'triangle',
+    'width': 1,  # Thin line
+    'line-color': '#000000',  # Black
+    'target-arrow-shape': 'none',
     'curve-style': 'bezier',
+    'line-style': 'solid',
+}
+
+# Equipment connection style (for bus-to-equipment connections)
+EQUIPMENT_CONNECTION_STYLE = {
+    'width': 1,  # Thin line
+    'line-color': '#000000',  # Black
+    'line-style': 'dashed',
+    'curve-style': 'straight',
 }
 
 @dataclass
@@ -126,20 +147,28 @@ class OneLineDiagram:
                     'text-max-width': '100px',
                 }
             },
-            # Default edge style
+            # Default edge style (applies to all edges unless overridden)
             {
                 'selector': 'edge',
                 'style': {
-                    'label': 'data(label)',
-                    'width': str(self.edge_width),
-                    'line-color': EDGE_STYLE['line-color'],
-                    'target-arrow-color': EDGE_STYLE['target-arrow-color'],
-                    'target-arrow-shape': EDGE_STYLE['target-arrow-shape'],
-                    'curve-style': EDGE_STYLE['curve-style'],
-                    'font-size': '10px',
-                    'text-outline-width': '2px',
-                    'text-outline-color': '#fff',
-                    'text-margin-y': '-10px',
+                    'width': '1',  # Force thin lines
+                    'line-color': '#000000',  # Force black color
+                    'target-arrow-shape': 'none',
+                    'curve-style': 'bezier',
+                    'line-style': 'solid',
+                    'z-index': 2,  # Draw bus connections on top
+                }
+            },
+            # Equipment connection styles
+            {
+                'selector': '.equipment-connection',
+                'style': {
+                    'width': '1',  # Thin lines
+                    'line-color': '#000000',  # Black color
+                    'line-style': 'dashed',
+                    'curve-style': 'straight',
+                    'z-index': 1,  # Draw behind bus connections
+                    'line-cap': 'round',
                 }
             },
             # Styles for different node types
@@ -180,17 +209,19 @@ class OneLineDiagram:
         return NODE_STYLES.get(node_type.lower(), NODE_STYLES['default'])
     
     def _get_node_elements(self) -> List[Dict]:
-        """Convert model buses and equipment to node elements."""
+        """Convert model buses and equipment to node elements with proper spacing."""
         elements = []
+        bus_equipment = {}  # Track equipment for each bus
         
-        # Calculate positions in a grid layout
+        # Calculate grid layout for buses
         bus_count = len(self.model.network.bus)
         grid_size = int(bus_count ** 0.5) + 1
-        node_spacing = 150  # pixels between nodes
+        node_spacing = 300  # Increased spacing between buses
         
-        # Add buses with calculated positions
+        # First pass: add all buses in a grid
         for idx, (_, bus) in enumerate(self.model.network.bus.iterrows()):
             bus_id = f"bus_{bus['i']}"
+            bus_equipment[bus_id] = []
             
             # Calculate grid position
             row = idx // grid_size
@@ -205,6 +236,7 @@ class OneLineDiagram:
                     'y': 100 + row * node_spacing
                 }
             
+            # Add the bus
             elements.append({
                 'data': {
                     'id': bus_id,
@@ -220,6 +252,77 @@ class OneLineDiagram:
                 'grabbable': True,
                 'selectable': True,
             })
+        
+        # Second pass: add equipment with proper offsets
+        equipment_spacing = 120  # pixels between equipment items
+        
+        # Add generators with offset from their bus
+        if hasattr(self.model.network, 'generator'):
+            for idx, (_, gen) in enumerate(self.model.network.generator.iterrows()):
+                gen_id = f"gen_{gen['i']}_{gen['id']}"
+                bus_id = f"bus_{gen['i']}"
+                
+                # Calculate position offset based on equipment count for this bus
+                offset = len(bus_equipment[bus_id]) * equipment_spacing
+                
+                # Get bus position
+                bus_pos = next((e['position'] for e in elements if e['data']['id'] == bus_id), {'x': 0, 'y': 0})
+                
+                # Position generator to the right of the bus, stacked vertically
+                position = self.node_positions.get(gen_id, {
+                    'x': bus_pos.get('x', 0) + 150,  # To the right of bus
+                    'y': bus_pos.get('y', 0) - 100 + offset  # Stacked vertically
+                })
+                
+                elements.append({
+                    'data': {
+                        'id': gen_id,
+                        'label': f"Gen {gen['i']}:{gen['id']}",
+                        'type': 'generator',
+                        'pg': gen.get('pg', 0),
+                        'qg': gen.get('qg', 0),
+                        'pt': gen.get('pt', 0),
+                        'pb': gen.get('pb', 0),
+                    },
+                    'position': position,
+                    'classes': 'generator-node',
+                    'grabbable': True,
+                    'selectable': True,
+                })
+        
+        # Add loads with offset from their bus
+        if hasattr(self.model.network, 'load'):
+            for idx, (_, load) in enumerate(self.model.network.load.iterrows()):
+                load_id = f"load_{load['i']}_{load['id']}"
+                bus_id = f"bus_{load['i']}"
+                
+                # Calculate position offset based on equipment count for this bus
+                offset = len(bus_equipment[bus_id]) * equipment_spacing
+                
+                # Get bus position
+                bus_pos = next((e['position'] for e in elements if e['data']['id'] == bus_id), {'x': 0, 'y': 0})
+                
+                # Position load to the left of the bus, stacked vertically
+                position = self.node_positions.get(load_id, {
+                    'x': bus_pos.get('x', 0) - 150,  # To the left of bus
+                    'y': bus_pos.get('y', 0) - 100 + offset  # Stacked vertically
+                })
+                
+                elements.append({
+                    'data': {
+                        'id': load_id,
+                        'label': f"Load {load['i']}:{load['id']}",
+                        'type': 'load',
+                        'pl': load.get('pl', 0),
+                        'ql': load.get('ql', 0),
+                    },
+                    'position': position,
+                    'classes': 'load-node',
+                    'grabbable': True,
+                    'selectable': True,
+                })
+                
+        return elements
         
         # Add generators
         if hasattr(self.model.network, 'generator'):
@@ -264,10 +367,50 @@ class OneLineDiagram:
         return elements
     
     def _get_edge_elements(self) -> List[Dict]:
-        """Convert model branches to edge elements."""
+        """Convert model branches to edge elements and create connections to equipment."""
         elements = []
         
-        # Add AC lines
+        # Add connections between buses and their equipment first (so they're drawn underneath)
+        
+        # Connect generators to their buses
+        if hasattr(self.model.network, 'generator'):
+            for _, gen in self.model.network.generator.iterrows():
+                gen_id = f"gen_{gen['i']}_{gen['id']}"
+                bus_id = f"bus_{gen['i']}"
+                edge_id = f"gen_conn_{gen['i']}_{gen['id']}"
+                
+                elements.append({
+                    'data': {
+                        'id': edge_id,
+                        'source': bus_id,
+                        'target': gen_id,
+                        'type': 'connection',
+                        'line-style': 'dashed',
+                    },
+                    'classes': 'equipment-connection',
+                    'selectable': False,
+                })
+        
+        # Connect loads to their buses
+        if hasattr(self.model.network, 'load'):
+            for _, load in self.model.network.load.iterrows():
+                load_id = f"load_{load['i']}_{load['id']}"
+                bus_id = f"bus_{load['i']}"
+                edge_id = f"load_conn_{load['i']}_{load['id']}"
+                
+                elements.append({
+                    'data': {
+                        'id': edge_id,
+                        'source': bus_id,
+                        'target': load_id,
+                        'type': 'connection',
+                        'line-style': 'dashed',
+                    },
+                    'classes': 'equipment-connection',
+                    'selectable': False,
+                })
+        
+        # Add AC lines between buses
         if hasattr(self.model.network, 'acline'):
             for _, line in self.model.network.acline.iterrows():
                 from_bus = f"bus_{line['i']}"
@@ -414,23 +557,29 @@ class OneLineDiagram:
         # Add compound nodes if needed
         self.elements.extend(self._get_compound_elements())
         
-        # Create the Cytoscape component
+        # Create the Cytoscape component with improved layout
         return cyto.Cytoscape(
             id='one-line-diagram',
             elements=self.elements,
             layout={
-                'name': 'preset',  # Use preset positions
+                'name': 'cose',  # Use CoSE (Compound Spring Embedder) layout
                 'animate': True,
-                'fit': True,
-                'padding': 10,
-                'spacingFactor': 1.5,
-            },
-            style={
-                'width': '100%',
-                'height': '800px',
-                'background-color': '#f8f9fa',
-                'border': '1px solid #dee2e6',
-                'border-radius': '4px',
+                'nodeDimensionsIncludeLabels': True,
+                'idealEdgeLength': 200,  # Increased ideal edge length
+                'nodeRepulsion': 10000,  # Increased repulsion to spread nodes
+                'edgeElasticity': 0.3,   # Slightly less elastic edges
+                'nestingFactor': 0.1,
+                'gravity': 0.2,          # Reduced gravity to prevent clustering
+                'numIter': 5000,         # More iterations for better layout
+                'initialTemp': 1000,     # Higher initial temperature for better initial spread
+                'coolingFactor': 0.95,   # Slower cooling
+                'minTemp': 1.0,
+                'randomize': True,
+                'componentSpacing': 100,  # Space between components
+                'nodeOverlap': 20,       # Prevent node overlap
+                'refresh': 20,           # Refresh rate
+                'fit': True,             # Fit to viewport
+                'padding': 30            # Padding around the layout
             },
             stylesheet=self.stylesheet,
             userZoomingEnabled=True,
@@ -510,23 +659,37 @@ class OneLineDiagram:
             Output('cytoscape-tooltip', 'children'),
             Input('one-line-diagram', 'mouseoverNodeData'),
             Input('one-line-diagram', 'mouseoverEdgeData'),
+            Input('one-line-diagram', 'tapNode'),
+            Input('one-line-diagram', 'tapEdge'),
             prevent_initial_call=True
         )
-        def update_tooltip(node_data, edge_data):
+        def update_tooltip(node_data, edge_data, tap_node, tap_edge):
             if node_data is None and edge_data is None:
                 return False, no_update, no_update
             
+            # Default position for the tooltip
+            x_pos = 100
+            y_pos = 100
+            
+            # If we have node data, position the tooltip relative to the node
             if node_data is not None:
                 data = node_data
+                # Use the node's position if available, otherwise use default
+                if 'position' in data and data['position'] is not None:
+                    x_pos = data['position'].get('x', 100) + 20
+                    y_pos = data['position'].get('y', 100) - 50
             else:
                 data = edge_data
+                # For edges, use a fixed position for now
+                x_pos = 150
+                y_pos = 150
             
-            # Return a valid bbox format for the tooltip
+            # Define the tooltip bounding box
             bbox = {
-                'x0': 100,
-                'y0': 100,
-                'x1': 200,
-                'y1': 200
+                'x0': x_pos,
+                'y0': y_pos,
+                'x1': x_pos + 200,  # Fixed width
+                'y1': y_pos + 100   # Fixed height
             }
             
             tooltip_content = self._get_tooltip({'data': data})
