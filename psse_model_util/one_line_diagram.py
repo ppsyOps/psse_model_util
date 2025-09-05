@@ -32,24 +32,24 @@ NODE_STYLES = {
     'bus': {
         'shape': 'rectangle',  # Buses as horizontal bars
         'background-color': '#2B7CE9',  # Blue
-        'width': 60,  # Wider than tall for horizontal bar
-        'height': 20,
+        'width': 30,  # Wider than tall for horizontal bar
+        'height': 10,
         'border-width': 2,
         'border-color': '#000000',
     },
     'generator': {
         'shape': 'ellipse',  # Generators as circles
         'background-color': '#FFA500',  # Orange
-        'width': 40,
-        'height': 40,
+        'width': 20,
+        'height': 20,
         'border-width': 2,
         'border-color': '#000000',
     },
     'load': {
         'shape': 'triangle',  # Loads as triangles
         'background-color': '#28A745',  # Green
-        'width': 40,
-        'height': 40,
+        'width': 20,
+        'height': 20,
         'border-width': 2,
         'border-color': '#000000',
         'shape-polygon-points': '-0.5 -0.8, 0.5 -0.8, 0 0.8'  # Pointing up
@@ -57,24 +57,24 @@ NODE_STYLES = {
     'transformer': {
         'shape': 'diamond',
         'background-color': '#6F42C1',  # Purple
-        'width': 40,
-        'height': 40,
+        'width': 20,
+        'height': 20,
         'border-width': 2,
         'border-color': '#000000',
     },
     'shunt': {
         'shape': 'octagon',
         'background-color': '#DC3545',  # Red
-        'width': 40,
-        'height': 40,
+        'width': 20,
+        'height': 20,
         'border-width': 2,
         'border-color': '#000000',
     },
     'default': {
         'shape': 'ellipse',
         'background-color': '#6C757D',  # Gray
-        'width': 30,
-        'height': 30,
+        'width': 15,
+        'height': 15,
         'border-width': 2,
         'border-color': '#000000',
     }
@@ -116,7 +116,7 @@ class OneLineDiagram:
     layout_dir: Path = Path("./layouts")
     show_isolated_nodes: bool = False
     show_labels: bool = True
-    node_size: int = 40
+    node_size: int = 20
     edge_width: int = 2
     selected_node: Optional[str] = None
     node_positions: Dict[str, Dict[str, float]] = field(default_factory=dict)
@@ -138,13 +138,15 @@ class OneLineDiagram:
                     'text-valign': 'center',
                     'text-halign': 'center',
                     'color': 'white',
-                    'font-size': '12px',
+                    'font-size': '9px',
                     'font-weight': 'bold',
                     'text-outline-width': '2px',
                     'text-outline-color': '#000',
                     'overlay-opacity': 0,
                     'text-wrap': 'wrap',
                     'text-max-width': '100px',
+                    'text-margin-y': '0px',
+                    'text-margin-x': '0px',
                 }
             },
             # Default edge style (applies to all edges unless overridden)
@@ -213,27 +215,22 @@ class OneLineDiagram:
         elements = []
         bus_equipment = {}  # Track equipment for each bus
         
-        # Calculate grid layout for buses
-        bus_count = len(self.model.network.bus)
-        grid_size = int(bus_count ** 0.5) + 1
-        node_spacing = 300  # Increased spacing between buses
-        
         # First pass: add all buses in a grid
         for idx, (_, bus) in enumerate(self.model.network.bus.iterrows()):
             bus_id = f"bus_{bus['i']}"
             bus_equipment[bus_id] = []
             
-            # Calculate grid position
-            row = idx // grid_size
-            col = idx % grid_size
+            # Calculate grid position with more spacing
+            row = idx // 2  # Two columns
+            col = idx % 2   
             
             # Get saved position or calculate new one
             if bus_id in self.node_positions:
                 position = self.node_positions[bus_id]
             else:
                 position = {
-                    'x': 100 + col * node_spacing,
-                    'y': 100 + row * node_spacing
+                    'x': 200 + col * 600,  # Increased horizontal spacing
+                    'y': 100 + row * 400    # Increased vertical spacing
                 }
             
             # Add the bus
@@ -262,16 +259,16 @@ class OneLineDiagram:
                 gen_id = f"gen_{gen['i']}_{gen['id']}"
                 bus_id = f"bus_{gen['i']}"
                 
-                # Calculate position offset based on equipment count for this bus
-                offset = len(bus_equipment[bus_id]) * equipment_spacing
-                
                 # Get bus position
                 bus_pos = next((e['position'] for e in elements if e['data']['id'] == bus_id), {'x': 0, 'y': 0})
                 
-                # Position generator to the right of the bus, stacked vertically
+                # Calculate position below the bus with horizontal offset
+                # Alternate sides for better spacing
+                side_offset = 100 if idx % 2 == 0 else -100
+                
                 position = self.node_positions.get(gen_id, {
-                    'x': bus_pos.get('x', 0) + 150,  # To the right of bus
-                    'y': bus_pos.get('y', 0) - 100 + offset  # Stacked vertically
+                    'x': bus_pos.get('x', 0) + side_offset,  # Alternate sides
+                    'y': bus_pos.get('y', 0) + 50  # Closer to bus (reduced from 80)
                 })
                 
                 elements.append({
@@ -296,16 +293,16 @@ class OneLineDiagram:
                 load_id = f"load_{load['i']}_{load['id']}"
                 bus_id = f"bus_{load['i']}"
                 
-                # Calculate position offset based on equipment count for this bus
-                offset = len(bus_equipment[bus_id]) * equipment_spacing
-                
                 # Get bus position
                 bus_pos = next((e['position'] for e in elements if e['data']['id'] == bus_id), {'x': 0, 'y': 0})
                 
-                # Position load to the left of the bus, stacked vertically
+                # Calculate position below the bus with horizontal offset
+                # Opposite side from generators for balance
+                side_offset = -100 if idx % 2 == 0 else 100
+                
                 position = self.node_positions.get(load_id, {
-                    'x': bus_pos.get('x', 0) - 150,  # To the left of bus
-                    'y': bus_pos.get('y', 0) - 100 + offset  # Stacked vertically
+                    'x': bus_pos.get('x', 0) + side_offset,  # Opposite side from generator
+                    'y': bus_pos.get('y', 0) + 80  # Below the bus
                 })
                 
                 elements.append({
