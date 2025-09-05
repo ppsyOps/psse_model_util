@@ -449,4 +449,3 @@ if __name__ == '__main__':
     # # Drop columns.
     # df = pd.DataFrame(np.random.rand(10, 4), columns=['A', 'B', 'C', 'D'])
     # df.drop(['C', 'D'], axis=1)
-    

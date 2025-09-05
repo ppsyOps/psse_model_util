@@ -1,3 +1,2 @@
+from psse_model_util.model import Model
 
-from .model import Model
-from .compare import ModelComparison

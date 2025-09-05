@@ -22,23 +22,23 @@ GEN_MW_FILTER = RangeFilterType(20, 10_000)
 DOWNLOAD_WAIT_SECONDS = 3
 
 
-# Dictionary of native PJM areas with their area numbers as keys and names as values
-NATIVE_AREAS = {1: 'CENTRAL', 2: 'EAST', 3: 'CENTRAL_DC'}
-
-# Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
-NEIGHBOR_AREAS = {4: 'EAST_COGEN1', 5: 'WEST', 6: 'EAST_COGEN2'}
-
 # # Dictionary of native PJM areas with their area numbers as keys and names as values
-# NATIVE_AREAS = {202: 'FE', 205: 'AEP', 206: 'OVEC', 209: 'DAY', 212: 'DEOK',
-#                 215: 'DUQ', 222: 'CE', 225: 'PJM', 320: 'EKPC', 345: 'DOM'}
+# NATIVE_AREAS = {1: 'CENTRAL', 2: 'EAST', 3: 'CENTRAL_DC'}
 #
 # # Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
-# NEIGHBOR_AREAS = {102: 'NYIS', 207: 'HE', 208: 'CIN', 216: 'IPL', 217: 'NIPS',
-#                   218: 'CONS', 219: 'DECO', 295: 'WEC', 314: 'BREC', 330: 'AECI',
-#                   340: 'CPLE', 341: 'CPLW', 342: 'DUK', 346: 'SOCO', 347: 'TVA',
-#                   356: 'AMMO', 357: 'AMIL', 363: 'LGEE', 627: 'ALTW', 635: 'MEC',
-#                   640: 'NPPD', 652: 'WAUE', 680: 'DPC', 694: 'ALTE', 696: 'WPS',
-#                   697: 'MGE'}
+# NEIGHBOR_AREAS = {4: 'EAST_COGEN1', 5: 'WEST', 6: 'EAST_COGEN2'}
+
+# Dictionary of native PJM areas with their area numbers as keys and names as values
+NATIVE_AREAS = {202: 'FE', 205: 'AEP', 206: 'OVEC', 209: 'DAY', 212: 'DEOK',
+                215: 'DUQ', 222: 'CE', 225: 'PJM', 320: 'EKPC', 345: 'DOM'}
+
+# Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
+NEIGHBOR_AREAS = {102: 'NYIS', 207: 'HE', 208: 'CIN', 216: 'IPL', 217: 'NIPS',
+                  218: 'CONS', 219: 'DECO', 295: 'WEC', 314: 'BREC', 330: 'AECI',
+                  340: 'CPLE', 341: 'CPLW', 342: 'DUK', 346: 'SOCO', 347: 'TVA',
+                  356: 'AMMO', 357: 'AMIL', 363: 'LGEE', 627: 'ALTW', 635: 'MEC',
+                  640: 'NPPD', 652: 'WAUE', 680: 'DPC', 694: 'ALTE', 696: 'WPS',
+                  697: 'MGE'}
 
 # Combined dictionary of native and neighboring areas, used for filtering models
 INCLUDE_AREAS = NEIGHBOR_AREAS.copy() | NATIVE_AREAS.copy()
@@ -70,8 +70,6 @@ NETWORK_DF_COMPARISON_QUERIES = {
 
 # Flag to determine if operations should be resilient (continue on errors) or raise exceptions
 RESILIENT = True
-
-LOG_FOLDER = Path(__file__).resolve().parent.parent.parent / "data/log"
 
 # # INCH (Incremental Network Change) related constants
 # # Actions that can be performed in INCH files

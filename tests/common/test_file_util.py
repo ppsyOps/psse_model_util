@@ -12,17 +12,18 @@ from psse_model_util.common.file_util import (
     uneven_lists_to_df,
     read_uneven_csv_file,
     write_bytesio_to_disk,
-    is_file_locked,
     to_pickle,
     read_pickle
 )
+# from psse_model_util.common.file_lock_checker import check_file_lock
 
 from psse_model_util.common.dirs import site_temp_dir
 
 
-@pytest.fixture
-def temp_dir():
-    return site_temp_dir
+@pytest.fixture(scope="session")
+def temp_dir(tmp_path_factory):
+    test_dir = tmp_path_factory.mktemp("test_data")
+    return test_dir
 
 
 @pytest.fixture
@@ -38,6 +39,7 @@ def sample_csv_content():
 @pytest.fixture
 def sample_csv_file(temp_dir):
     file_path = temp_dir / "sample.csv"
+    file_path.absolute().parent.mkdir(parents=True, exist_ok=True)
     with open(file_path, "w", newline="") as f:
         f.write("a,b,c\n1,2,3\n4,5\n6\n")
     return file_path
@@ -113,43 +115,6 @@ def test_write_bytesio_to_disk_no_overwrite(temp_dir):
         write_bytesio_to_disk(bytes_io, file_path, overwrite=False)
 
 
-def test_is_file_locked(temp_dir):
-    file_path = temp_dir / "locked_file.txt"
-
-    # Create and write to the file
-    with open(file_path, "w") as f:
-        f.write("Test content")
-
-    # Check if file is not locked
-    assert not is_file_locked(file_path), "New file should not be locked"
-
-    # Test with actual file locking
-    with open(file_path, "r+b") as f:
-        try:
-            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
-
-            # Check in another process if the file is locked
-            import subprocess
-            result = subprocess.run(
-                [
-                    "python", "-c",
-                    f"from test_file_util import is_file_locked; "
-                    f"print(is_file_locked(r'{file_path}'))"
-                ],
-                capture_output=True,
-                text=True
-            )
-            locked_result = result.stdout.strip().lower() == 'true'
-
-            print(f"Subprocess detected lock: {locked_result}")
-            assert locked_result, "File should be detected as locked"
-
-        finally:
-            f.seek(0)
-            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-
-    # Check if file is unlocked after releasing the lock
-    assert not is_file_locked(file_path), "File should be unlocked after releasing the lock"
 def test_to_pickle(temp_dir):
     data = {"test": "data"}
     pickle_path = temp_dir / "test.pickle"

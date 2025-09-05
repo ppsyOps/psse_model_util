@@ -17,7 +17,7 @@ Model : class
     The 'network' section receives special attention, with data parsed into pandas
     DataFrames and used to create a NetworkX graph for topological analysis.
 
-the following classes are used to represent specific sections of the RAW/RAWX file.  They
+The following classes are used to represent specific sections of the RAW/RAWX file.  They
 are used to set attributes of the Model object, such as Model.general
 and Model.network.
 
@@ -39,6 +39,7 @@ Usage:
 ------
 To use this module, create an instance of Model by providing a path to a RAW or RAWX file:
 
+    from psse_model_util.model import Model
     model = Model('path/to/rawx/file.rawx')
 
 You can then access different sections of the model, manipulate data, filter the model,
@@ -49,6 +50,9 @@ or perform graph analysis:
 
 This module is designed to be memory-efficient and performant, suitable for handling
 large power system models such as MMWG or IDC cases used in the Eastern Interconnection.
+
+If you load a model once, you can save the Model object to disk directly as a
+pickle, to make loading it in the future much cheaper and much faster!
 """
 
 # Rest of the module code follows...
@@ -61,9 +65,12 @@ from datetime import datetime as dtdt
 import copy
 from time import perf_counter_ns
 import pickle
+import logging
+
+import networkx.exception
 
 from psse_model_util.common.dataframe_util import convert_df_column_dtypes
-from psse_model_util.common.dirs import site_cache_dir, site_data_dir
+from psse_model_util.common.dirs import site_cache_dir, site_data_dir, copy_doc
 from psse_model_util.common.file_util import to_pickle, read_pickle
 from psse_model_util.common.json_util import load_and_clean_json
 from psse_model_util.common.constants import INCLUDE_AREAS
@@ -178,7 +185,7 @@ class General:
 
 class AbstractSection:
     """
-    Base classs for the Network, Timeseries and Harmonics classes, each
+    Base class for the Network, Timeseries and Harmonics classes, each
     specific to a particular section of the PSSE v35 rawx file.  RAW files
     do not contain time series or harmonics data.
     """
@@ -317,7 +324,7 @@ class Network(AbstractSection):
         copy: Create independent copy of network data
 
     Example:
-        >>> from model import Model
+        # >>> from model import Model
         >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
         >>> model = Model(fp, name="Summer_Peak")
         >>> network = model.network
@@ -640,22 +647,36 @@ class Network(AbstractSection):
                        inplace: bool = False,
                        graph_effect: str = 'clear') -> 'Network':
         """
-        Filter the Network instance data by specified areas.
+        Filter the network data by the specified areas, removing all equipment
+        (not) in or connected to equipment in those areas.
+
+        How? Filters the `bus` DataFrame based on the provided areas,
+        then filters network component dfs by their bus references
+        (as defined in each DataFrame's `_metadata['bus_cols']`).
+
+        Graph: Updates the network graph according to the `graph_effect` option.
 
         Args:
-            areas (dict | list[str]): Dict or list of area names or IDs to include in the filtered network.
-                Defaults to INCLUDE_AREAS.
-            inplace (bool): If True, filter self.Network inplace. If False, return a modified copy of the Network instance.
-            graph_effect (str): 'clear' to clear the graph, 'regenerate' to regenerate the graph, 'leave' to leave the graph
-                unchanged.
+            areas (dict | list[str], optional): Areas to retain in the filtered
+                network. Defaults to INCLUDE_AREAS
+            inplace (bool, optional): If True, modifies the current Network object
+                If False, returns a new filtered copy. Defaults to Falsem
+            graph_effect (str, optional): Determines how the network graph should
+                be handled after filtering:
+                    - 'clear': resets the graph to empty
+                    - 'regenerate': rebuilds the graph
+                    - 'leave': leaves the current graph unchanged
+                Defaults to 'clear'
 
         Returns:
-            Network: Filtered Network instance.
+            Network: Filtered network instance (same instance if inplace=True)
 
         Raises:
             ValueError: If the areas list is empty after preprocessing.
         """
-        # Preprocess areas
+        logger.info("Network.filter_by_area: starting area filtering...")
+
+        # Normalize areas argument
         areas = list(areas.keys()) if isinstance(areas, dict) else copy.deepcopy(areas)
         if not areas:
             raise ValueError("The areas list is empty after preprocessing.")
@@ -663,50 +684,59 @@ class Network(AbstractSection):
         # If inplace network = self, else network = copy of self.
         network: 'Network' = self if inplace else self.copy()
 
-        # Filter bus by area
-        meta = network.bus._metadata
+        # Filter bus DataFrame by area
+        bus_meta = network.bus._metadata
+        logger.info(f"Network.filter_by_area: filtering buses for areas: {areas}")
         network.bus = network.bus[network.bus['area'].isin(areas)]
-        network.bus._metadata = meta
-        # Get the set of buses in the filtered areas
-        filtered_buses = set(network.bus.index)
+        network.bus._metadata = bus_meta
 
-        # Filter other DataFrames that have bus references
+        filtered_buses = set(network.bus.index)
+        logger.info(f"Network.filter_by_area: retained {len(filtered_buses)} buses after area filtering.")
+
+        # Filter all DataFrames that reference buses
         for attr_name, df in network.__dict__.items():
             if isinstance(df, pd.DataFrame) and attr_name != 'bus':
                 meta = df._metadata
-                if 'bus_cols' in meta:
-                    bus_cols = meta['bus_cols']
+                if 'bus_cols' not in meta:
+                    continue  # skip DataFrames without bus references
 
-                    # Check if bus_cols are in the columns or index
-                    index_bus_cols = [col for col in bus_cols if col in df.index.names]
-                    column_bus_cols = [col for col in bus_cols if col in df.columns]
+                bus_cols = meta['bus_cols']
+                # Check if bus_cols are in the columns or index
+                index_bus_cols = [col for col in bus_cols if col in df.index.names]
+                column_bus_cols = [col for col in bus_cols if col in df.columns]
 
-                    if index_bus_cols:
-                        # If bus_cols are in the index
-                        mask = df.index.get_level_values(index_bus_cols[0]).isin(filtered_buses)
-                        for col in index_bus_cols[1:]:
-                            mask |= df.index.get_level_values(col).isin(filtered_buses)
-                    elif column_bus_cols:
-                        # If bus_cols are in the columns
-                        # mask = df[column_bus_cols].apply(lambda x: x.isin(filtered_buses)).any(axis=1)
-                        mask = np.any(np.isin(df[column_bus_cols].values, list(filtered_buses)), axis=1)
-                    else:
-                        # If no bus columns found, keep all rows and warn
-                        warnings.warn(f"No bus columns found in {attr_name}. Keeping all rows.")
-                        continue
-                    df = df[mask]
-                    df._metadata = meta
-                    setattr(network, attr_name, df)
+                if index_bus_cols:
+                    # If bus_cols in index
+                    mask = df.index.get_level_values(index_bus_cols[0]).isin(filtered_buses)
+                    for col in index_bus_cols[1:]:
+                        mask |= df.index.get_level_values(col).isin(filtered_buses)
+                    logger.info(f"Network.filter_by_area: filtering index-based DataFrame '{attr_name}'")
+                elif column_bus_cols:
+                    # If bus_cols in columns
+                    mask = np.any(np.isin(df[column_bus_cols].values, list(filtered_buses)), axis=1)
+                    logger.info(f"Network.filter_by_area: filtering column-based DataFrame '{attr_name}'")
+                else:
+                    # If no bus_cols in index or columns, keep all and warn
+                    warnings.warn(f"Network.filter_by_area: no bus columns found in '{attr_name}', keeping all rows.")
+                    continue
 
-        # Clear, regenerate or leave the graph per the "graph_effect" argument.
+                df = df[mask]
+                df._metadata = meta
+                setattr(network, attr_name, df)
+
+        # Handle network graph based on graph_effect argument
+        logger.info(f"Network.filter_by_area: applying graph_effect='{graph_effect}'")
         if graph_effect == 'clear':
             network._graph = nx.Graph()
         elif graph_effect == 'regenerate':
             network.graph(regenerate=True)
-        elif graph_effect != 'leave':
-            raise ValueError(f'Invalid value of graph_effect, "{graph_effect}". '
-                             f'Expected one of "clear", "regenerate" or "leave".')
+        elif graph_effect == 'leave':
+            logger.info("Network.filter_by_area: leaving graph unchanged.")
+        else:
+            raise ValueError(f"Invalid value for graph_effect '{graph_effect}'. "
+                            "Expected one of 'clear', 'regenerate', or 'leave'.")
 
+        logger.info("Network.filter_by_area: area filtering complete.")
         return network
 
     def filter_section(self, section: str, where_clause: str,
@@ -740,14 +770,14 @@ class Network(AbstractSection):
 
         Examples:
             >>> # Filter buses to voltage >= 345 kV
-            >>> filtered_buses = network.filter_section('bus', 'baskv >= 345')
+            >>> filtered_buses = network.filter_by_section('bus', 'baskv >= 345')
             >>>
             >>> # Filter generators to certain statuses in place
-            >>> network.filter_section('generator', 'stat == 1', inplace=True)
+            >>> network.filter_by_section('generator', 'stat == 1', inplace=True)
             >>>
             >>> # Create new Network with only large transformers
-            >>> new_net = network.filter_section('transformer', 'mbase > 1000',
-            ...                                 inplace=False)
+            >>> new_net = network.filter_by_section('transformer', 'mbase > 1000',
+            ...                                     inplace=False)
 
         Notes:
             - The where_clause is passed directly to pandas.DataFrame.query()
@@ -755,6 +785,9 @@ class Network(AbstractSection):
             - Column names in where_clause must exist in the section DataFrame
             - The method preserves the DataFrame's metadata
         """
+        logger.info(f"Network.filter_by_section: starting filtering on section '{section}' "
+                    f"with where_clause='{where_clause}' (inplace={inplace}, graph_effect='{graph_effect}')")
+
         # Validate section exists and is a DataFrame
         if not hasattr(self, section):
             raise ValueError(f"Section '{section}' does not exist in Network")
@@ -770,12 +803,15 @@ class Network(AbstractSection):
             # Apply the filter using pandas query
             filtered_df = df.query(where_clause)
             filtered_df._metadata = metadata
+            logger.info(f"Network.filter_section: filtered '{section}' down to {len(filtered_df)} rows")
         except Exception as e:
+            logger.error(f"Network.filter_section: failed to filter '{section}' with error: {str(e)}")
             raise ValueError(f"Invalid where clause: '{where_clause}'. Error: {str(e)}")
 
         if inplace:
             # Update the section in place
             setattr(self, section, filtered_df)
+            logger.info(f"Network.filter_section: updated section '{section}' in place")
 
             # Handle graph effects
             self._handle_graph_effect(graph_effect)
@@ -785,6 +821,7 @@ class Network(AbstractSection):
             # Create a new Network instance with the filtered section
             new_network = self.copy(deep=True)
             setattr(new_network, section, filtered_df)
+            logger.info(f"Network.filter_section: created new network with filtered section '{section}'")
 
             # Handle graph effects for the new network
             new_network._handle_graph_effect(graph_effect)
@@ -1302,7 +1339,10 @@ class Network(AbstractSection):
         for _ in range(distance):
             next_nodes = set()
             for node in current_nodes:
-                next_nodes.update(self._graph.neighbors(node))
+                try:
+                    next_nodes.update(self._graph.neighbors(node))
+                except networkx.exception.NetworkXException:
+                    warnings.warn(f'Unable to add node {node} to one-line diagram.')
             nodes_in_range.update(next_nodes)
             current_nodes = next_nodes
 
@@ -1640,7 +1680,7 @@ class Model:
 
     Args:
         file_path_or_json (Union[str, dict, Path]): Input source - either file path or
-            pre-loaded data
+            preloaded data
         name (str, optional): Custom identifier for the model
         force_recalculate (bool, optional): Force reprocessing even if cache exists
 
@@ -1978,59 +2018,55 @@ class Model:
                 self.json_data = raw_file_to_rawx_dict(self.raw_file_path)
         return self.json_data
 
-    def filter_by_area(self, areas: dict | list[str] = INCLUDE_AREAS,
-                       inplace: bool = False):
-        """Filter network data to include only specified areas.
-
-        Removes all equipment not associated with the specified areas while maintaining
-        network connectivity and relationships between remaining components.
-
-        Args:
-            areas (Union[dict, list]): Areas to retain, specified either as:
-                - dict: Mapping of area numbers to names
-                - list: List of area numbers
-                Defaults to pre-defined INCLUDE_AREAS
-            inplace (bool, optional): If True, modify existing network. If False,
-                return filtered copy. Defaults to False.
-
-        Returns:
-            Network: Filtered network instance (same instance if inplace=True)
-
-        Raises:
-            ValueError: If areas list is empty or no matching areas found
-
-        Example:
-            >>> from model import Model
-            >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
-            >>> model = Model(fp, name="Summer_Peak")
-            >>> # Filter to specific areas
-            >>> areas = {101: 'AREA1', 102: 'AREA2'}
-            >>> filtered = model.network.filter_by_area(areas)
-            >>>
-            # >>> # Filter in-place
-            # >>> model.network.filter_by_area(['AREA1'], inplace=True)
-        """
-        start_time = perf_counter_ns()
-        logger.info(f'Model filter_by_area ({self.raw_file_path}) starting...')
-
-        # If inplace == True, work with a copy of the model.
+    @copy_doc(Network.filter_by_area)
+    def filter_by_area(self,
+                       areas: dict | list[str] = INCLUDE_AREAS,
+                       inplace: bool = False,
+                       graph_effect: str = 'clear') -> 'Model':
+        # This method delegates to Network.filter_by_area.
+        # The inherited docstring describes expected behavior.
         model = self if inplace else self.copy(deep=True)
+        model.network.filter_by_area(
+            areas=areas,
+            inplace=True,
+            graph_effect=graph_effect
+        )
+        return model
 
-        # Filter the model.network by specified areas.
-        if not hasattr(model.network, 'filter_by_area'):
-            raise AttributeError("The 'network' object does not have a 'filter_by_area' method")
-        model.network.filter_by_area(areas, inplace=True)
+    @copy_doc(Network.filter_section)
+    def filter_section(self,
+                        section: str,
+                        where_clause: str,
+                        inplace: bool = False,
+                        graph_effect: str = 'clear') -> Union['Model', pd.DataFrame]:
+        # This method delegates to Network.filter_section.
+        # The inherited docstring describes expected behavior.
 
-        if model.network._graph:
-            logger.info(f'Model.filter_by_area(): building graph...')
-            # Rebuild the network graph only if it existed
-            model.network.graph(regenerate=True, empty_ok=False)  # Rebuild the graph (this calls the property getter)
-            logger.info(f'Model.filter_by_area(): elapsed time: '
-                        f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+        model = self if inplace else self.copy(deep=True)
+        model.network.filter_section(
+            section=section,
+            where_clause=where_clause,
+            inplace=True,
+            graph_effect=graph_effect
+        )
+        return model if inplace else model
 
-        logger.info(f'Model.filter_by_area: finished in '
-                    f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+    @copy_doc(Network.filter_by_kv)
+    def filter_by_kv(self,
+                    low_value: float = 0.0,
+                    high_value: float = float('inf'),
+                    inplace: bool = False,
+                    graph_effect: str = 'clear') -> 'Model':
+        # This method delegates to Network.filter_by_kv.
+        # The inherited docstring describes expected behavior.
 
+        model = self if inplace else self.copy(deep=True)
+        model.network.filter_by_kv(
+            low_value=low_value,
+            high_value=high_value,
+            inplace=True,
+            graph_effect=graph_effect
+        )
         return model
 
     def copy(self, deep: bool = True):
@@ -2424,8 +2460,9 @@ if __name__ == '__main__':
 
     clear_site_cache()
 
-    # fp = Path(__file__).parent.parent / r'tests\data\sample_34.raw'
-    fp = Path(__file__).parent.parent / r'tests\data\Model_1.raw'
+    # fp = Path(r'K:\panc\contingencies\IDC_24S_sum24idctr1p8.raw')
+    fp = Path(__file__).parent.parent / r'tests\data\sample_34.raw'
+    # fp = Path(__file__).parent.parent / r'tests\data\Model_1.raw'
 
     pickle_path = site_cache_dir / fp.with_suffix('.model').name
     if not pickle_path.exists():
@@ -2450,10 +2487,12 @@ if __name__ == '__main__':
         native_graph = native_model.network.graph(regenerate=False,
                                                   empty_ok=False)
 
-    native_model.network.draw_one_line(node_id=('bus', 201), distance=2)
-
-    logger.info(f"Native Network graph: {native_graph.number_of_nodes()} nodes, "
-                f"{native_graph.number_of_edges()} edges.")
+    try:
+        native_model.network.draw_one_line(node_id=('bus', 201), distance=2)
+        logger.info(f"Native Network graph: {native_graph.number_of_nodes()} nodes, "
+                    f"{native_graph.number_of_edges()} edges.")
+    except Exception as e:
+        warnings.warn(str(e))
 
     if export_format == 'csv':
         csv_folder = native_model.csv_folder

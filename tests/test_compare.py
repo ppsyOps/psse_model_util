@@ -53,8 +53,7 @@ NETWORK_DF_COMPARISON_QUERIES = {
                    f'or ibus_baskv_model2 >= {DEFAULT_KV_FILTER[0]} '
                    f'or jbus_baskv_model2 >= {DEFAULT_KV_FILTER[0]} '
                    f'or kbus_baskv_model2 >= {DEFAULT_KV_FILTER[0]}'
-}
-
+    }
 
 @pytest.fixture
 def raw_models():
@@ -145,7 +144,6 @@ def test_compare_network_dfs(model_comparison):
     assert any(bus_df['presence'] == 'model2_only')  # Bus 156 added
     assert any(bus_df['presence'] == 'model1_only')  # Bus 155 removed
 
-
 def test_compare_graph(model_comparison):
     """
     Test the compare_graph method of ModelComparison.
@@ -172,11 +170,12 @@ def test_compare_graph(model_comparison):
     print("result['removed_nodes']: ", result['removed_nodes'])
     assert len(result['removed_nodes']) == 18, 'Should have found 18 nodes removed.'
 
+
     print("result['path_sectionalizations']: ", result['path_sectionalizations'])
     print("result['path_sectionalizations'].keys(): ", result['path_sectionalizations'].keys())
     print("Number lines sectionalized (graph sectionalizes):", len(result['path_sectionalizations']))
     assert len(result['path_sectionalizations']) == 1, 'One sectionalize should be found.'
-
+    
     # Check that sectionalize of ((bus, 3008), (bus, 3009)) from Model_1 was sectionalized.
     assert len([_[0] for _ in result['path_sectionalizations'].values if ('bus', 3008) in _[0]]) > 0
 
@@ -227,11 +226,11 @@ def test_large_model_performance(raw_models):
 
 def test_filter_by_area(raw_models):
     """Test filter_by_area method with various inputs."""
-    model1, _ = raw_models
-    comparison = ModelComparison(model1, model1)
+    model1, model2 = raw_models
+    comparison = ModelComparison(model1, model2)
 
     # Test with default areas
-    filtered_model = comparison.model1.filter_by_area()
+    filtered_model = comparison.model1.filter_by_area(areas=INCLUDE_AREAS)
     assert set(filtered_model.network.bus['area']) == set(INCLUDE_AREAS.keys())
 
     # Test with custom areas
@@ -278,8 +277,7 @@ def test_query_network_df_comparison_with_filters(model_comparison):
 
     # Check if filters are applied correctly
     if 'pg' in filtered_dfs['generator'].columns:
-        assert (filtered_dfs['generator']['pg'] > float(
-            NETWORK_DF_COMPARISON_QUERIES['generator'].sectionalize('>')[1])).all()
+        assert (filtered_dfs['generator']['pg'] > float(NETWORK_DF_COMPARISON_QUERIES['generator'].sectionalize('>')[1])).all()
     if 'pl' in filtered_dfs['load'].columns:
         assert (filtered_dfs['load']['pl'] > float(NETWORK_DF_COMPARISON_QUERIES['load'].sectionalize('>')[1])).all()
 

@@ -2,6 +2,7 @@
 The purpose of this module is to convert to parse a raw file into a dict similar
 to the dict created when reading from a rawx file, then create a compatible model.
 """
+import argparse
 import re
 import io
 import json
@@ -15,7 +16,8 @@ import numpy as np
 import pandas as pd
 import json
 
-SECTION_MAP_CSV = Path(__file__).parent / r"dataformat/raw_rawx_section_map.csv"
+from psse_model_util.common.dirs import site_temp_dir
+
 RAW_RAWX_MAP_CSV = Path(__file__).parent / r"dataformat/rawx_raw_map.csv"
 _PATTERNS = {'column_names': r'^(?!@!\s*IC|^@!\s*IC\s).*@!(?!.*BEGIN\s+SUBSTATION).*,.+$',
              # Column name lines except for case identification lines.
@@ -51,8 +53,58 @@ MULTI_ROW_RECORDS = {'TRANSFORMER DATA': 5, 'TWO-TERMINAL DC DATA': 3,
                      'VSC DC LINE DATA': 2, 'MULTI-TERMINAL DC DATA': 4,
                      'GNE DATA': 5}
 
-section_map_df: pd.DataFrame = pd.DataFrame()
+_section_map_df: pd.DataFrame = pd.DataFrame()
 raw_rawx_columns: pd.DataFrame = pd.DataFrame()
+
+
+def _get_section_map(filepath: Path = RAW_RAWX_MAP_CSV) -> pd.DataFrame:
+    """Creates section map from raw_rawx_map.csv
+
+    Reads CSV file containing section mapping data, removes duplicates,
+    and performs data cleaning operations. The result is cached globally
+    to avoid repeated file operations.
+
+    Args:
+        filepath (Path, optional): Path to the CSV file containing raw section
+            mapping data. Defaults to RAW_RAWX_MAP_CSV.
+
+    Returns:
+        pd.DataFrame: A cleaned DataFrame containing three columns:
+            - section_raw: Raw section identifiers
+            - subsection_raw: Raw subsection identifiers (may contain NaN)
+            - section_rawx: Processed section identifiers
+
+    Note:
+        This function uses a global cache (_section_map_df) to store results.
+        Subsequent calls will return the cached DataFrame without re-reading
+        the file.
+
+        The function performs the following cleaning operations:
+        - Removes duplicate rows based on section_raw_34, subsection_raw_34,
+          and section_rawx columns
+        - Renames columns from *_34 format to standard names
+        - Drops rows where both section_raw and subsection_raw are NaN
+        - Sets subsection_raw to NaN when it equals section_raw
+    """
+    global _section_map_df
+
+    if not _section_map_df.empty:
+        return _section_map_df
+
+    df = pd.read_csv(filepath)
+    df_dropped_dup = df.drop_duplicates(subset=['section_raw_34', 'subsection_raw_34', 'section_rawx'])
+
+    df_dropped_dup = df_dropped_dup.rename(
+        columns={'section_raw_34': 'section_raw',
+                 'subsection_raw_34': 'subsection_raw'}
+    ).reset_index(drop=True)
+
+    _section_map_df = df_dropped_dup[['section_raw', 'subsection_raw', 'section_rawx']]
+
+    _section_map_df = _section_map_df.dropna(subset=_section_map_df.columns[:2], how='any')
+    _section_map_df.loc[_section_map_df['subsection_raw'] == _section_map_df['section_raw'], 'subsection_raw'] = np.nan
+
+    return _section_map_df
 
 
 def raw_file_to_rawx_dict(raw_filepath: str | Path,
@@ -60,7 +112,10 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
     """Reads a raw file and converts the content to a rawx json format.
 
     Args:
-        raw_filepath (str): path of the file
+        raw_filepath (str | Path): path of the file
+        return_dataframes (bool, optional): If True, section data will be
+            returned as pandas DataFrames. Otherwise, data will be returned
+            as a dictionary with 'fields' and 'data' keys. Defaults to False.
 
     Returns:
         dict: corresponding the json rawx file format.
@@ -208,6 +263,14 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
 
 
 def _read_caseid(caseid_line: str):
+    """Parses the case identification line from a raw file.
+
+    Args:
+        caseid_line (str): The second line of the raw file containing case ID information.
+
+    Returns:
+        dict: A dictionary containing 'fields' (list of column names) and 'data' (list of parsed values).
+    """
     caseid_cols = 'ic', 'sbase', 'rev', 'xfrrat', 'nxfrat', 'basfrq', 'title1', 'title2'
     data = caseid_line.split('/ PSS(R)E-', 1)[0].strip()
     data = [_.strip() for _ in data.split(',')]
@@ -221,6 +284,20 @@ def _read_caseid(caseid_line: str):
 
 
 def _read_syswide(lines):
+    """Reads and parses system-wide data from a list of lines.
+
+    This function extracts general network information, such as solver settings,
+    ratings, and other system-wide parameters.
+
+    Args:
+        lines (list): A list of strings, where each string is a line from the raw file
+                      containing system-wide data.
+
+    Returns:
+        dict: A dictionary where keys are rawx section names (e.g., 'general', 'solver', 'rating')
+              and values are dictionaries containing 'fields' and 'data' for each section.
+              The 'rating' section data is structured as a list of lists.
+    """
     def read_network_general_info_line(line: str):
         # Get the case into line type
         sub_section_name = line.split(',', 1)[0].strip()
@@ -267,21 +344,21 @@ def _read_syswide(lines):
 
 def _raw_to_rawx_section_name(section_raw: str,
                               subsection_raw: str | None = None,
-                              section_map_csv: Path = SECTION_MAP_CSV):
+                              raw_rawx_map_csv: Path = RAW_RAWX_MAP_CSV):
     """Get the RAWX section name that corresponds to a specific section
     and subsection of a RAW file. subsection_raw can be None.
-    :param section_raw: section name from RAW file, like 'SUBSTATION'
-    :param subsection_raw: section name from RAW file, like 'SUBSTATION NODE DATA'
-    :param section_map_csv: optional Path to the file containing the mapping data.
-    :return: RAWX section name or None (if not found).
+
+    Args:
+        section_raw (str): section name from RAW file, like 'SUBSTATION'
+        subsection_raw (str | None, optional): section name from RAW file,
+            like 'SUBSTATION NODE DATA'. Defaults to None.
+        raw_rawx_map_csv (Path, optional): Path to the file containing the mapping data.
+            Defaults to RAW_RAWX_MAP_CSV.
+
+    Returns:
+        str: RAWX section name or None (if not found).
     """
-
-    def read_section_map(filepath: Path = SECTION_MAP_CSV) -> Tuple:
-        return pd.read_csv(filepath)
-
-    global section_map_df
-    if section_map_csv and section_map_df.empty:
-        section_map_df = read_section_map(Path(section_map_csv))
+    section_map_df = _get_section_map(raw_rawx_map_csv)
 
     section_raw = section_raw.upper() if section_raw else None
     subsection_raw = subsection_raw.upper() if subsection_raw else np.nan
@@ -297,6 +374,21 @@ def _raw_to_rawx_section_name(section_raw: str,
 
 def _get_raw_rawx_columns(filepath: Path | str = RAW_RAWX_MAP_CSV,
                           version=34) -> pd.DataFrame:
+    """Loads and preprocesses the raw to rawx column mapping DataFrame.
+
+    This function reads a CSV file containing mappings between raw file column
+    names and rawx column names, filters by PSS/E version, renames columns,
+    and sorts the data. The result is cached globally for efficiency.
+
+    Args:
+        filepath (Path | str, optional): Path to the CSV file containing the
+            raw to rawx column mapping data. Defaults to RAW_RAWX_MAP_CSV.
+        version (int, optional): The PSS/E version number (e.g., 34, 35) to
+            filter the columns. Defaults to 34. Code does not support earlier versions.
+
+    Returns:
+        pd.DataFrame: A preprocessed DataFrame containing the raw to rawx column mappings.
+    """
     global raw_rawx_columns
     if isinstance(raw_rawx_columns, pd.DataFrame) and not raw_rawx_columns.empty:
         return raw_rawx_columns
@@ -329,17 +421,18 @@ def _get_raw_rawx_columns(filepath: Path | str = RAW_RAWX_MAP_CSV,
 def _get_column_names(subsection_raw_value: str,
                       raw_rawx_columns_df: pd.DataFrame) \
         -> Tuple[List, List[str]]:
-    """
-    Return an ordered list of tuples (field_raw, field_rawx) for a specific subsection_raw value,
+    """Return an ordered list of tuples (field_raw, field_rawx) for a specific subsection_raw value,
     ordered by field_idx_raw.
 
-    :param subsection_raw_value: The value of subsection_raw to filter by.
-    :param raw_rawx_columns_df: The DataFrame to search in.
-    :return: Tuple of:
-                1) List of ordered tuples (field_raw, field_rawx).
-                2) List of raw column names.  If raw file contains multiple
-                   rows per record, then List of list of raw column names.
-                3) List of rawx column names (same as the 2nd tupe item in item 1)
+    Args:
+        subsection_raw_value (str): The value of subsection_raw to filter by.
+        raw_rawx_columns_df (pd.DataFrame): The DataFrame to search in.
+
+    Returns:
+        Tuple[List, List[str]]: A tuple containing:
+            1. List of ordered tuples (field_raw, field_rawx).
+            2. List of raw column names. If raw file contains multiple
+               rows per record, then List of list of raw column names.
     """
     # Ensure that the DataFrame contains the necessary columns
     if 'subsection_raw' not in raw_rawx_columns_df.columns or \
@@ -382,10 +475,13 @@ def split_csv_line(line: str, strip_chars: str = '\n\'" ') -> List[str]:
     quoted string literals (both single and double quotes). Optionally
     strip leading and trailing whitespace from each parsed value.
 
-    :param line: A line of CSV data.
-    :param strip_chars: Leading and trailing characters to strip from each
-                        parsed value.
-    :return: List of parsed values.
+    Args:
+        line (str): A line of CSV data.
+        strip_chars (str, optional): Leading and trailing characters to strip from each
+            parsed value. Defaults to '\n\'" '.
+
+    Returns:
+        List[str]: List of parsed values.
     """
     # Remove trailing carriage return
     line = line.rstrip('\r')
@@ -407,12 +503,12 @@ def save_rawx_dict_to_json(rawx_dict, output_file, compact=False):
     Save the results of raw_file_to_rawx_dict to a JSON file.
 
     Args:
-    rawx_dict (dict): The dictionary returned by raw_file_to_rawx_dict
-    output_file (str): The path to the output JSON file
-    compact (bool): If True, produces more compact JSON output. Default is True.
+        rawx_dict (dict): The dictionary returned by raw_file_to_rawx_dict
+        output_file (str): The path to the output JSON file
+        compact (bool): If True, produces more compact JSON output. Default is True.
 
     Returns:
-    None
+        None
     """
     try:
         with open(output_file, 'w') as f:
@@ -427,31 +523,61 @@ def save_rawx_dict_to_json(rawx_dict, output_file, compact=False):
         print(f"Error encoding dictionary to JSON: {e}")
 
 
-if __name__ == "__main__":
-    from pathlib import Path
-    from psse_model_util.common.dirs import site_temp_dir
-
-    # fp = Path(__file__).absolute().parent.parent.parent / 'tests/data/sample_34.raw'
-    # fp.parent.mkdir(parents=True, exist_ok=True)
-    # result = raw_file_to_rawx_dict(fp)
-    # print('\n\nresult')
-    # print(result)
-    # json_temp_file = site_temp_dir / f'{fp.stem}.json'
-    # json_temp_file.parent.mkdir(parents=True, exist_ok=True)
-    # save_rawx_dict_to_json(rawx_dict=result, output_file=json_temp_file, compact=True)
-    # print(json_temp_file)
-    #
-    # fp = Path(__file__).absolute().parent.parent.parent / 'tests/data/sample_v35.raw'
-    # result = raw_file_to_rawx_dict(fp)
-    # print('\n\nresult')
-    # print(result)
-    # json_temp_file = site_temp_dir / f'{fp.stem}.json'
-    # save_rawx_dict_to_json(rawx_dict=result, output_file=json_temp_file, compact=False)
-
-    fp = Path(__file__).absolute().parent.parent.parent / 'tests/data/sample_v35.rawx'
-    result = raw_file_to_rawx_dict(fp)
+def main(sample_raw34_path: Path | str,
+         sample_raw35_path: Path | str,
+         save_json: bool = True):
+    """
+    Main function to convert both PSS/E v34 and v35 RAW files to RAWX
+    
+    Args:
+        sample_raw34_path (Path | str): Path to the sample v34 RAW file
+        sample_raw35_path (Path | str): Path to the sample v35 RAW file
+        save_json (bool): If True, saves RAWX dictionary to a JSON file
+        
+    Returns:
+        None
+        
+    Example:
+        >>> main("path/to/sample_34.raw", "path/to/sample_35.raw")
+    """
+    
+    raw34_path, raw35_path = Path(sample_raw34_path), Path(sample_raw35_path)
+    
+    result_34, result_35 = raw_file_to_rawx_dict(sample_raw34_path), raw_file_to_rawx_dict(sample_raw35_path)
+    
     print('\n\nresult')
-    print(result)
-    json_temp_file = site_temp_dir / f'{fp.stem}.json'
-    save_rawx_dict_to_json(rawx_dict=result, output_file=json_temp_file, compact=False)
+    print(result_34)
+    
+    json_temp_file = site_temp_dir / f'{raw34_path.stem}.json'
+    json_temp_file.parent.mkdir(parents=True, exist_ok=True)
+    if save_json: save_rawx_dict_to_json(rawx_dict=result_34, output_file=json_temp_file, compact=True)
+
     print(json_temp_file)
+    
+    print('\n\nresult')
+    print(result_35)
+    
+    json_temp_file = site_temp_dir / f'{raw35_path.stem}.json'
+    if save_json: save_rawx_dict_to_json(rawx_dict=result_35, output_file=json_temp_file, compact=False)
+    print(json_temp_file)
+    
+          
+
+if __name__ == "__main__":
+    
+    parser = argparse.ArgumentParser(description='Convert PSS/E v34 or v35 RAW files to RAWX', add_help=True)
+    parser.add_argument('-v34', '--raw34_path', type=str, help='Path to the v34 RAW file')
+    parser.add_argument('-v35', '--raw35_path', type=str, help='Path to the v35 RAW file')
+    parser.add_argument('-s', '--save_json', action='store_true', help='Save RAWX dictionary as a JSON file locally')
+    
+    args = parser.parse_args()
+
+    # If raw34_path or raw35_poth not provided, prompt user to enter paths.
+    if args.raw34_path == None:
+        args.raw34_path = input('Enter the path to the sample v34 RAW file: ').strip()
+    if args.raw35_path == None:
+        args.raw35_path = input('Enter the path to the sample v35 RAW file: ').strip()
+        
+    main(sample_raw34_path=args.raw34_path,
+         sample_raw35_path=args.raw35_path,
+         save_json=args.save_json)

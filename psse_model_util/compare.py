@@ -54,22 +54,32 @@ from psse_model_util.common.file_util import to_pickle
 from psse_model_util.common.dirs import site_cache_dir, site_data_dir
 
 # Define named tuples for storing comparison results
-FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
-PathComparison = namedtuple('PathComparison', ['path_sectionalizations', 'path_bypasses',
-                                               'added_edges', 'removed_edges',
-                                               'added_nodes', 'removed_nodes'])
-GraphComparison = namedtuple('GraphComparison', ['path_sectionalizations', 'path_bypasses',
-                                                 'added_edges', 'removed_edges',
-                                                 'added_nodes', 'removed_nodes'])
-ComparisonDF = namedtuple('ComparisonDF', ['changed', 'added', 'removed'])
-EdgePathInfo = namedtuple('EdgePathInfo', ['section', 'branch', 'edge_name', 'valid_paths'])
-EdgeInfo = namedtuple('EdgeInfo', ['from_bus', 'to_bus', 'equip', 'edge_type', 'edge_name'])
+FpPickleType = namedtuple('FpPickleType',
+                          ['file_path', 'object'])
+PathComparison = namedtuple('PathComparison',
+                            ['path_sectionalizations', 'path_bypasses', 'added_edges',
+                             'removed_edges', 'added_nodes', 'removed_nodes'])
+ComparisonDF = namedtuple('ComparisonDF',
+                          ['changed', 'added', 'removed'])
+EdgePathInfo = namedtuple('EdgePathInfo',
+                          ['section', 'branch', 'edge_name', 'valid_paths'])
+EdgeInfo = namedtuple('EdgeInfo',
+                      ['from_bus', 'to_bus', 'equip', 'edge_type', 'edge_name'])
+
+# Bus splits/sectionalizations and merges/bypasses
+# ModelComparison.compare_graph._find_alt_paths()
+#   Sectionalize: branch split, like A-C becomes A-B-C.
+#   Bypass: branch merged, like A-B-C becomes A-C.
+GraphComparison = namedtuple('GraphComparison',
+                             ['path_sectionalizations', 'path_bypasses', 'added_edges',
+                              'removed_edges', 'added_nodes', 'removed_nodes'])
 
 COMMAND_LINE_HELP_TEXT = """
 PSSE Model Comparison Tool
 --------------------------
 
-This tool compares two PSSE RAW or RAWX models and provides detailed analysis of their differences.
+This tool compares two PSSE RAW or RAWX models and provides detailed analysis of 
+their differences.
 
 Usage:
     python compare.py <raw1_path> <raw2_path> [options]
@@ -84,13 +94,15 @@ Options:
                                 : Format to export results (default: csv)
     -b, --add_bus_info_to_branches
                                 : Add bus information to branch DataFrames
-    -a, --areas AREAS           : Comma-separated list of area numbers to include (e.g., "101,102,103")
+    -a, --areas AREAS           : Comma-separated list of area numbers to 
+                                  include (e.g., "101,102,103")
 
 Example:
     python compare.py path/to/model1.rawx path/to/model2.rawx -f -e csv -b -a 101,102,103
 
-This example compares model1.rawx and model2.rawx, forces recalculation, exports results to CSV,
-adds bus information to branches, and includes only areas 101, 102, and 103 in the comparison.
+This example compares model1.rawx and model2.rawx, forces recalculation, exports 
+results to CSV, adds bus information to branches, and includes only areas 101, 
+102, and 103 in the comparison.
 """
 
 
@@ -264,7 +276,8 @@ class ModelComparison:
 
     def compare_network_dfs(self) -> Dict[str, pd.DataFrame]:
         """
-        Compare network dataframes between the two models.
+        Create column-by-column comparison of network dataframes between the two
+        models.  Saves results to self.network_df_comparison.
 
         This method compares corresponding dataframes from both models,
         identifying changes, additions, and removals.
@@ -298,8 +311,10 @@ class ModelComparison:
                 return (series1 != series2).astype(bool)
 
         result: Dict[str, pd.DataFrame] = {}
-        df1_names = [_ for _ in dir(self.model1.network) if isinstance(getattr(self.model1.network, _), pd.DataFrame)]
-        df2_names = [_ for _ in dir(self.model2.network) if isinstance(getattr(self.model2.network, _), pd.DataFrame)]
+        df1_names = [_ for _ in dir(self.model1.network)
+                     if isinstance(getattr(self.model1.network, _), pd.DataFrame)]
+        df2_names = [_ for _ in dir(self.model2.network)
+                     if isinstance(getattr(self.model2.network, _), pd.DataFrame)]
 
         removed_dfs = set(df1_names) - set(df2_names)
         if removed_dfs:
@@ -313,8 +328,8 @@ class ModelComparison:
             df1 = getattr(self.model1.network, df_name)
             df2 = getattr(self.model2.network, df_name)
             try:
-                bypassd_df = pd.merge(df1, df2, how='outer', left_index=True, right_index=True,
-                                      suffixes=('_model1', '_model2'))
+                bypassd_df = pd.merge(df1, df2, how='outer', left_index=True,
+                                      right_index=True, suffixes=('_model1', '_model2'))
             except Exception as e:
                 print(f'Could not bypass dataframes: {df_name}. Exception: {str(e)}')
                 print(f'Model 1 columns:', df1.columns)
@@ -329,7 +344,8 @@ class ModelComparison:
                 col1, col2 = f'{column}_model1', f'{column}_model2'
                 if col1 in bypassd_df.columns and col2 in bypassd_df.columns:
                     try:
-                        new_columns[f'{column}_delta'] = _column_delta(bypassd_df[col1], bypassd_df[col2])
+                        new_columns[f'{column}_delta'] = _column_delta(bypassd_df[col1],
+                                                                       bypassd_df[col2])
                     except ValueError as e:
                         print(f'Dataframe "{df_name}" comparison error. {str(e)}')
                         raise e
@@ -353,7 +369,8 @@ class ModelComparison:
                 new_columns_df = pd.DataFrame(new_columns, index=bypassd_df.index)
                 bypassd_df = pd.concat([bypassd_df, new_columns_df], axis=1)
             except ValueError as e:
-                print(f"Error adding new columns to bypassed DataFrame for {df_name}. Exception: {str(e)}.")
+                print(
+                    f"Error adding new columns to bypassed DataFrame for {df_name}. Exception: {str(e)}.")
 
                 # Attempt to add columns individually
                 for col, values in new_columns.items():
@@ -370,7 +387,8 @@ class ModelComparison:
         self.network_df_comparison = result
         return self.network_df_comparison
 
-    def compare_graph(self, max_path_length: int = None, sort: bool = True, regenerate=False) -> dict:
+    def compare_graph(self, max_path_length: int = None, sort: bool = True,
+                      regenerate=False) -> dict:
         """
         Compare graph structures between the two models.
 
@@ -431,7 +449,8 @@ class ModelComparison:
                 section = edge['section'] if 'section' in edge else ''
 
                 paths = nx.all_simple_paths(g2, node_a, node_b, cutoff=max_path_length)
-                valid_paths = [path for path in paths if all(node not in g1.nodes for node in path[1:-1])]
+                valid_paths = [path for path in paths if
+                               all(node not in g1.nodes for node in path[1:-1])]
 
                 if valid_paths:
                     if sort:
@@ -728,8 +747,10 @@ class ModelComparison:
         load_df = self.network_df_comparison['load']
 
         # Extract 'ibus' from multi-index
-        gen_buses = gen_df.index.get_level_values('ibus') if 'ibus' in gen_df.index.names else pd.Series()
-        load_buses = load_df.index.get_level_values('ibus') if 'ibus' in load_df.index.names else pd.Series()
+        gen_buses = gen_df.index.get_level_values(
+            'ibus') if 'ibus' in gen_df.index.names else pd.Series()
+        load_buses = load_df.index.get_level_values(
+            'ibus') if 'ibus' in load_df.index.names else pd.Series()
 
         # Combine generator and load buses
         all_buses = set(gen_buses) | set(load_buses)
@@ -744,26 +765,63 @@ class ModelComparison:
         return bus_df[mask].index.tolist()
 
     def query_network_df_comparison(self, inplace: bool = True,
-                                    queries: dict = NETWORK_DF_COMPARISON_QUERIES) -> Dict[str, pd.DataFrame]:
-        """
-        Filter and return network dataframes based on voltage criteria.
+                                    queries: dict = NETWORK_DF_COMPARISON_QUERIES
+                                    ) -> Dict[str, pd.DataFrame]:
+        """Filter and return network dataframes using voltage criteria and
+        custom queries.
+
+        You may want to filter in place to only records we care about for INCH
+        or IDEV file creation.  INCH/IDEV functionality is not yet finished.
+
+
+        This method performs two-step filtering:
+        1. Automatically filters buses by voltage criteria using bus_kv_filter()
+        2. Filters equipment based on connections to voltage-filtered buses
+        3. Applies additional custom queries from the queries parameter
 
         Args:
-            inplace (bool): If True, update the network_df_comparison with the filtered dataframes. Defaults to True.
+            inplace (bool): If True, update the network_df_comparison with the
+                filtered dataframes. Defaults to True.
+            queries (dict): Dictionary mapping dataframe names to pandas query
+                strings for additional filtering. Defaults to NETWORK_DF_COMPARISON_QUERIES.
 
         Returns:
             Dict[str, pd.DataFrame]: Dictionary of filtered dataframes.
 
         Example:
-            >>> model_comp = ModelComparison(model1, model2)
-            >>> filtered_dfs = model_comp.query_network_df_comparison()
-            >>> print(filtered_dfs.keys())
-            dict_keys(['bus', 'generator', 'load', 'branch'])
+            ```
+            modelcomp = ModelComparison(model1, model2)
+
+            # Use default queries
+            filtered_dfs = modelcomp.query_network_df_comparison()
+
+            # Use custom queries
+            custom_queries = {
+                'bus': 'baskv >= 345',
+                'generator': 'pg > 100',
+                'load': 'pl > 50'
+            }
+            filtered_dfs = modelcomp.query_network_df_comparison(
+                queries=custom_queries
+            )
+            print(filtered_dfs.keys())  # dict_keys(['bus', 'generator', 'load', 'acline', 'transformer'])
+            ```
+
+        Notes:
+            - Voltage filtering is always applied first using bus_kv_filter()
+            - Custom queries are applied after voltage filtering
+            - Equipment dataframes are filtered based on bus connectivity
+            - Failed queries generate warnings but don't stop execution
         """
-        # network_df_comparison
+        # Get a list of bus IDs where bus voltage (baskv) is between
+        # DEFAULT_KV_FILTER.min & DEFAULT_KV_FILTER.max)
         filtered_bus_ids = self.bus_kv_filter()
 
-        dfs_to_filter = {k: self.network_df_comparison[k] for k in NETWORK_DF_COMPARISON_QUERIES.keys()}
+        # Get dict of network dataframes that we want to filter (from
+        # NETWORK_DF_COMPARISON_QUERIES.keys, i.e. bus, generator, load, branch
+        # and transformer)
+        dfs_to_filter = {k: self.network_df_comparison[k] for k in
+                         NETWORK_DF_COMPARISON_QUERIES.keys()}
         # dfs_to_filter = {
         #     'bus': self.network_df_comparison['bus'],
         #     'generator': self.network_df_comparison['generator'],
@@ -813,7 +871,8 @@ def main(raw1_path: Path | str,
     Main function to compare two PSSE RAW or RAWX models.
 
     This function loads two models, filters them by area, optionally adds bus information
-    to branches, performs a comparison, and exports the results.
+    to branches, performs a comparison, and exports the results.  Exports results to
+    pickle file (as cached python object) and to disk in a text format (export_format).
 
     Args:
         raw1_path (Path | str): Path to the first RAW or RAWX file.
@@ -874,16 +933,16 @@ def main(raw1_path: Path | str,
     if force_recalculation or not comparison.network_df_comparison or not comparison.graph_comparison:
         # Run the comparison of the Model.network pandas dataframes.
         print('Comparing network dataframes...')
-        comparison.compare_network_dfs()
+        comparison.compare_network_dfs()  # sets comparison.network_df_comparison
 
         # Run the comparison of the Model.network.graph edges and
         # nodes (built from the dataframes)
         print('Comparing graphs...')
-        comparison.compare_graph()
+        comparison.compare_graph()  # sets comparison.graph_comparison
 
         # Cache the updated ModelComparison object to a pickle file (.modcomp)
         print(f'Saving model comparison to {comparison.pickle_path}...')
-        comparison.to_pickle()
+        comparison.to_pickle()  # cache comparison results to disk.
 
     if export_format == 'csv':
         # Export comparison results to CSV
@@ -902,17 +961,17 @@ def main(raw1_path: Path | str,
 if __name__ == '__main__':
     """
     Run "python compare.py -h" for help.
-
+    
     For sample use inside of an IDE, run "tests/example_compare.py"
     """
-    # if len(sys.argv) > 1 and sys.argv[1] in ['-h', '--help', '?']:
-    #     print_comand_line_help()
-    #     sys.exit(0)
 
-    parser = argparse.ArgumentParser(description='Compare two PSSE RAW or RAWX models.', add_help=False)
+    parser = argparse.ArgumentParser(description='Compare two PSSE RAW or RAWX models.',
+                                     add_help=False)
     # make p1 optional
-    parser.add_argument('-p1', '--raw1_path', type=str, default='', help='Path to the first RAW or RAWX file')
-    parser.add_argument('-p2', '--raw2_path', type=str, help='Path to the second RAW or RAWX file', default='')
+    parser.add_argument('-p1', '--raw1_path', type=str, default='',
+                        help='Path to the first RAW or RAWX file')
+    parser.add_argument('-p2', '--raw2_path', type=str, help='Path to the second RAW or RAWX file',
+                        default='')
     parser.add_argument('-f', '--force_recalculation', action='store_true',
                         help='Force recalculation even if cached results exist')
     parser.add_argument('-e', '--export_format', type=str, choices=['csv', 'none'], default='csv',

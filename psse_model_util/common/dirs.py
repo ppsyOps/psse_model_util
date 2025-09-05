@@ -26,7 +26,11 @@ def delete_all_items_in_directory(directory: str):
     """
     Delete all items (files and directories) in the specified directory.
 
-    :param directory: The path to the directory to clear.
+    Parameters:
+        directory (str): The path to the directory to clear.
+
+    Raises:
+        ValueError: If the path is not a directory.
     """
     # Define the target directory using pathlib
     target_dir = Path(directory)
@@ -39,21 +43,39 @@ def delete_all_items_in_directory(directory: str):
 
     # Iterate through each item in the directory
     for item in target_dir.iterdir():
-        if item.is_dir():
-            # Remove the directory and its contents
-            shutil.rmtree(item)
-        else:
-            # Remove the file
-            item.unlink()
+        try:
+            if item.is_dir():
+                shutil.rmtree(item)
+            else:
+                item.unlink()
+        except Exception as e:
+            print(f"Warning: Could not delete '{item}': {e}")
 
 
 def clear_user_cache():
-    """Delete all files from the user_cache_dir directory."""
+    """
+    Delete all files from the user cache directory.
+
+    The user cache is located at a system-appropriate location based on the
+    current user profile, typically something like:
+        - Windows: C:\\Users\\<username>\\AppData\\Local\\psse_model_util\\cache
+        - Linux/macOS: ~/.local/share/psse_model_util/cache
+
+    This directory is used for storing user-specific temporary or cache files
+    that should persist across sessions but are safe to delete.
+    """
     delete_all_items_in_directory(user_cache_dir)
 
 
 def clear_site_cache():
-    """Delete all files from the site_cache_dir directory."""
+    """
+    Delete all files from the site cache directory.
+
+    The site cache is located in the main project directory and shared across
+    all users running this utility from a common installation base. It is used
+    for storing shared temporary files (e.g., model parsing artifacts or logs)
+    that can be safely cleared to reset application state.
+    """
     delete_all_items_in_directory(site_cache_dir)
 
 
@@ -63,20 +85,34 @@ def clear_cache():
     clear_site_cache()
 
 
-if __name__ == '__main__':
-    paths = {'project_dir:': project_dir,
-             'code_dir': code_dir,
-             'site_log_dir': site_log_dir,
-             'site_cache_dir': site_cache_dir,
-             'site_config_dir': site_config_dir,
-             'site_data_dir': site_data_dir,
-             'site_temp_dir': site_temp_dir,
-             'user_log_dir': user_log_dir,
-             'user_config_dir': user_config_dir,
-             'user_state_dir': user_state_dir,
-             'user_cache_dir': user_cache_dir,
-             'user_data_dir': user_data_dir,
-             }
+def get_app_dirs():
+    """
+    Returns application directories
+    """
+    return {
+        "project_dir": project_dir,
+        "code_dir": code_dir,
+        "site_log_dir": site_log_dir,
+        "site_cache_dir": site_cache_dir,
+        "site_config_dir": site_config_dir,
+        "site_data_dir": site_data_dir,
+        "site_temp_dir": site_temp_dir,
+        "user_log_dir": user_log_dir,
+        "user_config_dir": user_config_dir,
+        "user_state_dir": user_state_dir,
+        "user_cache_dir": user_cache_dir,
+        "user_data_dir": user_data_dir,
+    }
 
-    for name, path in paths.items():
+
+def copy_doc(from_func):
+    """Decorator to copy the docstring from another function or method."""
+    def decorator(func):
+        func.__doc__ = from_func.__doc__
+        return func
+    return decorator
+
+
+if __name__ == '__main__':
+    for name, path in get_app_dirs().items():
         print(f'dirs.{name}: {path}')

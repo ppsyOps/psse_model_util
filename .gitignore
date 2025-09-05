@@ -10,14 +10,17 @@ __pycache__/
 *.path_comp
 *.pickle
 *.xlsx
-.idea/*
 /psse_model_util/*example*
 /psse_model_util/old/
 /psse_model_util/dataformat.txt
 /psse_model_util/psse-model_meta_modified.txt
 *deleteme*
-# Ignore all files in any directory starting with IDC and containing .raw
-IDC*.*
-MMWG*.*
-/data/IDC*
-/data/MMWG*
+/data/
+/Temp/
+/docs/DataFormat_34.pdf
+/docs/DataFormat_comparison_v34_v35.pdf
+/docs/DataFormats_v35.pdf
+/docs/PYTSD-65 Fitler ModelComparison.network_df_comparison for use in INCH and IDEV file creation.docx
+/dist/
+/build/
+/notebooks/

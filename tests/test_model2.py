@@ -12,7 +12,14 @@ import networkx as nx
 
 from psse_model_util.common.dirs import clear_site_cache, clear_cache, site_temp_dir
 from psse_model_util.model import Model
-from psse_model_util.common.constants import INCLUDE_AREAS, NATIVE_AREAS, NEIGHBOR_AREAS
+# from psse_model_util.common.constants import INCLUDE_AREAS, NATIVE_AREAS, NEIGHBOR_AREAS
+
+
+# Dictionary of native PJM areas with their area numbers as keys and names as values
+NATIVE_AREAS = {1: 'CENTRAL', 2: 'EAST', 3: 'CENTRAL_DC'}
+
+# Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
+NEIGHBOR_AREAS = {4: 'EAST_COGEN1', 5: 'WEST', 6: 'EAST_COGEN2'}
 
 
 # Setup fixtures
@@ -191,3 +198,4 @@ def test_graph_edge_cases(base_model):
             ('bus', 153),
             cutoff=7
         ))
+

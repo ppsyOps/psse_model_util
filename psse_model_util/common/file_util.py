@@ -7,9 +7,10 @@ from pathlib import Path
 import time
 import warnings
 import pickle
+from typing import List
 
 from psse_model_util.common.constants import DOWNLOAD_WAIT_SECONDS, RESILIENT
-from psse_model_util.common.dirs import site_temp_dir
+from psse_model_util.common.dirs import site_temp_dir, site_data_dir
 
 import pandas as pd
 
@@ -206,25 +207,6 @@ def write_bytesio_to_disk(bytes_io, file_path: Path, overwrite: bool = True):
         warnings.warn(f"Error: {e}")
 
 
-def is_file_locked(filepath):
-    """
-    Check if the file at 'filepath' is locked or not.
-    The approach is to try opening the file in append mode.
-    If the file is locked, it should raise an exception.
-    """
-    try:
-        # Try to open the file in exclusive mode
-        with open(filepath, 'r+b') as f:
-            try:
-                msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
-                msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
-            except OSError:
-                return True  # File is locked
-    except PermissionError:
-        return True  # File is locked
-    return False  # File is not locked
-
-
 def to_pickle(pickle_path: Path | str, data, resilient: bool = RESILIENT) -> bool:
     try:
         with open(pickle_path, 'wb') as file:
@@ -258,4 +240,28 @@ def read_pickle(pickle_path: Path | str = None,
             raise e
 
     return obj
-    
+
+
+def get_available_model_files(directory: Path = site_data_dir) -> List[Path]:
+    """
+    Return all available .raw and .rawx model files in the specified directory.
+
+    This function searches for files with `.rawx` and `.raw` extensions,
+    sorted alphabetically, and returns their full paths.
+
+    Parameters:
+        directory (Path): Directory to search for model files.
+                          Defaults to the shared `site_data_dir`.
+
+    Returns:
+        List[Path]: A list of full paths to all model files found.
+
+    Raises:
+        FileNotFoundError: If the provided directory does not exist.
+    """
+    if not directory.exists() or not directory.is_dir():
+        raise FileNotFoundError(f"Directory does not exist: {directory}")
+
+    rawx_files = sorted(directory.glob("*.rawx"))
+    raw_files = sorted(directory.glob("*.raw"))
+    return rawx_files + raw_files

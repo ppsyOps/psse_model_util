@@ -18,7 +18,7 @@ def basic_example(raw_path: str | Path = None):
     model = Model(file_path_or_json=raw_path,  # Path to the .raw or .rawx file
                   name='my_model',  # Give your model a convenient name.
                   force_recalculate=True)  # Do not use locally cached data.
-
+    return model
 
 def model_info_example(raw_path: str | Path = None):
     print('[[MODEL INFO EXAMPLE]]')
