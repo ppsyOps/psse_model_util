@@ -128,7 +128,7 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
     result: dict = {}  # rawx dict
     result['network'] = {}
 
-    def _get_line_type(line: str) -> str:
+    def _get_line_type(line: str) -> str | None:
         line = line.strip()
         # Find which of the regex patterns matches.  If no match found, return None.
         # Iterate through patterns and find matching pattern
@@ -159,7 +159,6 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
 
         raw_rawx_columns = _get_raw_rawx_columns(filepath=RAW_RAWX_MAP_CSV, version=version)
 
-
         result['general'] = {}
         result['general']['version'] = version
 
@@ -177,42 +176,62 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
         result['network'].update(syswide)
 
         # Read Network Data (after system-wide data)
-        for line_num, line in enumerate(f[end_syswide_line_num:]):
-            line_num = line_num + end_syswide_line_num
+        f_list = f[end_syswide_line_num:]  # Convert to list for easier indexing
+        line_num = end_syswide_line_num
+
+        while line_num < len(f):
+            line = f[line_num]
             line_type = _get_line_type(line)
+            print('line_num, line_type, line:', line_num, line_type, line)
             if line_type == 'section_divider':
                 # Process previous section.
                 if data and rawx_column_names and rawx_section not in ['impcor']:
-                    # TODO: Parse impedence correction data, impcor, which is excluded in the line above.
                     print('\nsection:', section, rawx_section)
                     print('rawx_column_names:', len(rawx_column_names), rawx_column_names)
-                    print('data[0]:', len(data[0]), data[0])
-                    if return_dataframes:
+                    if data:  # Only print if data is not empty
+                        print('data[0]:', len(data[0]) if data else 0, data[0] if data else 'No data')
+                    if return_dataframes and data:  # Only create DataFrame if there's data
                         result['network'][rawx_section] = pd.DataFrame(data=data, columns=rawx_column_names)
-                    else:
-                        result['network'][rawx_section] = {'fields': rawx_column_names,
-                                                           'data': data}
+                    elif data:  # Only add if there's data
+                        result['network'][rawx_section] = {'fields': rawx_column_names, 'data': data}
 
                 # Prepare for current section data.
                 section = line.split(', BEGIN')[-1].strip()
                 rawx_section = _raw_to_rawx_section_name(section, None)
                 data, record_data = [], []
-                # Some records are multi-ine in RAW files.  Track the current
-                # line of a given record.  Since, we are starting anew section,
-                # we have not started a record.
                 line_num_of_record, end_record_line_index = 0, 0
 
-                # Create a mapping of raw to rawx column names (in the expected RAW file column order)
-                raw_rawx_column_names, raw_column_names \
-                    = _get_column_names(subsection_raw_value=section, raw_rawx_columns_df=raw_rawx_columns)
-                rawx_column_names = [_[1] for _ in raw_rawx_column_names]
+                # Create a mapping of raw to rawx column names
+                if rawx_section and not rawx_section.startswith('substation'):  # Skip column mapping for substation section
+                    raw_rawx_column_names, raw_column_names = _get_column_names(
+                        subsection_raw_value=section,
+                        raw_rawx_columns_df=raw_rawx_columns
+                    )
+                    rawx_column_names = [_[1] for _ in raw_rawx_column_names]
             elif line_type == 'data':
-                # if rawx_section.startswith('gne') or rawx_section.startswith('substation'):
-                if rawx_section.startswith('substation') or rawx_section in ['impcor']:
-                    # TODO: Placeholder for Substation and Impedance correction data parsing.
-                    warnings.warn(f"SKIPPING '{section}' section.  Parsing of this section is not yet supported.")
-                    data = []
-                    continue
+                if rawx_section and rawx_section.startswith('substation'):
+                    # Parse substation section
+                    substation_data, end_line = _parse_substation_section(f, line_num)
+                    result['network']['substation'] = substation_data
+                    # Skip to the end of the substation section
+                    line_num = end_line
+                elif rawx_section == 'impcor':
+                    # Parse impedance correction data
+                    line_data = split_csv_line(line)
+                    if len(line_data) >= 4:  # Ensure we have all required fields
+                        # Format: I, Ti, Re, Im
+                        impcor_data = {
+                            'itable': int(float(line_data[0])),  # Table number
+                            'tap': float(line_data[1]),  # Tap value or angle
+                            'refact': float(line_data[2]),  # Real part of correction factor
+                            'imfact': float(line_data[3])  # Imaginary part of correction factor
+                        }
+                        data.append([
+                            impcor_data['itable'],
+                            impcor_data['tap'],
+                            impcor_data['refact'],
+                            impcor_data['imfact']
+                        ])
                 elif section == 'TRANSFORMER DATA':
                     column_names = raw_column_names[line_num_of_record]
                     line_data = split_csv_line(line)
@@ -257,6 +276,7 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
             elif line_type == 'eof':
                 # End of file
                 break
+            line_num += 1
 
     raw_rawx_columns = pd.DataFrame()
     return result
@@ -283,6 +303,93 @@ def _read_caseid(caseid_line: str):
     return caseid
 
 
+def _parse_substation_section(lines, start_line=0):
+    """Parse the SUBSTATION section of a PSSE RAW file.
+
+    Args:
+        lines: List of strings containing the raw file lines
+        start_line: Line number where the SUBSTATION section begins
+
+    Returns:
+        tuple: (substation_data, end_line) where:
+            - substation_data: Dictionary containing parsed substation data
+            - end_line: Line number where the section ends
+    """
+    substation_data = {
+        'substations': [],
+        'nodes': [],
+        'switching_devices': []
+    }
+    current_substation = None
+    current_node = None
+    in_switching_section = False
+
+    i = start_line
+    while i < len(lines):
+        line = lines[i].strip()
+
+        # Check for end of section
+        if line.startswith('0 / END OF SUBSTATION'):
+            return substation_data, i
+
+        # Check for switching device section
+        if 'BEGIN SUBSTATION SWITCHING DEVICE DATA' in line:
+            in_switching_section = True
+            i += 1
+            # continue
+
+        # Skip empty lines and comments
+        if not line or line.startswith('@!') or line.startswith('0 /'):
+            i += 1
+            # continue
+
+        if in_switching_section:
+            # Parse switching device data
+            if not line.startswith('Q'):  # Skip end of file marker
+                parts = split_csv_line(line)
+                if len(parts) >= 8:  # Minimum required fields for switching device
+                    device = {
+                        'substation': parts[0],
+                        'node1': parts[1],
+                        'node2': parts[2],
+                        'device_type': parts[3],
+                        'status': parts[4] if len(parts) > 4 else '',
+                        'description': parts[5] if len(parts) > 5 else ''
+                    }
+                    substation_data['switching_devices'].append(device)
+        else:
+            # Parse substation and node data
+            parts = split_csv_line(line)
+
+            # Check if this is a new substation
+            if len(parts) >= 3 and parts[0] and parts[1] == '0':
+                current_substation = {
+                    'id': parts[0],
+                    'name': parts[2],
+                    'voltage': parts[3] if len(parts) > 3 else '',
+                    'nodes': []
+                }
+                substation_data['substations'].append(current_substation)
+            # Check if this is a node within the current substation
+            elif current_substation and len(parts) >= 3 and parts[1] != '0':
+                node = {
+                    'id': parts[1],
+                    'bus_number': parts[2],
+                    'voltage': parts[3] if len(parts) > 3 else '',
+                    'angle': parts[4] if len(parts) > 4 else '',
+                    'base_kv': parts[5] if len(parts) > 5 else ''
+                }
+                current_substation['nodes'].append(node)
+                substation_data['nodes'].append({
+                    'substation_id': current_substation['id'],
+                    **node
+                })
+
+        i += 1
+
+    return substation_data, i
+
+
 def _read_syswide(lines):
     """Reads and parses system-wide data from a list of lines.
 
@@ -298,6 +405,7 @@ def _read_syswide(lines):
               and values are dictionaries containing 'fields' and 'data' for each section.
               The 'rating' section data is structured as a list of lists.
     """
+
     def read_network_general_info_line(line: str):
         # Get the case into line type
         sub_section_name = line.split(',', 1)[0].strip()
@@ -528,48 +636,67 @@ def main(sample_raw34_path: Path | str,
          save_json: bool = True):
     """
     Main function to convert both PSS/E v34 and v35 RAW files to RAWX
-    
+
     Args:
         sample_raw34_path (Path | str): Path to the sample v34 RAW file
         sample_raw35_path (Path | str): Path to the sample v35 RAW file
         save_json (bool): If True, saves RAWX dictionary to a JSON file
-        
+
     Returns:
         None
-        
+
     Example:
         >>> main("path/to/sample_34.raw", "path/to/sample_35.raw")
     """
-    
-    raw34_path, raw35_path = Path(sample_raw34_path), Path(sample_raw35_path)
-    
-    result_34, result_35 = raw_file_to_rawx_dict(sample_raw34_path), raw_file_to_rawx_dict(sample_raw35_path)
-    
-    print('\n\nresult')
-    print(result_34)
-    
-    json_temp_file = site_temp_dir / f'{raw34_path.stem}.json'
-    json_temp_file.parent.mkdir(parents=True, exist_ok=True)
-    if save_json: save_rawx_dict_to_json(rawx_dict=result_34, output_file=json_temp_file, compact=True)
+    import json
+    class ModelDecoder(json.JSONDecoder):
+        """
+        Custom JSON decoder for Model class data.
 
-    print(json_temp_file)
-    
-    print('\n\nresult')
-    print(result_35)
-    
-    json_temp_file = site_temp_dir / f'{raw35_path.stem}.json'
-    if save_json: save_rawx_dict_to_json(rawx_dict=result_35, output_file=json_temp_file, compact=False)
-    print(json_temp_file)
-    
-          
+        Handles deserialization of specially formatted model data, converting
+        back from the JSON-safe format produced by ModelEncoder.
+        """
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(object_hook=self.object_hook, *args, **kwargs)
+
+        def object_hook(self, dct):
+            # Handle DataFrame reconstruction if the dict has the pandas split-format structure
+            if all(key in dct for key in ('index', 'columns', 'data')):
+                return pd.DataFrame(**dct)
+            return dct
+
+    raw34_path, raw35_path = Path(sample_raw34_path), Path(sample_raw35_path)
+
+    if sample_raw34_path:
+        result_34 = raw_file_to_rawx_dict(sample_raw34_path)
+
+        print('\n\nresult')
+        print(result_34)
+
+        json_temp_file = site_temp_dir / f'{raw34_path.stem}.json'
+        json_temp_file.parent.mkdir(parents=True, exist_ok=True)
+        if save_json: save_rawx_dict_to_json(rawx_dict=result_34, output_file=json_temp_file, compact=True)
+
+        print(json_temp_file)
+
+    if sample_raw35_path:
+        result_35 = raw_file_to_rawx_dict(sample_raw35_path)
+        print('\n\nresult')
+        print(result_35)
+
+        json_temp_file = site_temp_dir / f'{raw35_path.stem}.json'
+        if save_json: save_rawx_dict_to_json(rawx_dict=result_35, output_file=json_temp_file, compact=False)
+        print(json_temp_file)
+
 
 if __name__ == "__main__":
-    
+
     parser = argparse.ArgumentParser(description='Convert PSS/E v34 or v35 RAW files to RAWX', add_help=True)
     parser.add_argument('-v34', '--raw34_path', type=str, help='Path to the v34 RAW file')
     parser.add_argument('-v35', '--raw35_path', type=str, help='Path to the v35 RAW file')
     parser.add_argument('-s', '--save_json', action='store_true', help='Save RAWX dictionary as a JSON file locally')
-    
+
     args = parser.parse_args()
 
     # If raw34_path or raw35_poth not provided, prompt user to enter paths.
@@ -577,7 +704,7 @@ if __name__ == "__main__":
         args.raw34_path = input('Enter the path to the sample v34 RAW file: ').strip()
     if args.raw35_path == None:
         args.raw35_path = input('Enter the path to the sample v35 RAW file: ').strip()
-        
+
     main(sample_raw34_path=args.raw34_path,
          sample_raw35_path=args.raw35_path,
          save_json=args.save_json)
