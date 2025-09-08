@@ -211,7 +211,11 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
             elif line_type == 'data':
                 if rawx_section and rawx_section.startswith('substation'):
                     # Parse substation section
-                    substation_data, end_line = _parse_substation_section(f, line_num)
+                    substation_data, end_line = _parse_substation_section(
+                        f, 
+                        line_num,
+                        raw_rawx_columns=raw_rawx_columns
+                    )
                     result['network']['substation'] = substation_data
                     # Skip to the end of the substation section
                     line_num = end_line
@@ -308,25 +312,43 @@ def _read_caseid(caseid_line: str):
     return caseid
 
 
-def _parse_substation_section(lines, start_line=0):
+def _parse_substation_section(lines, start_line=0, raw_rawx_columns=None):
     """Parse the SUBSTATION section of a PSSE RAW file.
 
     Args:
         lines: List of strings containing the raw file lines
         start_line: Line number where the SUBSTATION section begins
+        raw_rawx_columns: DataFrame containing raw to rawx column mappings
 
     Returns:
         tuple: (substation_data, end_line) where:
             - substation_data: Dictionary containing parsed substation data
             - end_line: Line number where the section ends
     """
+    # Get column name mappings
+    substation_columns = {}
+    for section in [
+        'SUBSTATION DATA BLOCK',
+        'SUBSTATION NODE DATA',
+        'SUBSTATION SWITCHING DEVICE DATA'
+    ]:
+        try:
+            raw_rawx_pairs, _ = _get_column_names(
+                subsection_raw_value=section,
+                raw_rawx_columns_df=raw_rawx_columns
+            )
+            # Convert list of tuples to dict for easier lookup
+            substation_columns[section] = {raw: rawx for raw, rawx in raw_rawx_pairs}
+        except Exception as e:
+            print(f"Warning: Could not load column mappings for {section}: {e}")
+            substation_columns[section] = {}
+
     substation_data = {
         'substations': [],
         'nodes': [],
         'switching_devices': []
     }
     current_substation = None
-    current_node = None
     in_switching_section = False
 
     i = start_line
@@ -341,52 +363,58 @@ def _parse_substation_section(lines, start_line=0):
         if 'BEGIN SUBSTATION SWITCHING DEVICE DATA' in line:
             in_switching_section = True
             i += 1
-            # continue
+            continue
 
         # Skip empty lines and comments
         if not line or line.startswith('@!') or line.startswith('0 /'):
             i += 1
-            # continue
+            continue
 
+        parts = split_csv_line(line)
+        
         if in_switching_section:
             # Parse switching device data
             if not line.startswith('Q'):  # Skip end of file marker
-                parts = split_csv_line(line)
-                if len(parts) >= 8:  # Minimum required fields for switching device
-                    device = {
-                        'substation': parts[0],
-                        'node1': parts[1],
-                        'node2': parts[2],
-                        'device_type': parts[3],
-                        'status': parts[4] if len(parts) > 4 else '',
-                        'description': parts[5] if len(parts) > 5 else ''
-                    }
+                if len(parts) >= 4:  # Minimum required fields for switching device
+                    # Map fields using the column names from the mapping
+                    field_map = substation_columns.get('SUBSTATION SWITCHING DEVICE DATA', {})
+                    device = {}
+                    
+                    # Map fields by position
+                    if len(parts) > 0: device[field_map.get('NI', 'inode')] = parts[0]  # from node
+                    if len(parts) > 1: device[field_map.get('NJ', 'jnode')] = parts[1]  # to node
+                    if len(parts) > 2: device[field_map.get('CKT', 'swlid')] = parts[2]  # device id
+                    if len(parts) > 3: device[field_map.get('TYPE', 'type')] = parts[3]  # device type
+                    if len(parts) > 4: device[field_map.get('STATUS', 'stat')] = parts[4]  # status
+                    if len(parts) > 5: device['description'] = parts[5]  # description
+                    
                     substation_data['switching_devices'].append(device)
         else:
             # Parse substation and node data
-            parts = split_csv_line(line)
-
-            # Check if this is a new substation
             if len(parts) >= 3 and parts[0] and parts[1] == '0':
+                # This is a substation record
+                field_map = substation_columns.get('SUBSTATION DATA BLOCK', {})
                 current_substation = {
-                    'id': parts[0],
-                    'name': parts[2],
+                    field_map.get('IS', 'isub'): parts[0],  # substation number
+                    field_map.get('NAME', 'name'): parts[2],  # substation name
                     'voltage': parts[3] if len(parts) > 3 else '',
                     'nodes': []
                 }
                 substation_data['substations'].append(current_substation)
-            # Check if this is a node within the current substation
             elif current_substation and len(parts) >= 3 and parts[1] != '0':
+                # This is a node record
+                field_map = substation_columns.get('SUBSTATION NODE DATA', {})
                 node = {
-                    'id': parts[1],
-                    'bus_number': parts[2],
+                    field_map.get('NI', 'inode'): parts[1],  # node number
+                    field_map.get('NAME', 'name'): parts[2],  # node name
+                    field_map.get('I', 'ibus'): parts[2],  # bus number
                     'voltage': parts[3] if len(parts) > 3 else '',
                     'angle': parts[4] if len(parts) > 4 else '',
                     'base_kv': parts[5] if len(parts) > 5 else ''
                 }
                 current_substation['nodes'].append(node)
                 substation_data['nodes'].append({
-                    'substation_id': current_substation['id'],
+                    'substation_id': current_substation[field_map.get('IS', 'isub')],
                     **node
                 })
 
