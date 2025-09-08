@@ -217,21 +217,26 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
                     line_num = end_line
                 elif rawx_section == 'impcor':
                     # Parse impedance correction data
+                    if not raw_rawx_column_names:  # Only get column names once per section
+                        raw_rawx_column_names, _ = _get_column_names(
+                            subsection_raw_value='IMPEDANCE CORRECTION DATA',
+                            raw_rawx_columns_df=raw_rawx_columns
+                        )
+                        rawx_column_names = [col[1] for col in raw_rawx_column_names]
+                    
                     line_data = split_csv_line(line)
                     if len(line_data) >= 4:  # Ensure we have all required fields
-                        # Format: I, Ti, Re, Im
-                        impcor_data = {
-                            'itable': int(float(line_data[0])),  # Table number
-                            'tap': float(line_data[1]),  # Tap value or angle
-                            'refact': float(line_data[2]),  # Real part of correction factor
-                            'imfact': float(line_data[3])  # Imaginary part of correction factor
-                        }
-                        data.append([
-                            impcor_data['itable'],
-                            impcor_data['tap'],
-                            impcor_data['refact'],
-                            impcor_data['imfact']
-                        ])
+                        # Convert values to appropriate types based on column position
+                        row_data = []
+                        for i, value in enumerate(line_data[:4]):  # Only process first 4 columns
+                            if i == 0:  # itable - integer
+                                row_data.append(int(float(value)) if value.strip() else 0)
+                            else:  # tap, refact, imfact - float
+                                row_data.append(float(value) if value.strip() else 0.0)
+                        
+                        # Pad with None if we don't have enough values
+                        row_data += [None] * (len(rawx_column_names) - len(row_data))
+                        data.append(row_data)
                 elif section == 'TRANSFORMER DATA':
                     column_names = raw_column_names[line_num_of_record]
                     line_data = split_csv_line(line)
