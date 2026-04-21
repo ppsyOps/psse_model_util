@@ -1,4 +1,4 @@
-import appdirs
+import platformdirs
 import shutil
 from pathlib import Path
 
@@ -14,7 +14,7 @@ site_config_dir = __site_root / 'config'
 site_temp_dir = __site_root / 'Temp'
 site_cache_dir = __site_root / 'cache'
 
-__user_root = Path(appdirs.user_data_dir())
+__user_root = Path(platformdirs.user_data_dir(APP_NAME))
 user_config_dir = __user_root / 'config'
 user_log_dir = __user_root / 'log'
 user_data_dir = __user_root / 'data'

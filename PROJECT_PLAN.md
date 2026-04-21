@@ -37,12 +37,13 @@
 
 | ID | Item | Channel | Status |
 |----|------|---------|--------|
-| 1.1 | Migrate build system: `setup.py` → PDM + Hatch | #hatch-pdm-migration | 🔜 Next |
+| 1.1 | Migrate build system: `setup.py` → PDM + Hatch | #hatch-pdm-migration | 🔄 In Progress |
 | 1.2 | Project structure review — dead code ID (review w/ Chris before removing) | TBD | ⬜ Queued |
 | 1.3 | README.md + ARCHITECTURE.md + RAW-to-RAWX technical doc | TBD | ⬜ Queued |
 | 1.4 | Test coverage baseline: add `pytest` + `pytest-cov`, measure gaps | TBD | ⬜ Queued |
 | 1.5 | Fix CSV export — missing columns (e.g. `network_acline.csv` missing bus numbers; root cause: `index=False` + index holds bus fields) | TBD | ⬜ Queued |
 | 1.6 | Code quality pass — linting (`ruff`), type hints, docstring audit | TBD | ⬜ Queued |
+| 1.7 | Remove `arrow` dependency — replace `arrow.Arrow` usage in `common/dataframe_util.py` with stdlib `datetime` | TBD | ⬜ Queued |
 
 ### Phase 2 — Core Correctness
 > Goal: Fix known bugs, improve output quality.
