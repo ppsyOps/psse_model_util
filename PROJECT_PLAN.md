@@ -27,6 +27,8 @@
 | Anonymizer | Text portions of names only (never numbers). Single persistent master mapping file so real name always → same fake name across all models (required for `ModelComparison` correctness). |
 | RAWX export bug | Known issue, low priority. Log it and address in Phase 2. |
 | Channel strategy | One Discord channel per active work item. Keeps LLM context clean and focused. |
+| Versioning (Phase 1.1) | Keep `version.py` `__version__` hardcoded string for now (Option A). Manually edit before releases. Calver makes this trivial. |
+| Versioning (Phase 1.2) | Retire `version.py` + `build_utils/` entirely. Migrate to `hatch version` with `[tool.hatch.version]` sourcing from `__about__.py` (or `src/_version.py`) — modern best practice. Hatch manages all bumps. |
 
 ---
 
