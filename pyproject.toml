@@ -31,13 +31,9 @@ dependencies = [
     "dash>=2.0",
     "dash-cytoscape>=0.3",
 
-    # Build / version utilities
-    "gitpython>=3.1",
-
     # Platform / system
     "platformdirs>=3.0",
     "portalocker>=2.0",
-    "certifi>=2023.0",
 ]
 
 [project.optional-dependencies]
@@ -48,15 +44,14 @@ dev = [
 ]
 
 [tool.hatch.version]
-path = "version.py"
+path = "__about__.py"
 pattern = "__version__ = ['\"](?P<version>[^'\"]+)['\"]"
 
 [tool.hatch.build.targets.wheel]
 packages = ["."]
 exclude = [
-    "build_utils/",
     "*.cmd",
-    "delete_me.py",
+    "dist/",
 ]
 
 [tool.pdm]
