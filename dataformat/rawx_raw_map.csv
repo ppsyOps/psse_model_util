@@ -1,0 +1,668 @@
+dataformat_pdf_section,field_idx_raw_34,row_raw_34,section_raw_34,subsection_raw_34,field_raw_34,field_idx_raw_35,row_raw_35,section_raw_35,subsection_raw_35,field_raw_35,field_id_rawx,section_rawx,field_rawx,inch_section,inch_field,Inch_change,notes
+1.5 Case Identification Data,1,1,N/A,N/A,IC,1,1,N/A,N/A,IC,1,caseid,ic,N/A,N/A,N/A,New case flag
+1.5 Case Identification Data,2,1,N/A,N/A,SBASE,2,1,N/A,N/A,SBASE,2,caseid,sbase,N/A,N/A,N/A,System MVA base
+1.5 Case Identification Data,3,1,N/A,N/A,REV,3,1,N/A,N/A,REV,3,caseid,rev,N/A,N/A,N/A,PSSE revision number
+1.5 Case Identification Data,4,1,N/A,N/A,XFRRAT,4,1,N/A,N/A,XFRRAT,4,caseid,xfrrat,N/A,N/A,N/A,Units of transformer ratings
+1.5 Case Identification Data,5,1,N/A,N/A,NXFRAT,5,1,N/A,N/A,NXFRAT,5,caseid,nxfrat,N/A,N/A,N/A,Units of ratings of non-transformer branches
+1.5 Case Identification Data,6,1,N/A,N/A,BASFRQ,6,1,N/A,N/A,BASFRQ,6,caseid,basfrq,N/A,N/A,N/A,System base frequency in Hertz
+1.5 Case Identification Data,N/A,1,N/A,N/A,N/A,7,1,N/A,N/A,N/A,7,caseid,title1,N/A,N/A,N/A,First line of the case title
+1.5 Case Identification Data,N/A,1,N/A,N/A,N/A,8,1,N/A,N/A,N/A,8,caseid,title2,N/A,N/A,N/A,Second line of the case title
+1.6.1 General Record,2,1,GENERAL,GENERAL,THRSHZ,2,1,GENERAL,GENERAL,THRSHZ,1,general,thrshz,N/A,N/A,N/A,the zero impedance line threshold tolerance
+1.6.1 General Record,3,1,GENERAL,GENERAL,PQBRAK,3,1,GENERAL,GENERAL,PQBRAK,2,general,pqbrak,N/A,N/A,N/A,the constant power load characteristic voltage breakpoint
+1.6.1 General Record,4,1,GENERAL,GENERAL,BLOWUP,4,1,GENERAL,GENERAL,BLOWUP,3,general,blowup,N/A,N/A,N/A,the largest voltage change threshold
+1.6.1 General Record,N/A,1,N/A,N/A,N/A,5,1,GENERAL,N/A,N/A,4,general,maxisollvls,N/A,N/A,N/A,the maximum levels to move outward from a element when attempting to isolate it by breaker/switch actions
+1.6.1 General Record,N/A,1,N/A,N/A,N/A,6,1,GENERAL,N/A,N/A,5,general,camaxreptsln,N/A,N/A,N/A,the maximum number of times to try and solve a contingency/remedial action
+1.6.1 General Record,N/A,1,N/A,N/A,N/A,7,1,GENERAL,N/A,N/A,6,general,chkdupcntlbl,N/A,N/A,N/A,check for duplicate contingency labels when create DFAX file and running contingency analysis
+1.6.2 GAUSS Record,2,1,GAUSS,GAUSS,ITMX,2,1,GAUSS,GAUSS,ITMX,1,gauss,itmx,N/A,N/A,N/A,the maximum number of iterations
+1.6.2 GAUSS Record,3,1,GAUSS,GAUSS,ACCP,3,1,GAUSS,GAUSS,ACCP,2,gauss,accp,N/A,N/A,N/A,real component voltage change acceleration factor
+1.6.2 GAUSS Record,4,1,GAUSS,GAUSS,ACCQ,4,1,GAUSS,GAUSS,ACCQ,3,gauss,accq,N/A,N/A,N/A,imaginary component voltage change acceleration factor
+1.6.2 GAUSS Record,5,1,GAUSS,GAUSS,ACCM,5,1,GAUSS,GAUSS,ACCM,4,gauss,accm,N/A,N/A,N/A,type 1 bus complex voltage change acceleration factor in MSLV
+1.6.2 GAUSS Record,6,1,GAUSS,GAUSS,TOL,6,1,GAUSS,GAUSS,TOL,5,gauss,tol,N/A,N/A,N/A,voltage magnitude change convergence tolerance
+1.6.3 NEWTON Record,2,1,NEWTON,NEWTON,ITMXN,2,1,NEWTON,NEWTON,ITMXN,1,newton,itmxn,N/A,N/A,N/A,the maximum number of iterations
+1.6.3 NEWTON Record,3,1,NEWTON,NEWTON,ACCN,3,1,NEWTON,NEWTON,ACCN,2,newton,accn,N/A,N/A,N/A,voltage magnitude setpoint change acceleration factor at voltage controlled buses
+1.6.3 NEWTON Record,4,1,NEWTON,NEWTON,TOLN,4,1,NEWTON,NEWTON,TOLN,3,newton,toln,N/A,N/A,N/A,mismatch convergence tolerance
+1.6.3 NEWTON Record,5,1,NEWTON,NEWTON,VCTOLQ,5,1,NEWTON,NEWTON,VCTOLQ,4,newton,vctolq,N/A,N/A,N/A,controlled bus reactive power mismatch convergence tolerance
+1.6.3 NEWTON Record,6,1,NEWTON,NEWTON,VCTOLV,6,1,NEWTON,NEWTON,VCTOLV,5,newton,vctolv,N/A,N/A,N/A,controlled bus voltage error convergence tolerance
+1.6.3 NEWTON Record,7,1,NEWTON,NEWTON,DVLIM,7,1,NEWTON,NEWTON,DVLIM,6,newton,dvlim,N/A,N/A,N/A,maximum voltage magnitude change that may be applied on any iteration
+1.6.3 NEWTON Record,8,1,NEWTON,NEWTON,NDVFCT,8,1,NEWTON,NEWTON,NDVFCT,7,newton,ndvfct,N/A,N/A,N/A,non-divergent solution improvement factor
+1.6.4 ADJUST Record,2,1,ADJUST,ADJUST,ADJTHR,2,1,ADJUST,ADJUST,ADJTHR,1,adjust,adjthr,N/A,N/A,N/A,automatic adjustment threshold tolerance
+1.6.4 ADJUST Record,3,1,ADJUST,ADJUST,ACCTAP,3,1,ADJUST,ADJUST,ACCTAP,2,adjust,acctap,N/A,N/A,N/A,tap movement deceleration factor
+1.6.4 ADJUST Record,4,1,ADJUST,ADJUST,TAPLIM,4,1,ADJUST,ADJUST,TAPLIM,3,adjust,taplim,N/A,N/A,N/A,maximum tap ratio change on any iteration
+1.6.4 ADJUST Record,5,1,ADJUST,ADJUST,SWVBND,5,1,ADJUST,ADJUST,SWVBND,4,adjust,swvbnd,N/A,N/A,N/A,percent of voltage band switched shunts with voltage violations that are adjusted on any iteration
+1.6.4 ADJUST Record,6,1,ADJUST,ADJUST,MXTPSS,6,1,ADJUST,ADJUST,MXTPSS,5,adjust,mxtpss,N/A,N/A,N/A,maximum number of tap and/or switched shunt adjustment cycles
+1.6.4 ADJUST Record,7,1,ADJUST,ADJUST,MXSWIM,7,1,ADJUST,ADJUST,MXSWIM,6,adjust,mxswim,N/A,N/A,N/A,maximum number of induction machine state switching
+1.6.5 TYSL Record,2,1,TYSL,TYSL,ITMXTY,2,1,TYSL,TYSL,ITMXTY,1,tysl,itmxty,N/A,N/A,N/A,the maximum number of iterations
+1.6.5 TYSL Record,3,1,TYSL,TYSL,ACCTY,3,1,TYSL,TYSL,ACCTY,2,tysl,accty,N/A,N/A,N/A,voltage change acceleration factor
+1.6.5 TYSL Record,4,1,TYSL,TYSL,TOLTY,4,1,TYSL,TYSL,TOLTY,3,tysl,tolty,N/A,N/A,N/A,voltage magnitude change convergence tolerance
+1.6.6 SOLVER Record,2,1,SOLVER,SOLVER,METHOD,2,1,SOLVER,SOLVER,METHOD,1,solver,method,N/A,N/A,N/A,"Name of the solution method (either FDNS, FNSL, NSOL, SOLV or MSLV)"
+1.6.6 SOLVER Record,3,1,SOLVER,SOLVER,ACTAPS,3,1,SOLVER,SOLVER,ACTAPS,2,solver,actaps,N/A,N/A,N/A,the ac tap adjustment code
+1.6.6 SOLVER Record,4,1,SOLVER,SOLVER,AREAIN,4,1,SOLVER,SOLVER,AREAIN,3,solver,areain,N/A,N/A,N/A,the area interchange adjustment code
+1.6.6 SOLVER Record,5,1,SOLVER,SOLVER,PHSHFT,5,1,SOLVER,SOLVER,PHSHFT,4,solver,phshft,N/A,N/A,N/A,the phase shift adjustment code
+1.6.6 SOLVER Record,6,1,SOLVER,SOLVER,DCTAPS,6,1,SOLVER,SOLVER,DCTAPS,5,solver,dctaps,N/A,N/A,N/A,the dc tap adjustment code
+1.6.6 SOLVER Record,7,1,SOLVER,SOLVER,SWSHNT,7,1,SOLVER,SOLVER,SWSHNT,6,solver,swshnt,N/A,N/A,N/A,the dc tap adjustment code
+1.6.6 SOLVER Record,8,1,SOLVER,SOLVER,FLATST,8,1,SOLVER,SOLVER,FLATST,7,solver,flatst,N/A,N/A,N/A,the flat start code
+1.6.6 SOLVER Record,9,1,SOLVER,SOLVER,VARLIM,9,1,SOLVER,SOLVER,VARLIM,8,solver,varlim,N/A,N/A,N/A,the reactive power limit application code
+1.6.6 SOLVER Record,10,1,SOLVER,SOLVER,NONDIV,10,1,SOLVER,SOLVER,NONDIV,9,solver,nondiv,N/A,N/A,N/A,the non-divergent solution code
+1.6.7 RATING Record,2,1,RATING,RATING,RATING SET,2,1,RATING,RATING,RATING SET,1,rating,irate,N/A,N/A,N/A,the number of the rating set (1 through 12)
+1.6.7 RATING Record,3,1,RATING,RATING,NAME,3,1,RATING,RATING,NAME,2,rating,name,N/A,N/A,N/A,a quoted string that contains the rating�s name (this is used as a column heading in several reports
+1.6.7 RATING Record,4,1,RATING,RATING,DESCRIPTION,4,1,RATING,RATING,DESCRIPTION,3,rating,desc,N/A,N/A,N/A,a quoted string that contains the rating�s description
+1.7 Bus Data,1,1,BUS DATA,BUS DATA,I,1,1,BUS DATA,BUS DATA,I,1,bus,ibus,DATA_BUS,BusNum,N/A,Bus number
+1.7 Bus Data,2,1,BUS DATA,BUS DATA,NAME,2,1,BUS DATA,BUS DATA,NAME,2,bus,name,DATA_BUS,BusName,N/A,Alphanumeric identifier assigned to bus
+1.7 Bus Data,3,1,BUS DATA,BUS DATA,BASKV,3,1,BUS DATA,BUS DATA,BASKV,3,bus,baskv,DATA_BUS,BusNomVolt,N/A,Bus base voltage; entered in kV
+1.7 Bus Data,4,1,BUS DATA,BUS DATA,IDE,4,1,BUS DATA,BUS DATA,IDE,4,bus,ide,DATA_BUS,BusType,N/A,Bus type code
+1.7 Bus Data,5,1,BUS DATA,BUS DATA,AREA,5,1,BUS DATA,BUS DATA,AREA,5,bus,area,DATA_BUS,AreaNum,N/A,Area number
+1.7 Bus Data,6,1,BUS DATA,BUS DATA,ZONE,6,1,BUS DATA,BUS DATA,ZONE,6,bus,zone,DATA_BUS,ZoneNum,N/A,Zone number
+1.7 Bus Data,7,1,BUS DATA,BUS DATA,OWNER,7,1,BUS DATA,BUS DATA,OWNER,7,bus,owner,DATA_BUS,OwnerNum,N/A,Owner number
+1.7 Bus Data,8,1,BUS DATA,BUS DATA,VM,8,1,BUS DATA,BUS DATA,VM,8,bus,vm,DATA_BUS,BusVoltPU,N/A,Bus voltage magnitude; entered in pu
+1.7 Bus Data,9,1,BUS DATA,BUS DATA,VA,9,1,BUS DATA,BUS DATA,VA,9,bus,va,DATA_BUS,BusAngle,N/A,Bus voltage phase angle; entered in degrees
+1.7 Bus Data,10,1,BUS DATA,BUS DATA,NVHI,10,1,BUS DATA,BUS DATA,NVHI,10,bus,nvhi,DATA_BUS,VmaxNorm,N/A,Normal voltage magnitude high limit; entered in pu.
+1.7 Bus Data,11,1,BUS DATA,BUS DATA,NVLO,11,1,BUS DATA,BUS DATA,NVLO,11,bus,nvlo,DATA_BUS,VminNorm,N/A,"Normal voltage magnitude low limit, entered in pu."
+1.7 Bus Data,12,1,BUS DATA,BUS DATA,EVHI,12,1,BUS DATA,BUS DATA,EVHI,12,bus,evhi,DATA_BUS,VmaxCont,N/A,Emergency voltage magnitude high limit; entered in pu.
+1.7 Bus Data,13,1,BUS DATA,BUS DATA,EVLO,13,1,BUS DATA,BUS DATA,EVLO,13,bus,evlo,DATA_BUS,VminCont,N/A,Emergency voltage magnitude low limit; entered in pu.
+1.8 Load Data,1,1,LOAD DATA,LOAD DATA,I,1,1,LOAD DATA,LOAD DATA,I,1,load,ibus,DATA_LOAD,BusNum,N/A,Bus number
+1.8 Load Data,2,1,LOAD DATA,LOAD DATA,ID,2,1,LOAD DATA,LOAD DATA,ID,2,load,loadid,DATA_LOAD,LoadID,N/A,load identifier used to distinguish among multiple loads at bus I
+1.8 Load Data,3,1,LOAD DATA,LOAD DATA,STATUS,3,1,LOAD DATA,LOAD DATA,STATUS,3,load,stat,DATA_LOAD,Status,N/A,Load status of one for in-service and zero for out-of-service
+1.8 Load Data,4,1,LOAD DATA,LOAD DATA,AREA,4,1,LOAD DATA,LOAD DATA,AREA,4,load,area,DATA_LOAD,LoadArea,N/A,Area to which the load is assigned
+1.8 Load Data,5,1,LOAD DATA,LOAD DATA,ZONE,5,1,LOAD DATA,LOAD DATA,ZONE,5,load,zone,DATA_LOAD,LoadZone,N/A,Zone to which the load is assigned
+1.8 Load Data,6,1,LOAD DATA,LOAD DATA,PL,6,1,LOAD DATA,LOAD DATA,PL,6,load,pl,DATA_LOAD,LoadP0,N/A,Active power component of constant MVA load; entered in MW.
+1.8 Load Data,7,1,LOAD DATA,LOAD DATA,QL,7,1,LOAD DATA,LOAD DATA,QL,7,load,ql,DATA_LOAD,LoadQ0,N/A,Reactive power component of constant MVA load; entered in Mvar.
+1.8 Load Data,8,1,LOAD DATA,LOAD DATA,IP,8,1,LOAD DATA,LOAD DATA,IP,8,load,ip,DATA_LOAD,LoadP1,N/A,Active power component of constant current load; entered in MW at one per unit voltage.
+1.8 Load Data,9,1,LOAD DATA,LOAD DATA,IQ,9,1,LOAD DATA,LOAD DATA,IQ,9,load,iq,DATA_LOAD,LoadQ1,N/A,Reactive power component of constant current load; entered in Mvar at one per unit voltage.
+1.8 Load Data,10,1,LOAD DATA,LOAD DATA,YP,10,1,LOAD DATA,LOAD DATA,YP,10,load,yp,DATA_LOAD,LoadP2,N/A,Active power component of constant admittance load; entered in MW at one per unit voltage.
+1.8 Load Data,11,1,LOAD DATA,LOAD DATA,YQ,11,1,LOAD DATA,LOAD DATA,YQ,11,load,yq,DATA_LOAD,LoadQ2,N/A,Reactive power component of constant admittance load; entered in Mvar at one per unit voltage.
+1.8 Load Data,12,1,LOAD DATA,LOAD DATA,OWNER,12,1,LOAD DATA,LOAD DATA,OWNER,12,load,owner,DATA_LOAD,LoadOwner,N/A,Owner to which the load is assigned
+1.8 Load Data,13,1,LOAD DATA,LOAD DATA,SCALE,13,1,LOAD DATA,LOAD DATA,SCALE,13,load,scale,DATA_LOAD,ConfirmFlag,N/A,Load scaling flag of one for a scalable load and zero for a fixed load
+1.8 Load Data,14,1,LOAD DATA,LOAD DATA,INTRPT,14,1,LOAD DATA,LOAD DATA,INTRPT,14,load,intrpt,DATA_LOAD,N/A,N/A,Interruptible load flag of one for an interruptible load for zero for a non interruptible load.
+1.8 Load Data,15,1,LOAD DATA,LOAD DATA,DGENP,15,1,LOAD DATA,LOAD DATA,DGENP,15,load,dgenp,DATA_LOAD,N/A,N/A,Distributed Generation active power component; entered in units of MW.
+1.8 Load Data,16,1,LOAD DATA,LOAD DATA,DGENQ,16,1,LOAD DATA,LOAD DATA,DGENQ,16,load,dgenq,DATA_LOAD,N/A,N/A,Distributed Generation reactive power component; entered in units of MVAR
+1.8 Load Data,17,1,LOAD DATA,LOAD DATA,DGENM,17,1,LOAD DATA,LOAD DATA,DGENM,17,load,dgenm,DATA_LOAD,N/A,N/A,"Distributed Generation operation mode; 0 = distributed generation on feeder is OFF, 1 = distributed generation on feeder is ON."
+1.8 Load Data,N/A,1,N/A,N/A,N/A,18,1,LOAD DATA,LOAD DATA,LOADTYPE,18,load,loadtype,DATA_LOAD,N/A,N/A,Alphanumeric load type descriptor of up to twelve characters used to distinguish among different types of load
+1.9 Fixed Bus Shunt Data,1,1,FIXED SHUNT DATA,FIXED SHUNT DATA,I,1,1,FIXED SHUNT DATA,FIXED SHUNT DATA,I,1,fixshunt,ibus,DATA_FXSHUNT,BusNum,N/A,Bus number
+1.9 Fixed Bus Shunt Data,2,1,FIXED SHUNT DATA,FIXED SHUNT DATA,ID,2,1,FIXED SHUNT DATA,FIXED SHUNT DATA,ID,2,fixshunt,shntid,DATA_FXSHUNT,ShuntID,N/A,alphanumeric fixed shunt identifier used to distinguish among multiple fixed shunts at bus
+1.9 Fixed Bus Shunt Data,3,1,FIXED SHUNT DATA,FIXED SHUNT DATA,STATUS,3,1,FIXED SHUNT DATA,FIXED SHUNT DATA,STATUS,3,fixshunt,stat,DATA_FXSHUNT,Status,N/A,Shunt status of one for in-service and zero for out-of-service
+1.9 Fixed Bus Shunt Data,4,1,FIXED SHUNT DATA,FIXED SHUNT DATA,GL,4,1,FIXED SHUNT DATA,FIXED SHUNT DATA,GL,4,fixshunt,gl,DATA_FXSHUNT,ShuntMW,N/A,Active component of shunt admittance to ground; entered in MW at one per unit voltage
+1.9 Fixed Bus Shunt Data,5,1,FIXED SHUNT DATA,FIXED SHUNT DATA,BL,5,1,FIXED SHUNT DATA,FIXED SHUNT DATA,BL,5,fixshunt,bl,DATA_FXSHUNT,ShuntMVAr,N/A,Reactive component of shunt admittance to ground; entered in Mvar at one per unit voltage
+1.10 Generator Data,1,1,GENERATOR DATA,GENERATOR DATA,I,1,1,GENERATOR DATA,GENERATOR DATA,I,1,generator,ibus,DATA_GEN,BusNum,N/A,Bus number
+1.10 Generator Data,2,1,GENERATOR DATA,GENERATOR DATA,ID,2,1,GENERATOR DATA,GENERATOR DATA,ID,2,generator,machid,DATA_GEN,GenID,N/A,alphanumeric machine identifier used to distinguish among multiple machines at bus
+1.10 Generator Data,3,1,GENERATOR DATA,GENERATOR DATA,PG,3,1,GENERATOR DATA,GENERATOR DATA,PG,3,generator,pg,DATA_GEN,GenMW,N/A,Generator active power output; entered in MW
+1.10 Generator Data,4,1,GENERATOR DATA,GENERATOR DATA,QG,4,1,GENERATOR DATA,GENERATOR DATA,QG,4,generator,qg,DATA_GEN,GenMVR,N/A,Generator reactive power output; entered in Mvar
+1.10 Generator Data,5,1,GENERATOR DATA,GENERATOR DATA,QT,5,1,GENERATOR DATA,GENERATOR DATA,QT,5,generator,qt,DATA_GEN,GenMVRMax,N/A,Maximum generator reactive power output; entered in Mvar
+1.10 Generator Data,6,1,GENERATOR DATA,GENERATOR DATA,QB,6,1,GENERATOR DATA,GENERATOR DATA,QB,6,generator,qb,DATA_GEN,GenMVRMin,N/A,Minimum generator reactive power output; entered in Mvar
+1.10 Generator Data,7,1,GENERATOR DATA,GENERATOR DATA,VS,7,1,GENERATOR DATA,GENERATOR DATA,VS,7,generator,vs,DATA_GEN,VoltTarg,N/A,Regulated voltage setpoint; entered in pu.
+1.10 Generator Data,8,1,GENERATOR DATA,GENERATOR DATA,IREG,8,1,GENERATOR DATA,GENERATOR DATA,IREG,8,generator,ireg,DATA_GEN,GenRegBusNum,N/A,Bus number for which voltage is to be regulated by this plant to the value specified by VS
+1.10 Generator Data,29,1,GENERATOR DATA,GENERATOR DATA,NREG,9,1,GENERATOR DATA,GENERATOR DATA,NREG,9,generator,nreg,DATA_GEN,N/A,N/A,A node number of bus IREG
+1.10 Generator Data,9,1,GENERATOR DATA,GENERATOR DATA,MBASE,10,1,GENERATOR DATA,GENERATOR DATA,MBASE,10,generator,mbase,DATA_GEN,MBase,N/A,Total MVA base of the units represented by this machine; entered in MVA
+1.10 Generator Data,10,1,GENERATOR DATA,GENERATOR DATA,ZR,11,1,GENERATOR DATA,GENERATOR DATA,ZR,11,generator,zr,DATA_GEN,Rsource,N/A,"Complex machine impedance, ZSORCE; entered in pu on MBASE base"
+1.10 Generator Data,11,1,GENERATOR DATA,GENERATOR DATA,ZX,12,1,GENERATOR DATA,GENERATOR DATA,ZX,12,generator,zx,DATA_GEN,Xsource,N/A,"Complex machine impedance, ZSORCE; entered in pu on MBASE base"
+1.10 Generator Data,12,1,GENERATOR DATA,GENERATOR DATA,RT,13,1,GENERATOR DATA,GENERATOR DATA,RT,13,generator,rt,DATA_GEN,RTran,N/A,"Step-up transformer impedance, XTRAN; entered in pu on MBASE base"
+1.10 Generator Data,13,1,GENERATOR DATA,GENERATOR DATA,XT,14,1,GENERATOR DATA,GENERATOR DATA,XT,14,generator,xt,DATA_GEN,XTran,N/A,"Step-up transformer impedance, XTRAN; entered in pu on MBASE base"
+1.10 Generator Data,14,1,GENERATOR DATA,GENERATOR DATA,GTAP,15,1,GENERATOR DATA,GENERATOR DATA,GTAP,15,generator,gtap,DATA_GEN,GenTap,N/A,Step-up transformer off-nominal turns ratio; entered in pu on a system base. GTAP is used only if XTRAN is non-zero
+1.10 Generator Data,15,1,GENERATOR DATA,GENERATOR DATA,STAT,16,1,GENERATOR DATA,GENERATOR DATA,STAT,16,generator,stat,DATA_GEN,Status,N/A,Machine status of one for in-service and zero for out-of-service
+1.10 Generator Data,16,1,GENERATOR DATA,GENERATOR DATA,RMPCT,17,1,GENERATOR DATA,GENERATOR DATA,RMPCT,17,generator,rmpct,DATA_GEN,GenRMPCT,N/A,Percent of the total Mvar required to hold the voltage at the bus controlled by bus I that are to be contributed by the generation at bus I
+1.10 Generator Data,17,1,GENERATOR DATA,GENERATOR DATA,PT,18,1,GENERATOR DATA,GENERATOR DATA,PT,18,generator,pt,DATA_GEN,GenMWMax,N/A,Maximum generator active power output; entered in MW.
+1.10 Generator Data,18,1,GENERATOR DATA,GENERATOR DATA,PB,19,1,GENERATOR DATA,GENERATOR DATA,PB,19,generator,pb,DATA_GEN,GenMWMin,N/A,Minimum generator active power output; entered in MW.
+1.10 Generator Data,N/A,1,N/A,N/A,N/A,20,1,GENERATOR DATA,N/A,N/A,20,generator,baslod,DATA_GEN,N/A,N/A,Base loaded flag
+1.10 Generator Data,19,1,GENERATOR DATA,GENERATOR DATA,O1,21,1,GENERATOR DATA,GENERATOR DATA,O1,21,generator,o1,DATA_GEN,Own1,N/A,Owner number
+1.10 Generator Data,20,1,GENERATOR DATA,GENERATOR DATA,F1,22,1,GENERATOR DATA,GENERATOR DATA,F1,22,generator,f1,DATA_GEN,Own1%,N/A,Fraction of total ownership assigned to owner Oi
+1.10 Generator Data,21,1,GENERATOR DATA,GENERATOR DATA,O2,23,1,GENERATOR DATA,GENERATOR DATA,O2,23,generator,o2,DATA_GEN,Own2,N/A,Owner number
+1.10 Generator Data,22,1,GENERATOR DATA,GENERATOR DATA,F2,24,1,GENERATOR DATA,GENERATOR DATA,F2,24,generator,f2,DATA_GEN,Own2%,N/A,Fraction of total ownership assigned to owner Oi
+1.10 Generator Data,23,1,GENERATOR DATA,GENERATOR DATA,O3,25,1,GENERATOR DATA,GENERATOR DATA,O3,25,generator,o3,DATA_GEN,Own3,N/A,Owner number
+1.10 Generator Data,24,1,GENERATOR DATA,GENERATOR DATA,F3,26,1,GENERATOR DATA,GENERATOR DATA,F3,26,generator,f3,DATA_GEN,Own3%,N/A,Fraction of total ownership assigned to owner Oi
+1.10 Generator Data,25,1,GENERATOR DATA,GENERATOR DATA,O4,27,1,GENERATOR DATA,GENERATOR DATA,O4,27,generator,o4,DATA_GEN,Own4,N/A,Owner number
+1.10 Generator Data,26,1,GENERATOR DATA,GENERATOR DATA,F4,28,1,GENERATOR DATA,GENERATOR DATA,F4,28,generator,f4,DATA_GEN,Own4%,N/A,Fraction of total ownership assigned to owner Oi
+1.10 Generator Data,27,1,GENERATOR DATA,GENERATOR DATA,WMOD,29,1,GENERATOR DATA,GENERATOR DATA,WMOD,29,generator,wmod,DATA_GEN,N/A,N/A,Machine control mode
+1.10 Generator Data,28,1,GENERATOR DATA,GENERATOR DATA,WPF,30,1,GENERATOR DATA,GENERATOR DATA,WPF,30,generator,wpf,DATA_GEN,N/A,N/A,Power factor used in calculating reactive power limits or output when WMOD is 2 or 3
+1.11 Non-Transformer Branch Data,1,1,BRANCH DATA,BRANCH DATA,I,1,1,BRANCH DATA,BRANCH DATA,I,1,acline,ibus,DATA_BRANCH,BusNumFr,N/A,Branch from bus number
+1.11 Non-Transformer Branch Data,2,1,BRANCH DATA,BRANCH DATA,J,2,1,BRANCH DATA,BRANCH DATA,J,2,acline,jbus,DATA_BRANCH,BusNumTo,N/A,Branch to bus number
+1.11 Non-Transformer Branch Data,3,1,BRANCH DATA,BRANCH DATA,CKT,3,1,BRANCH DATA,BRANCH DATA,CKT,3,acline,ckt,DATA_BRANCH,CKT,N/A,alphanumeric branch circuit identifier
+1.11 Non-Transformer Branch Data,4,1,BRANCH DATA,BRANCH DATA,R,4,1,BRANCH DATA,BRANCH DATA,R,4,acline,rpu,DATA_BRANCH,R,N/A,Branch resistance; entered in pu.
+1.11 Non-Transformer Branch Data,5,1,BRANCH DATA,BRANCH DATA,X,5,1,BRANCH DATA,BRANCH DATA,X,5,acline,xpu,DATA_BRANCH,X,N/A,Branch reactance; entered in pu
+1.11 Non-Transformer Branch Data,6,1,BRANCH DATA,BRANCH DATA,B,6,1,BRANCH DATA,BRANCH DATA,B,6,acline,bpu,DATA_BRANCH,Charg,N/A,Total branch charging susceptance; entered in pu.
+1.11 Non-Transformer Branch Data,7,1,BRANCH DATA,BRANCH DATA,NAME,7,1,BRANCH DATA,BRANCH DATA,NAME,7,acline,name,DATA_BRANCH,BranchName,N/A,Alphanumeric identifier assigned to the branch
+1.11 Non-Transformer Branch Data,8,1,BRANCH DATA,BRANCH DATA,RATE1,8,1,BRANCH DATA,BRANCH DATA,RATE1,8,acline,rate1,DATA_BRANCH,Rate1,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,9,1,BRANCH DATA,BRANCH DATA,RATE2,9,1,BRANCH DATA,BRANCH DATA,RATE2,9,acline,rate2,DATA_BRANCH,Rate2,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,10,1,BRANCH DATA,BRANCH DATA,RATE3,10,1,BRANCH DATA,BRANCH DATA,RATE3,10,acline,rate3,DATA_BRANCH,Rate3,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,11,1,BRANCH DATA,BRANCH DATA,RATE4,11,1,BRANCH DATA,BRANCH DATA,RATE4,11,acline,rate4,DATA_BRANCH,Rate4,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,12,1,BRANCH DATA,BRANCH DATA,RATE5,12,1,BRANCH DATA,BRANCH DATA,RATE5,12,acline,rate5,DATA_BRANCH,Rate5,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,13,1,BRANCH DATA,BRANCH DATA,RATE6,13,1,BRANCH DATA,BRANCH DATA,RATE6,13,acline,rate6,DATA_BRANCH,Rate6,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,14,1,BRANCH DATA,BRANCH DATA,RATE7,14,1,BRANCH DATA,BRANCH DATA,RATE7,14,acline,rate7,DATA_BRANCH,Rate7,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,15,1,BRANCH DATA,BRANCH DATA,RATE8,15,1,BRANCH DATA,BRANCH DATA,RATE8,15,acline,rate8,DATA_BRANCH,Rate8,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,16,1,BRANCH DATA,BRANCH DATA,RATE9,16,1,BRANCH DATA,BRANCH DATA,RATE9,16,acline,rate9,DATA_BRANCH,Rate9,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,17,1,BRANCH DATA,BRANCH DATA,RATE10,17,1,BRANCH DATA,BRANCH DATA,RATE10,17,acline,rate10,DATA_BRANCH,Rate10,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,18,1,BRANCH DATA,BRANCH DATA,RATE11,18,1,BRANCH DATA,BRANCH DATA,RATE11,18,acline,rate11,DATA_BRANCH,Rate11,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,19,1,BRANCH DATA,BRANCH DATA,RATE12,19,1,BRANCH DATA,BRANCH DATA,RATE12,19,acline,rate12,DATA_BRANCH,Rate12,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.11 Non-Transformer Branch Data,20,1,BRANCH DATA,BRANCH DATA,GI,20,1,BRANCH DATA,BRANCH DATA,GI,20,acline,gi,DATA_BRANCH,ShuntGFr,N/A,Complex admittance of the line shunt at the bus I end of the branch; entered in pu.
+1.11 Non-Transformer Branch Data,21,1,BRANCH DATA,BRANCH DATA,BI,21,1,BRANCH DATA,BRANCH DATA,BI,21,acline,bi,DATA_BRANCH,ShuntBFr,N/A,Complex admittance of the line shunt at the bus I end of the branch; entered in pu.
+1.11 Non-Transformer Branch Data,22,1,BRANCH DATA,BRANCH DATA,GJ,22,1,BRANCH DATA,BRANCH DATA,GJ,22,acline,gj,DATA_BRANCH,ShuntGTo,N/A,Complex admittance of the line shunt at the bus J end of the branch; entered in pu.
+1.11 Non-Transformer Branch Data,23,1,BRANCH DATA,BRANCH DATA,BJ,23,1,BRANCH DATA,BRANCH DATA,BJ,23,acline,bj,DATA_BRANCH,ShuntBTo,N/A,Complex admittance of the line shunt at the bus J end of the branch; entered in pu.
+1.11 Non-Transformer Branch Data,24,1,BRANCH DATA,BRANCH DATA,ST,24,1,BRANCH DATA,BRANCH DATA,ST,24,acline,stat,DATA_BRANCH,Status,N/A,Branch status of one for in-service and zero for out-of-service
+1.11 Non-Transformer Branch Data,25,1,BRANCH DATA,BRANCH DATA,MET,25,1,BRANCH DATA,BRANCH DATA,MET,25,acline,method,DATA_BRANCH,Mt,N/A,Metered end flag
+1.11 Non-Transformer Branch Data,26,1,BRANCH DATA,BRANCH DATA,LEN,26,1,BRANCH DATA,BRANCH DATA,LEN,26,acline,len,DATA_BRANCH,Length,N/A,Line length; entered in user-selected units
+1.11 Non-Transformer Branch Data,27,1,BRANCH DATA,BRANCH DATA,O1,27,1,BRANCH DATA,BRANCH DATA,O1,27,acline,o1,DATA_BRANCH,Own1,N/A,Owner number
+1.11 Non-Transformer Branch Data,28,1,BRANCH DATA,BRANCH DATA,F1,28,1,BRANCH DATA,BRANCH DATA,F1,28,acline,f1,DATA_BRANCH,Own1%,N/A,Fraction of total ownership assigned to owner Oi
+1.11 Non-Transformer Branch Data,29,1,BRANCH DATA,BRANCH DATA,O2,29,1,BRANCH DATA,BRANCH DATA,O2,29,acline,o2,DATA_BRANCH,Own2,N/A,Owner number
+1.11 Non-Transformer Branch Data,30,1,BRANCH DATA,BRANCH DATA,F2,30,1,BRANCH DATA,BRANCH DATA,F2,30,acline,f2,DATA_BRANCH,Own2%,N/A,Fraction of total ownership assigned to owner Oi
+1.11 Non-Transformer Branch Data,31,1,BRANCH DATA,BRANCH DATA,O3,31,1,BRANCH DATA,BRANCH DATA,O3,31,acline,o3,DATA_BRANCH,Own3,N/A,Owner number
+1.11 Non-Transformer Branch Data,32,1,BRANCH DATA,BRANCH DATA,F3,32,1,BRANCH DATA,BRANCH DATA,F3,32,acline,f3,DATA_BRANCH,Own3%,N/A,Fraction of total ownership assigned to owner Oi
+1.11 Non-Transformer Branch Data,33,1,BRANCH DATA,BRANCH DATA,O4,33,1,BRANCH DATA,BRANCH DATA,O4,33,acline,o4,DATA_BRANCH,Own4,N/A,Owner number
+1.11 Non-Transformer Branch Data,34,1,BRANCH DATA,BRANCH DATA,F4,34,1,BRANCH DATA,BRANCH DATA,F4,34,acline,f4,DATA_BRANCH,Own4%,N/A,Fraction of total ownership assigned to owner Oi
+1.12 System Switching Device Data,1,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,I,1,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,I,1,sysswd,ibus,N/A,N/A,N/A,From bus number
+1.12 System Switching Device Data,2,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,J,2,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,J,2,sysswd,jbus,N/A,N/A,N/A,To bus number
+1.12 System Switching Device Data,3,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,CKT,3,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,CKT,3,sysswd,ckt,N/A,N/A,N/A,Two-character uppercase non-blank alphanumeric switching device identifier
+1.12 System Switching Device Data,4,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,X,4,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,X,4,sysswd,xpu,N/A,N/A,N/A,"Branch reactance; entered in pu, must be less than ZTHRES"
+1.12 System Switching Device Data,5,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE1,5,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE1,5,sysswd,rate1,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,6,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE2,6,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE2,6,sysswd,rate2,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,7,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE3,7,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE3,7,sysswd,rate3,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,8,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE4,8,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE4,8,sysswd,rate4,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,9,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE5,9,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE5,9,sysswd,rate5,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,10,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE6,10,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE6,10,sysswd,rate6,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,11,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE7,11,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE7,11,sysswd,rate7,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,12,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE8,12,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE8,12,sysswd,rate8,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,13,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE9,13,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE9,13,sysswd,rate9,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,14,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE10,14,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE10,14,sysswd,rate10,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,15,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE11,15,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE11,15,sysswd,rate11,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,16,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE12,16,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,RATE12,16,sysswd,rate12,N/A,N/A,N/A,"nth rating; entered in either MVA or current expressed as MVA, according to the value specified for NXFRAT"
+1.12 System Switching Device Data,17,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,STATUS,17,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,STATUS,17,sysswd,stat,N/A,N/A,N/A,Switching device status
+1.12 System Switching Device Data,18,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,NSTATUS,18,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,NSTATUS,18,sysswd,nstat,N/A,N/A,N/A,Switching device normal status
+1.12 System Switching Device Data,19,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,METERED,19,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,METERED,19,sysswd,met,N/A,N/A,N/A,Metered end
+1.12 System Switching Device Data,20,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,STYPE,20,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,STYPE,20,sysswd,stype,N/A,N/A,N/A,Switching device type
+1.12 System Switching Device Data,21,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,NAME,21,1,SYSTEM SWITCHING DEVICE DATA,SYSTEM SWITCHING DEVICE DATA,NAME,21,sysswd,name,N/A,N/A,N/A,System switching device name
+1.13 Transformer Data,1,1,TRANSFORMER DATA,TRANSFORMER DATA,I,1,1,TRANSFORMER DATA,TRANSFORMER DATA,I,1,transformer,ibus,DATA_TRANSFORMER,W1Bus#,N/A,the bus to which Winding 1 is connected
+1.13 Transformer Data,2,1,TRANSFORMER DATA,TRANSFORMER DATA,J,2,1,TRANSFORMER DATA,TRANSFORMER DATA,J,2,transformer,jbus,DATA_TRANSFORMER,W2Bus#,N/A,the bus to which Winding 2 is connected
+1.13 Transformer Data,3,1,TRANSFORMER DATA,TRANSFORMER DATA,K,3,1,TRANSFORMER DATA,TRANSFORMER DATA,K,3,transformer,kbus,DATA_TRANSFORMER,W3Bus#,N/A,the bus to which Winding 3 is connected. Zero is used to indicate that no third winding is present
+1.13 Transformer Data,4,1,TRANSFORMER DATA,TRANSFORMER DATA,CKT,4,1,TRANSFORMER DATA,TRANSFORMER DATA,CKT,4,transformer,ckt,DATA_TRANSFORMER,CKT,N/A,One- or two-character uppercase non-blank alphanumeric transformer circuit identifier
+1.13 Transformer Data,5,1,TRANSFORMER DATA,TRANSFORMER DATA,CW,5,1,TRANSFORMER DATA,TRANSFORMER DATA,CW,5,transformer,cw,DATA_TRANSFORMER,CW,N/A,"The winding data I/O code defines the units in which the turns ratios WINDV1, WINDV2 and WINDV3 are specified"
+1.13 Transformer Data,6,1,TRANSFORMER DATA,TRANSFORMER DATA,CZ,6,1,TRANSFORMER DATA,TRANSFORMER DATA,CZ,6,transformer,cz,DATA_TRANSFORMER,CZ,N/A,"The impedance data I/O code defines the units in which the winding impedances R1-2, X1-2, R2-3, X2-3, R3-1 and X3-1 are specified"
+1.13 Transformer Data,7,1,TRANSFORMER DATA,TRANSFORMER DATA,CM,7,1,TRANSFORMER DATA,TRANSFORMER DATA,CM,7,transformer,cm,DATA_TRANSFORMER,CM,N/A,The magnetizing admittance I/O code defines the units in which MAG1 and MAG2 are specified
+1.13 Transformer Data,8,1,TRANSFORMER DATA,TRANSFORMER DATA,MAG1,8,1,TRANSFORMER DATA,TRANSFORMER DATA,MAG1,8,transformer,mag1,DATA_TRANSFORMER,MAG1,N/A,The transformer magnetizing admittance connected to ground at bus I
+1.13 Transformer Data,9,1,TRANSFORMER DATA,TRANSFORMER DATA,MAG2,9,1,TRANSFORMER DATA,TRANSFORMER DATA,MAG2,9,transformer,mag2,DATA_TRANSFORMER,MAG2,N/A,The transformer magnetizing admittance connected to ground at bus I
+1.13 Transformer Data,10,1,TRANSFORMER DATA,TRANSFORMER DATA,NMETR,10,1,TRANSFORMER DATA,TRANSFORMER DATA,NMETR,10,transformer,nmet,DATA_TRANSFORMER,MTBus,N/A,The nonmetered end code
+1.13 Transformer Data,11,1,TRANSFORMER DATA,TRANSFORMER DATA,NAME,11,1,TRANSFORMER DATA,TRANSFORMER DATA,NAME,11,transformer,name,DATA_TRANSFORMER,XfmrName,N/A,Alphanumeric identifier assigned to the transformer
+1.13 Transformer Data,12,1,TRANSFORMER DATA,TRANSFORMER DATA,STAT,12,1,TRANSFORMER DATA,TRANSFORMER DATA,STAT,12,transformer,stat,DATA_TRANSFORMER,Status,N/A,Transformer status of one for in-service and zero for out-of-service
+1.13 Transformer Data,13,1,TRANSFORMER DATA,TRANSFORMER DATA,O1,13,1,TRANSFORMER DATA,TRANSFORMER DATA,O1,13,transformer,o1,DATA_TRANSFORMER,Own1,N/A,An owner number
+1.13 Transformer Data,14,1,TRANSFORMER DATA,TRANSFORMER DATA,F1,14,1,TRANSFORMER DATA,TRANSFORMER DATA,F1,14,transformer,f1,DATA_TRANSFORMER,Own1%,N/A,The fraction of total ownership assigned to owner Oi
+1.13 Transformer Data,15,1,TRANSFORMER DATA,TRANSFORMER DATA,O2,15,1,TRANSFORMER DATA,TRANSFORMER DATA,O2,15,transformer,o2,DATA_TRANSFORMER,Own2,N/A,An owner number
+1.13 Transformer Data,16,1,TRANSFORMER DATA,TRANSFORMER DATA,F2,16,1,TRANSFORMER DATA,TRANSFORMER DATA,F2,16,transformer,f2,DATA_TRANSFORMER,Own2%,N/A,The fraction of total ownership assigned to owner Oi
+1.13 Transformer Data,17,1,TRANSFORMER DATA,TRANSFORMER DATA,O3,17,1,TRANSFORMER DATA,TRANSFORMER DATA,O3,17,transformer,o3,DATA_TRANSFORMER,Own3,N/A,An owner number
+1.13 Transformer Data,18,1,TRANSFORMER DATA,TRANSFORMER DATA,F3,18,1,TRANSFORMER DATA,TRANSFORMER DATA,F3,18,transformer,f3,DATA_TRANSFORMER,Own3%,N/A,The fraction of total ownership assigned to owner Oi
+1.13 Transformer Data,19,1,TRANSFORMER DATA,TRANSFORMER DATA,O4,19,1,TRANSFORMER DATA,TRANSFORMER DATA,O4,19,transformer,o4,DATA_TRANSFORMER,Own4,N/A,An owner number
+1.13 Transformer Data,20,1,TRANSFORMER DATA,TRANSFORMER DATA,F4,20,1,TRANSFORMER DATA,TRANSFORMER DATA,F4,20,transformer,f4,DATA_TRANSFORMER,Own4%,N/A,The fraction of total ownership assigned to owner Oi
+1.13 Transformer Data,21,1,TRANSFORMER DATA,TRANSFORMER DATA,VECGRP,21,1,TRANSFORMER DATA,TRANSFORMER DATA,VECGRP,21,transformer,vecgrp,DATA_TRANSFORMER,N/A,N/A,Alphanumeric identifier specifying vector group based on transformer winding connections and phase angles
+1.13 Transformer Data,22,1,TRANSFORMER DATA,TRANSFORMER DATA,ZCOD,22,1,TRANSFORMER DATA,TRANSFORMER DATA,ZCOD,22,transformer,zcod,DATA_TRANSFORMER,N/A,N/A,Method to be used in deriving actual transformer impedances in applying transformer impedance adjustment tables
+1.13 Transformer Data,23,2,TRANSFORMER DATA,TRANSFORMER DATA,R1-2,23,2,TRANSFORMER DATA,TRANSFORMER DATA,R1-2,23,transformer,r1_2,DATA_TRANSFORMER,R1-2,N/A,The measured impedance of the transformer between the buses to which its first and second windings are connected
+1.13 Transformer Data,24,2,TRANSFORMER DATA,TRANSFORMER DATA,X1-2,24,2,TRANSFORMER DATA,TRANSFORMER DATA,X1-2,24,transformer,x1_2,DATA_TRANSFORMER,X1-2,N/A,The measured impedance of the transformer between the buses to which its first and second windings are connected
+1.13 Transformer Data,25,2,TRANSFORMER DATA,TRANSFORMER DATA,SBASE1-2,25,2,TRANSFORMER DATA,TRANSFORMER DATA,SBASE1-2,25,transformer,sbase1_2,DATA_TRANSFORMER,SBAS1,N/A,The Winding 1 to 2 three-phase base MVA of the transformer
+1.13 Transformer Data,26,2,TRANSFORMER DATA,TRANSFORMER DATA,R2-3,26,2,TRANSFORMER DATA,TRANSFORMER DATA,R2-3,26,transformer,r2_3,DATA_TRANSFORMER,R2-3,N/A,The measured impedance of a three-winding transformer between the buses to which its second and third windings are connected
+1.13 Transformer Data,27,2,TRANSFORMER DATA,TRANSFORMER DATA,X2-3,27,2,TRANSFORMER DATA,TRANSFORMER DATA,X2-3,27,transformer,x2_3,DATA_TRANSFORMER,X2-3,N/A,The measured impedance of a three-winding transformer between the buses to which its second and third windings are connected
+1.13 Transformer Data,28,2,TRANSFORMER DATA,TRANSFORMER DATA,SBASE2-3,28,2,TRANSFORMER DATA,TRANSFORMER DATA,SBASE2-3,28,transformer,sbase2_3,DATA_TRANSFORMER,SBAS2,N/A,The Winding 2 to 3 three-phase base MVA of a three-winding transformer
+1.13 Transformer Data,29,2,TRANSFORMER DATA,TRANSFORMER DATA,R3-1,29,2,TRANSFORMER DATA,TRANSFORMER DATA,R3-1,29,transformer,r3_1,DATA_TRANSFORMER,R3-1,N/A,The measured impedance of a three-winding transformer between the buses to which its third and first windings are connected
+1.13 Transformer Data,30,2,TRANSFORMER DATA,TRANSFORMER DATA,X3-1,30,2,TRANSFORMER DATA,TRANSFORMER DATA,X3-1,30,transformer,x3_1,DATA_TRANSFORMER,X3-1,N/A,The measured impedance of a three-winding transformer between the buses to which its third and first windings are connected
+1.13 Transformer Data,31,2,TRANSFORMER DATA,TRANSFORMER DATA,SBASE3-1,31,2,TRANSFORMER DATA,TRANSFORMER DATA,SBASE3-1,31,transformer,sbase3_1,DATA_TRANSFORMER,SBAS3,N/A,The Winding 3 to 1 three-phase base MVA of a three-winding transformer
+1.13 Transformer Data,32,2,TRANSFORMER DATA,TRANSFORMER DATA,VMSTAR,32,2,TRANSFORMER DATA,TRANSFORMER DATA,VMSTAR,32,transformer,vmstar,DATA_TRANSFORMER,N/A,N/A,The voltage magnitude at the hidden star point bus; entered in pu
+1.13 Transformer Data,33,2,TRANSFORMER DATA,TRANSFORMER DATA,ANSTAR,33,2,TRANSFORMER DATA,TRANSFORMER DATA,ANSTAR,33,transformer,anstar,DATA_TRANSFORMER,N/A,N/A,The bus voltage phase angle at the hidden star point bus; entered in degrees
+1.13 Transformer Data,34,3,TRANSFORMER DATA,TRANSFORMER DATA,WINDV1,34,3,TRANSFORMER DATA,TRANSFORMER DATA,WINDV1,34,transformer,windv1,DATA_TRANSFORMER,W1WINDV,N/A,
+1.13 Transformer Data,35,3,TRANSFORMER DATA,TRANSFORMER DATA,NOMV1,35,3,TRANSFORMER DATA,TRANSFORMER DATA,NOMV1,35,transformer,nomv1,DATA_TRANSFORMER,W1NOMV,N/A,The nominal (rated) Winding 1 voltage base in kV
+1.13 Transformer Data,36,3,TRANSFORMER DATA,TRANSFORMER DATA,ANG1,36,3,TRANSFORMER DATA,TRANSFORMER DATA,ANG1,36,transformer,ang1,DATA_TRANSFORMER,W1ANG,N/A,The winding one phase shift angle in degrees
+1.13 Transformer Data,37,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE11,37,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE11,37,transformer,wdg1rate1,DATA_TRANSFORMER,W1Rate1,N/A,
+1.13 Transformer Data,38,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE 21,38,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE 21,38,transformer,wdg1rate2,DATA_TRANSFORMER,W1Rate2,N/A,
+1.13 Transformer Data,39,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE 31,39,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE 31,39,transformer,wdg1rate3,DATA_TRANSFORMER,W1Rate3,N/A,
+1.13 Transformer Data,40,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE41,40,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE41,40,transformer,wdg1rate4,DATA_TRANSFORMER,W1Rate4,N/A,
+1.13 Transformer Data,41,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE51,41,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE51,41,transformer,wdg1rate5,DATA_TRANSFORMER,W1Rate5,N/A,
+1.13 Transformer Data,42,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE61,42,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE61,42,transformer,wdg1rate6,DATA_TRANSFORMER,W1Rate6,N/A,
+1.13 Transformer Data,43,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE71,43,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE71,43,transformer,wdg1rate7,DATA_TRANSFORMER,W1Rate7,N/A,
+1.13 Transformer Data,44,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE81,44,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE81,44,transformer,wdg1rate8,DATA_TRANSFORMER,W1Rate8,N/A,
+1.13 Transformer Data,45,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE91,45,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE91,45,transformer,wdg1rate9,DATA_TRANSFORMER,W1Rate9,N/A,
+1.13 Transformer Data,46,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE101,46,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE101,46,transformer,wdg1rate10,DATA_TRANSFORMER,W1Rate10,N/A,
+1.13 Transformer Data,47,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE111,47,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE111,47,transformer,wdg1rate11,DATA_TRANSFORMER,W1Rate11,N/A,
+1.13 Transformer Data,48,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE121,48,3,TRANSFORMER DATA,TRANSFORMER DATA,RATE121,48,transformer,wdg1rate12,DATA_TRANSFORMER,W1Rate12,N/A,
+1.13 Transformer Data,49,3,TRANSFORMER DATA,TRANSFORMER DATA,COD1,49,3,TRANSFORMER DATA,TRANSFORMER DATA,COD1,49,transformer,cod1,DATA_TRANSFORMER,W1AdjStatus,N/A,The transformer control mode for automatic adjustments of the Winding 1 tap or phase shift angle during power flow solutions
+1.13 Transformer Data,50,3,TRANSFORMER DATA,TRANSFORMER DATA,CONT1,50,3,TRANSFORMER DATA,TRANSFORMER DATA,CONT1,50,transformer,cont1,DATA_TRANSFORMER,W1CtrlBus,N/A,"The bus number, or extended bus name enclosed in single quotes, of the bus for which voltage is to be controlled by the transformer"
+1.13 Transformer Data,60,3,TRANSFORMER DATA,TRANSFORMER DATA,NODE1,51,3,TRANSFORMER DATA,TRANSFORMER DATA,NODE1,51,transformer,node1,DATA_TRANSFORMER,N/A,N/A,A node number of bus CONT1
+1.13 Transformer Data,51,3,TRANSFORMER DATA,TRANSFORMER DATA,RMA1,52,3,TRANSFORMER DATA,TRANSFORMER DATA,RMA1,52,transformer,rma1,DATA_TRANSFORMER,W1RegulMax,N/A,
+1.13 Transformer Data,52,3,TRANSFORMER DATA,TRANSFORMER DATA,RMI1,53,3,TRANSFORMER DATA,TRANSFORMER DATA,RMI1,53,transformer,rmi1,DATA_TRANSFORMER,W1RegulMin,N/A,
+1.13 Transformer Data,53,3,TRANSFORMER DATA,TRANSFORMER DATA,VMA1,54,3,TRANSFORMER DATA,TRANSFORMER DATA,VMA1,54,transformer,vma1,DATA_TRANSFORMER,W1TargetMax,N/A,
+1.13 Transformer Data,54,3,TRANSFORMER DATA,TRANSFORMER DATA,VMI1,55,3,TRANSFORMER DATA,TRANSFORMER DATA,VMI1,55,transformer,vmi1,DATA_TRANSFORMER,W1TargetMin,N/A,
+1.13 Transformer Data,55,3,TRANSFORMER DATA,TRANSFORMER DATA,NTP1,56,3,TRANSFORMER DATA,TRANSFORMER DATA,NTP1,56,transformer,ntp1,DATA_TRANSFORMER,W1NumTapPos,N/A,The number of tap positions available
+1.13 Transformer Data,56,3,TRANSFORMER DATA,TRANSFORMER DATA,TAB1,57,3,TRANSFORMER DATA,TRANSFORMER DATA,TAB1,57,transformer,tab1,DATA_TRANSFORMER,W1NTable,N/A,The number of a transformer impedance correction table
+1.13 Transformer Data,57,3,TRANSFORMER DATA,TRANSFORMER DATA,CR1,58,3,TRANSFORMER DATA,TRANSFORMER DATA,CR1,58,transformer,cr1,DATA_TRANSFORMER,W1LDropR,N/A,The load drop compensation impedance for voltage controlling transformers entered in pu on system base quantities
+1.13 Transformer Data,58,3,TRANSFORMER DATA,TRANSFORMER DATA,CX1,59,3,TRANSFORMER DATA,TRANSFORMER DATA,CX1,59,transformer,cx1,DATA_TRANSFORMER,W1LDropX,N/A,The load drop compensation impedance for voltage controlling transformers entered in pu on system base quantities
+1.13 Transformer Data,59,3,TRANSFORMER DATA,TRANSFORMER DATA,CNXA1,60,3,TRANSFORMER DATA,TRANSFORMER DATA,CNXA1,60,transformer,cnxa1,DATA_TRANSFORMER,N/A,N/A,Winding connection angle in degrees
+1.13 Transformer Data,61,4,TRANSFORMER DATA,TRANSFORMER DATA,WINDV2,61,4,TRANSFORMER DATA,TRANSFORMER DATA,WINDV2,61,transformer,windv2,DATA_TRANSFORMER,W2WINV,N/A,
+1.13 Transformer Data,62,4,TRANSFORMER DATA,TRANSFORMER DATA,NOMV2,62,4,TRANSFORMER DATA,TRANSFORMER DATA,NOMV2,62,transformer,nomv2,DATA_TRANSFORMER,W2NOMV,N/A,The nominal (rated) Winding 2 voltage base in kV
+1.13 Transformer Data,63,4,TRANSFORMER DATA,TRANSFORMER DATA,ANG2,63,4,TRANSFORMER DATA,TRANSFORMER DATA,ANG2,63,transformer,ang2,DATA_TRANSFORMER,W2ANG,N/A,The winding two phase shift angle in degrees
+1.13 Transformer Data,64,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE12,64,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE12,64,transformer,wdg2rate1,DATA_TRANSFORMER,W2Rate1,N/A,
+1.13 Transformer Data,65,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE22,65,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE22,65,transformer,wdg2rate2,DATA_TRANSFORMER,W2Rate2,N/A,
+1.13 Transformer Data,66,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE32,66,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE32,66,transformer,wdg2rate3,DATA_TRANSFORMER,W2Rate3,N/A,
+1.13 Transformer Data,67,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE42,67,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE42,67,transformer,wdg2rate4,DATA_TRANSFORMER,W2Rate4,N/A,
+1.13 Transformer Data,68,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE52,68,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE52,68,transformer,wdg2rate5,DATA_TRANSFORMER,W2Rate5,N/A,
+1.13 Transformer Data,69,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE62,69,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE62,69,transformer,wdg2rate6,DATA_TRANSFORMER,W2Rate6,N/A,
+1.13 Transformer Data,70,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE72,70,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE72,70,transformer,wdg2rate7,DATA_TRANSFORMER,W2Rate7,N/A,
+1.13 Transformer Data,71,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE82,71,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE82,71,transformer,wdg2rate8,DATA_TRANSFORMER,W2Rate8,N/A,
+1.13 Transformer Data,72,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE92,72,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE92,72,transformer,wdg2rate9,DATA_TRANSFORMER,W2Rate9,N/A,
+1.13 Transformer Data,73,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE102,73,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE102,73,transformer,wdg2rate10,DATA_TRANSFORMER,W2Rate10,N/A,
+1.13 Transformer Data,74,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE112,74,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE112,74,transformer,wdg2rate11,DATA_TRANSFORMER,W2Rate11,N/A,
+1.13 Transformer Data,75,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE122,75,4,TRANSFORMER DATA,TRANSFORMER DATA,RATE122,75,transformer,wdg2rate12,DATA_TRANSFORMER,W2Rate12,N/A,
+1.13 Transformer Data,76,4,TRANSFORMER DATA,TRANSFORMER DATA,COD2,76,4,TRANSFORMER DATA,TRANSFORMER DATA,COD2,76,transformer,cod2,DATA_TRANSFORMER,W2AdjStatus,N/A,The transformer control mode for automatic adjustments of the Winding 2 tap or phase shift angle during power flow solutions
+1.13 Transformer Data,77,4,TRANSFORMER DATA,TRANSFORMER DATA,CONT2,77,4,TRANSFORMER DATA,TRANSFORMER DATA,CONT2,77,transformer,cont2,DATA_TRANSFORMER,W2CtrlBus,N/A,"The bus number, or extended bus name enclosed in single quotes, of the bus for which voltage is to be controlled by the transformer"
+1.13 Transformer Data,87,4,TRANSFORMER DATA,TRANSFORMER DATA,NODE2,78,4,TRANSFORMER DATA,TRANSFORMER DATA,NODE2,78,transformer,node2,DATA_TRANSFORMER,N/A,N/A,A node number of bus CONT2
+1.13 Transformer Data,78,4,TRANSFORMER DATA,TRANSFORMER DATA,RMA2,79,4,TRANSFORMER DATA,TRANSFORMER DATA,RMA2,79,transformer,rma2,DATA_TRANSFORMER,W2RegulMax,N/A,
+1.13 Transformer Data,79,4,TRANSFORMER DATA,TRANSFORMER DATA,RMI2,80,4,TRANSFORMER DATA,TRANSFORMER DATA,RMI2,80,transformer,rmi2,DATA_TRANSFORMER,W2RegulMin,N/A,
+1.13 Transformer Data,80,4,TRANSFORMER DATA,TRANSFORMER DATA,VMA2,81,4,TRANSFORMER DATA,TRANSFORMER DATA,VMA2,81,transformer,vma2,DATA_TRANSFORMER,W2TargetMax,N/A,
+1.13 Transformer Data,81,4,TRANSFORMER DATA,TRANSFORMER DATA,VMI2,82,4,TRANSFORMER DATA,TRANSFORMER DATA,VMI2,82,transformer,vmi2,DATA_TRANSFORMER,W2TargetMin,N/A,
+1.13 Transformer Data,82,4,TRANSFORMER DATA,TRANSFORMER DATA,NTP2,83,4,TRANSFORMER DATA,TRANSFORMER DATA,NTP2,83,transformer,ntp2,DATA_TRANSFORMER,W2NumTapPos,N/A,The number of tap positions available
+1.13 Transformer Data,83,4,TRANSFORMER DATA,TRANSFORMER DATA,TAB2,84,4,TRANSFORMER DATA,TRANSFORMER DATA,TAB2,84,transformer,tab2,DATA_TRANSFORMER,W2NTable,N/A,The number of a transformer impedance correction table
+1.13 Transformer Data,84,4,TRANSFORMER DATA,TRANSFORMER DATA,CR2,85,4,TRANSFORMER DATA,TRANSFORMER DATA,CR2,85,transformer,cr2,DATA_TRANSFORMER,W2LDropR,N/A,The load drop compensation impedance for voltage controlling transformers entered in pu on system base quantities
+1.13 Transformer Data,85,4,TRANSFORMER DATA,TRANSFORMER DATA,CX2,86,4,TRANSFORMER DATA,TRANSFORMER DATA,CX2,86,transformer,cx2,DATA_TRANSFORMER,W2LDropX,N/A,The load drop compensation impedance for voltage controlling transformers entered in pu on system base quantities
+1.13 Transformer Data,86,4,TRANSFORMER DATA,TRANSFORMER DATA,CNXA2,87,4,TRANSFORMER DATA,TRANSFORMER DATA,CNXA2,87,transformer,cnxa2,DATA_TRANSFORMER,N/A,N/A,Winding connection angle in degrees
+1.13 Transformer Data,88,5,TRANSFORMER DATA,TRANSFORMER DATA,WINDV3,88,5,TRANSFORMER DATA,TRANSFORMER DATA,WINDV3,88,transformer,windv3,DATA_TRANSFORMER,W3WINV,N/A,
+1.13 Transformer Data,89,5,TRANSFORMER DATA,TRANSFORMER DATA,NOMV3,89,5,TRANSFORMER DATA,TRANSFORMER DATA,NOMV3,89,transformer,nomv3,DATA_TRANSFORMER,W3NOMV,N/A,The nominal (rated) Winding 3 voltage base in kV
+1.13 Transformer Data,90,5,TRANSFORMER DATA,TRANSFORMER DATA,ANG3,90,5,TRANSFORMER DATA,TRANSFORMER DATA,ANG3,90,transformer,ang3,DATA_TRANSFORMER,W3ANG,N/A,The winding three phase shift angle in degrees
+1.13 Transformer Data,91,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE13,91,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE13,91,transformer,wdg3rate1,DATA_TRANSFORMER,W3Rate1,N/A,
+1.13 Transformer Data,92,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE23,92,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE23,92,transformer,wdg3rate2,DATA_TRANSFORMER,W3Rate2,N/A,
+1.13 Transformer Data,93,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE33,93,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE33,93,transformer,wdg3rate3,DATA_TRANSFORMER,W3Rate3,N/A,
+1.13 Transformer Data,94,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE43,94,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE43,94,transformer,wdg3rate4,DATA_TRANSFORMER,W3Rate4,N/A,
+1.13 Transformer Data,95,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE53,95,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE53,95,transformer,wdg3rate5,DATA_TRANSFORMER,W3Rate5,N/A,
+1.13 Transformer Data,96,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE63,96,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE63,96,transformer,wdg3rate6,DATA_TRANSFORMER,W3Rate6,N/A,
+1.13 Transformer Data,97,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE73,97,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE73,97,transformer,wdg3rate7,DATA_TRANSFORMER,W3Rate7,N/A,
+1.13 Transformer Data,98,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE83,98,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE83,98,transformer,wdg3rate8,DATA_TRANSFORMER,W3Rate8,N/A,
+1.13 Transformer Data,99,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE93,99,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE93,99,transformer,wdg3rate9,DATA_TRANSFORMER,W3Rate9,N/A,
+1.13 Transformer Data,100,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE103,100,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE103,100,transformer,wdg3rate10,DATA_TRANSFORMER,W3Rate10,N/A,
+1.13 Transformer Data,101,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE113,101,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE113,101,transformer,wdg3rate11,DATA_TRANSFORMER,W3Rate11,N/A,
+1.13 Transformer Data,102,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE123,102,5,TRANSFORMER DATA,TRANSFORMER DATA,RATE123,102,transformer,wdg3rate12,DATA_TRANSFORMER,W3Rate12,N/A,
+1.13 Transformer Data,103,5,TRANSFORMER DATA,TRANSFORMER DATA,COD3,103,5,TRANSFORMER DATA,TRANSFORMER DATA,COD3,103,transformer,cod3,DATA_TRANSFORMER,W3AdjStatus,N/A,The transformer control mode for automatic adjustments of the Winding 3 tap or phase shift angle during power flow solutions
+1.13 Transformer Data,104,5,TRANSFORMER DATA,TRANSFORMER DATA,CONT3,104,5,TRANSFORMER DATA,TRANSFORMER DATA,CONT3,104,transformer,cont3,DATA_TRANSFORMER,W3CtrlBus,N/A,"The bus number, or extended bus name enclosed in single quotes, of the bus for which voltage is to be controlled by the transformer"
+1.13 Transformer Data,114,5,TRANSFORMER DATA,TRANSFORMER DATA,NODE3,105,5,TRANSFORMER DATA,TRANSFORMER DATA,NODE3,105,transformer,node3,DATA_TRANSFORMER,N/A,N/A,A node number of bus CONT3
+1.13 Transformer Data,105,5,TRANSFORMER DATA,TRANSFORMER DATA,RMA3,106,5,TRANSFORMER DATA,TRANSFORMER DATA,RMA3,106,transformer,rma3,DATA_TRANSFORMER,W3RegulMax,N/A,
+1.13 Transformer Data,106,5,TRANSFORMER DATA,TRANSFORMER DATA,RMI3,107,5,TRANSFORMER DATA,TRANSFORMER DATA,RMI3,107,transformer,rmi3,DATA_TRANSFORMER,W3RegulMin,N/A,
+1.13 Transformer Data,107,5,TRANSFORMER DATA,TRANSFORMER DATA,VMA3,108,5,TRANSFORMER DATA,TRANSFORMER DATA,VMA3,108,transformer,vma3,DATA_TRANSFORMER,W3TargetMax,N/A,
+1.13 Transformer Data,108,5,TRANSFORMER DATA,TRANSFORMER DATA,VMI3,109,5,TRANSFORMER DATA,TRANSFORMER DATA,VMI3,109,transformer,vmi3,DATA_TRANSFORMER,W3TargetMin,N/A,
+1.13 Transformer Data,109,5,TRANSFORMER DATA,TRANSFORMER DATA,NTP3,110,5,TRANSFORMER DATA,TRANSFORMER DATA,NTP3,110,transformer,ntp3,DATA_TRANSFORMER,W3NumTapPos,N/A,The number of tap positions available
+1.13 Transformer Data,110,5,TRANSFORMER DATA,TRANSFORMER DATA,TAB3,111,5,TRANSFORMER DATA,TRANSFORMER DATA,TAB3,111,transformer,tab3,DATA_TRANSFORMER,W3NTable,N/A,The number of a transformer impedance correction table
+1.13 Transformer Data,111,5,TRANSFORMER DATA,TRANSFORMER DATA,CR3,112,5,TRANSFORMER DATA,TRANSFORMER DATA,CR3,112,transformer,cr3,DATA_TRANSFORMER,W3LDropR,N/A,The load drop compensation impedance for voltage controlling transformers entered in pu on system base quantities
+1.13 Transformer Data,112,5,TRANSFORMER DATA,TRANSFORMER DATA,CX3,113,5,TRANSFORMER DATA,TRANSFORMER DATA,CX3,113,transformer,cx3,DATA_TRANSFORMER,W3LDropX,N/A,The load drop compensation impedance for voltage controlling transformers entered in pu on system base quantities
+1.13 Transformer Data,113,5,TRANSFORMER DATA,TRANSFORMER DATA,CNXA3,114,5,TRANSFORMER DATA,TRANSFORMER DATA,CNXA3,114,transformer,cnxa3,DATA_TRANSFORMER,N/A,N/A,Winding connection angle in degrees
+1.15 Area Interchange Data,1,1,AREA DATA,AREA DATA,I,1,1,AREA DATA,AREA DATA,I,1,area,iarea,DATA_AREA,AreaNum,N/A,Area number
+1.15 Area Interchange Data,2,1,AREA DATA,AREA DATA,ISW,2,1,AREA DATA,AREA DATA,ISW,2,area,isw,DATA_AREA,SlackBusNum,N/A,Bus number of the area slack bus for area interchange control
+1.15 Area Interchange Data,3,1,AREA DATA,AREA DATA,PDES,3,1,AREA DATA,AREA DATA,PDES,3,area,pdes,DATA_AREA,DesInter,N/A,Desired net interchange leaving the area (export); entered in MW
+1.15 Area Interchange Data,4,1,AREA DATA,AREA DATA,PTOL,4,1,AREA DATA,AREA DATA,PTOL,4,area,ptol,DATA_AREA,N/A,N/A,Interchange tolerance bandwidth; entered in MW
+1.15 Area Interchange Data,5,1,AREA DATA,AREA DATA,ARNAME,5,1,AREA DATA,AREA DATA,ARNAME,5,area,arname,DATA_AREA,AreaName,N/A,Alphanumeric identifier assigned to area I
+1.16 Two-Terminal DC Transmission Line Data,1,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NAME,1,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NAME,1,twotermdc,name,N/A,N/A,N/A,The non-blank alphanumeric identifier assigned to this dc line
+1.16 Two-Terminal DC Transmission Line Data,2,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,MDC,2,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,MDC,2,twotermdc,mdc,N/A,N/A,N/A,Control mode
+1.16 Two-Terminal DC Transmission Line Data,3,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RDC,3,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RDC,3,twotermdc,rdc,N/A,N/A,N/A,The dc line resistance; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,4,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,SETVL,4,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,SETVL,4,twotermdc,setvl,N/A,N/A,N/A,Current (amps) or power (MW) demand
+1.16 Two-Terminal DC Transmission Line Data,5,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,VSCHD,5,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,VSCHD,5,twotermdc,vschd,N/A,N/A,N/A,Scheduled compounded dc voltage; entered in kV
+1.16 Two-Terminal DC Transmission Line Data,6,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,VCMOD,6,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,VCMOD,6,twotermdc,vcmod,N/A,N/A,N/A,Mode switch dc voltage; entered in kV
+1.16 Two-Terminal DC Transmission Line Data,7,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RCOMP,7,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RCOMP,7,twotermdc,rcomp,N/A,N/A,N/A,Compounding resistance; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,8,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,DELTI,8,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,DELTI,8,twotermdc,delti,N/A,N/A,N/A,Margin entered in per unit of desired dc power or current
+1.16 Two-Terminal DC Transmission Line Data,9,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,METER,9,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,METER,9,twotermdc,meter,N/A,N/A,N/A,Metered end code of either R (for rectifier) or I (for inverter)
+1.16 Two-Terminal DC Transmission Line Data,10,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,DCVMIN,10,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,DCVMIN,10,twotermdc,dcvmin,N/A,N/A,N/A,Minimum compounded dc voltage; entered in kV
+1.16 Two-Terminal DC Transmission Line Data,11,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,CCCITMX,11,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,CCCITMX,11,twotermdc,cccitmx,N/A,N/A,N/A,Iteration limit for capacitor commutated two-terminal dc line Newton solution procedure
+1.16 Two-Terminal DC Transmission Line Data,12,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,CCCACC,12,1,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,CCCACC,12,twotermdc,cccacc,N/A,N/A,N/A,Acceleration factor for capacitor commutated two-terminal dc line Newton solution procedure
+1.16 Two-Terminal DC Transmission Line Data,13,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IPR,13,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IPR,13,twotermdc,ipr,N/A,N/A,N/A,Rectifier converter bus number
+1.16 Two-Terminal DC Transmission Line Data,14,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NBR,14,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NBR,14,twotermdc,nbr,N/A,N/A,N/A,Number of bridges in series
+1.16 Two-Terminal DC Transmission Line Data,15,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMXR,15,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMXR,15,twotermdc,anmxr,N/A,N/A,N/A,Nominal maximum rectifier firing angle; entered in degrees
+1.16 Two-Terminal DC Transmission Line Data,16,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMNR,16,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMNR,16,twotermdc,anmnr,N/A,N/A,N/A,Minimum steady-state rectifier firing angle; entered in degrees.
+1.16 Two-Terminal DC Transmission Line Data,17,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RCR,17,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RCR,17,twotermdc,rcr,N/A,N/A,N/A,Rectifier commutating transformer resistance per bridge; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,18,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCR,18,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCR,18,twotermdc,xcr,N/A,N/A,N/A,Rectifier commutating transformer reactance per bridge; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,19,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,EBASR,19,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,EBASR,19,twotermdc,ebasr,N/A,N/A,N/A,Rectifier primary base ac voltage; entered in kV
+1.16 Two-Terminal DC Transmission Line Data,20,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TRR,20,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TRR,20,twotermdc,trr,N/A,N/A,N/A,Rectifier transformer ratio
+1.16 Two-Terminal DC Transmission Line Data,21,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TAPR,21,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TAPR,21,twotermdc,tapr,N/A,N/A,N/A,Rectifier tap setting. TAPR = 1.0 by default
+1.16 Two-Terminal DC Transmission Line Data,22,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMXR,22,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMXR,22,twotermdc,tmxr,N/A,N/A,N/A,Maximum rectifier tap setting
+1.16 Two-Terminal DC Transmission Line Data,23,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMNR,23,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMNR,23,twotermdc,tmnr,N/A,N/A,N/A,Minimum rectifier tap setting
+1.16 Two-Terminal DC Transmission Line Data,24,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,STPR,24,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,STPR,24,twotermdc,stpr,N/A,N/A,N/A,Rectifier tap step; must be positive
+1.16 Two-Terminal DC Transmission Line Data,25,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ICR,25,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ICR,25,twotermdc,icr,N/A,N/A,N/A,Bus number of the rectifier commutating bus
+1.16 Two-Terminal DC Transmission Line Data,26,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IFR,26,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IFR,26,twotermdc,ifr,N/A,N/A,N/A,A node number of bus ICR
+1.16 Two-Terminal DC Transmission Line Data,27,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ITR,27,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ITR,27,twotermdc,itr,N/A,N/A,N/A,"Winding 1 side from bus number, or extended bus name enclosed in single quotes, of a two-winding transformer."
+1.16 Two-Terminal DC Transmission Line Data,28,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IDR,28,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IDR,28,twotermdc,idr,N/A,N/A,N/A,"Winding 2 side to bus number, or extended bus name enclosed in single quotes, of a two-winding transformer"
+1.16 Two-Terminal DC Transmission Line Data,29,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCAPR,29,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCAPR,29,twotermdc,xcapr,N/A,N/A,N/A,Circuit identifier
+1.16 Two-Terminal DC Transmission Line Data,30,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NDR,30,2,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NDR,30,twotermdc,ndr,N/A,N/A,N/A,Commutating capacitor reactance magnitude per bridge; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,31,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IPI,31,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IPI,31,twotermdc,ipi,N/A,N/A,N/A,Rectifier converter bus number
+1.16 Two-Terminal DC Transmission Line Data,32,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NBI,32,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NBI,32,twotermdc,nbi,N/A,N/A,N/A,Number of bridges in series
+1.16 Two-Terminal DC Transmission Line Data,33,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMXI,33,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMXI,33,twotermdc,anmxi,N/A,N/A,N/A,Nominal maximum rectifier firing angle; entered in degrees
+1.16 Two-Terminal DC Transmission Line Data,34,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMNI,34,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ANMNI,34,twotermdc,anmni,N/A,N/A,N/A,Minimum steady-state rectifier firing angle; entered in degrees.
+1.16 Two-Terminal DC Transmission Line Data,35,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RCI,35,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,RCI,35,twotermdc,rci,N/A,N/A,N/A,Rectifier commutating transformer resistance per bridge; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,36,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCI,36,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCI,36,twotermdc,xci,N/A,N/A,N/A,Rectifier commutating transformer reactance per bridge; entered in ohms
+1.16 Two-Terminal DC Transmission Line Data,37,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,EBASI,37,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,EBASI,37,twotermdc,ebasi,N/A,N/A,N/A,Rectifier primary base ac voltage; entered in kV
+1.16 Two-Terminal DC Transmission Line Data,38,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TRI,38,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TRI,38,twotermdc,tri,N/A,N/A,N/A,Rectifier transformer ratio
+1.16 Two-Terminal DC Transmission Line Data,39,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TAPI,39,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TAPI,39,twotermdc,tapi,N/A,N/A,N/A,Rectifier tap setting. TAPR = 1.0 by default
+1.16 Two-Terminal DC Transmission Line Data,40,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMXI,40,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMXI,40,twotermdc,tmxi,N/A,N/A,N/A,Maximum rectifier tap setting
+1.16 Two-Terminal DC Transmission Line Data,41,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMNI,41,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,TMNI,41,twotermdc,tmni,N/A,N/A,N/A,Minimum rectifier tap setting
+1.16 Two-Terminal DC Transmission Line Data,42,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,STPI,42,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,STPI,42,twotermdc,stpi,N/A,N/A,N/A,Rectifier tap step; must be positive
+1.16 Two-Terminal DC Transmission Line Data,43,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ICI,43,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ICI,43,twotermdc,ici,N/A,N/A,N/A,Bus number of the rectifier commutating bus
+1.16 Two-Terminal DC Transmission Line Data,44,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IFI,44,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IFI,44,twotermdc,ifi,N/A,N/A,N/A,A node number of bus ICR
+1.16 Two-Terminal DC Transmission Line Data,45,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ITI,45,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,ITI,45,twotermdc,iti,N/A,N/A,N/A,"Winding 1 side from bus number, or extended bus name enclosed in single quotes, of a two-winding transformer."
+1.16 Two-Terminal DC Transmission Line Data,46,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IDI,46,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,IDI,46,twotermdc,idi,N/A,N/A,N/A,"Winding 2 side to bus number, or extended bus name enclosed in single quotes, of a two-winding transformer"
+1.16 Two-Terminal DC Transmission Line Data,47,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCAPI,47,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,XCAPI,47,twotermdc,xcapi,N/A,N/A,N/A,Circuit identifier
+1.16 Two-Terminal DC Transmission Line Data,48,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NDI,48,3,TWO-TERMINAL DC DATA,TWO-TERMINAL DC DATA,NDI,48,twotermdc,ndi,N/A,N/A,N/A,Commutating capacitor reactance magnitude per bridge; entered in ohms
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,1,1,VSC DC LINE DATA,VSC DC LINE DATA,NAME,1,1,VSC DC LINE DATA,VSC DC LINE DATA,NAME,1,vscdc,name,N/A,N/A,N/A,The non-blank alphanumeric identifier assigned to this dc line
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,2,1,VSC DC LINE DATA,VSC DC LINE DATA,MDC,2,1,VSC DC LINE DATA,VSC DC LINE DATA,MDC,2,vscdc,mdc,N/A,N/A,N/A,Control mode
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,3,1,VSC DC LINE DATA,VSC DC LINE DATA,RDC,3,1,VSC DC LINE DATA,VSC DC LINE DATA,RDC,3,vscdc,rdc,N/A,N/A,N/A,The dc line resistance; entered in ohms
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,4,1,VSC DC LINE DATA,VSC DC LINE DATA,O1,4,1,VSC DC LINE DATA,VSC DC LINE DATA,O1,4,vscdc,o1,N/A,N/A,N/A,An owner number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,5,1,VSC DC LINE DATA,VSC DC LINE DATA,F1,5,1,VSC DC LINE DATA,VSC DC LINE DATA,F1,5,vscdc,f1,N/A,N/A,N/A,The fraction of total ownership assigned to owner Oi
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,6,1,VSC DC LINE DATA,VSC DC LINE DATA,O2,6,1,VSC DC LINE DATA,VSC DC LINE DATA,O2,6,vscdc,o2,N/A,N/A,N/A,An owner number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,7,1,VSC DC LINE DATA,VSC DC LINE DATA,F2,7,1,VSC DC LINE DATA,VSC DC LINE DATA,F2,7,vscdc,f2,N/A,N/A,N/A,The fraction of total ownership assigned to owner Oi
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,8,1,VSC DC LINE DATA,VSC DC LINE DATA,O3,8,1,VSC DC LINE DATA,VSC DC LINE DATA,O3,8,vscdc,o3,N/A,N/A,N/A,An owner number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,9,1,VSC DC LINE DATA,VSC DC LINE DATA,F3,9,1,VSC DC LINE DATA,VSC DC LINE DATA,F3,9,vscdc,f3,N/A,N/A,N/A,The fraction of total ownership assigned to owner Oi
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,10,1,VSC DC LINE DATA,VSC DC LINE DATA,O4,10,1,VSC DC LINE DATA,VSC DC LINE DATA,O4,10,vscdc,o4,N/A,N/A,N/A,An owner number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,11,1,VSC DC LINE DATA,VSC DC LINE DATA,F4,11,1,VSC DC LINE DATA,VSC DC LINE DATA,F4,11,vscdc,f4,N/A,N/A,N/A,The fraction of total ownership assigned to owner Oi
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,12,2,VSC DC LINE DATA,VSC DC LINE DATA,IBUS1,12,2,VSC DC LINE DATA,VSC DC LINE DATA,IBUS1,12,vscdc,ibus1,N/A,N/A,N/A,Converter bus number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,13,2,VSC DC LINE DATA,VSC DC LINE DATA,TYPE1,13,2,VSC DC LINE DATA,VSC DC LINE DATA,TYPE1,13,vscdc,type1,N/A,N/A,N/A,Code for the type of converter dc control
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,14,2,VSC DC LINE DATA,VSC DC LINE DATA,MODE1,14,2,VSC DC LINE DATA,VSC DC LINE DATA,MODE1,14,vscdc,mode1,N/A,N/A,N/A,Converter ac control mode
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,15,2,VSC DC LINE DATA,VSC DC LINE DATA,DCSET1,15,2,VSC DC LINE DATA,VSC DC LINE DATA,DCSET1,15,vscdc,dcset1,N/A,N/A,N/A,Converter dc setpoint
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,16,2,VSC DC LINE DATA,VSC DC LINE DATA,ACSET1,16,2,VSC DC LINE DATA,VSC DC LINE DATA,ACSET1,16,vscdc,acset1,N/A,N/A,N/A,Converter ac setpoint
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,17,2,VSC DC LINE DATA,VSC DC LINE DATA,ALOSS1,17,2,VSC DC LINE DATA,VSC DC LINE DATA,ALOSS1,17,vscdc,aloss1,N/A,N/A,N/A,Coefficients of the linear equation used to calculate converter losses
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,18,2,VSC DC LINE DATA,VSC DC LINE DATA,BLOSS1,18,2,VSC DC LINE DATA,VSC DC LINE DATA,BLOSS1,18,vscdc,bloss1,N/A,N/A,N/A,Coefficients of the linear equation used to calculate converter losses
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,19,2,VSC DC LINE DATA,VSC DC LINE DATA,MINLOSS1,19,2,VSC DC LINE DATA,VSC DC LINE DATA,MINLOSS1,19,vscdc,minloss1,N/A,N/A,N/A,Minimum converter losses; entered in kW
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,20,2,VSC DC LINE DATA,VSC DC LINE DATA,SMAX1,20,2,VSC DC LINE DATA,VSC DC LINE DATA,SMAX1,20,vscdc,smax1,N/A,N/A,N/A,Converter MVA rating; entered in MVA
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,21,2,VSC DC LINE DATA,VSC DC LINE DATA,IMAX1,21,2,VSC DC LINE DATA,VSC DC LINE DATA,IMAX1,21,vscdc,imax1,N/A,N/A,N/A,Converter ac current rating; entered in amps
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,22,2,VSC DC LINE DATA,VSC DC LINE DATA,PWF1,22,2,VSC DC LINE DATA,VSC DC LINE DATA,PWF1,22,vscdc,pwf1,N/A,N/A,N/A,Power weighting factor fraction
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,23,2,VSC DC LINE DATA,VSC DC LINE DATA,MAXQ1,23,2,VSC DC LINE DATA,VSC DC LINE DATA,MAXQ1,23,vscdc,maxq1,N/A,N/A,N/A,Reactive power upper limit; entered in Mvar
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,24,2,VSC DC LINE DATA,VSC DC LINE DATA,MINQ1,24,2,VSC DC LINE DATA,VSC DC LINE DATA,MINQ1,24,vscdc,minq1,N/A,N/A,N/A,Reactive power lower limit; entered in Mvar
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,25,2,VSC DC LINE DATA,VSC DC LINE DATA,VSREG1,25,2,VSC DC LINE DATA,VSC DC LINE DATA,VSREG1,25,vscdc,vsreg1,N/A,N/A,N/A,Bus number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,27,2,VSC DC LINE DATA,VSC DC LINE DATA,NREG1,26,2,VSC DC LINE DATA,VSC DC LINE DATA,NREG1,26,vscdc,nreg1,N/A,N/A,N/A,A node number of bus VSREG
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,26,2,VSC DC LINE DATA,VSC DC LINE DATA,RMPCT1,27,2,VSC DC LINE DATA,VSC DC LINE DATA,RMPCT1,27,vscdc,rmpct1,N/A,N/A,N/A,Percent of the total Mvar required to hold the voltage at the bus controlled by bus IBUS
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,28,3,VSC DC LINE DATA,VSC DC LINE DATA,IBUS2,28,3,VSC DC LINE DATA,VSC DC LINE DATA,IBUS2,28,vscdc,ibus2,N/A,N/A,N/A,Converter bus number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,29,3,VSC DC LINE DATA,VSC DC LINE DATA,TYPE2,29,3,VSC DC LINE DATA,VSC DC LINE DATA,TYPE2,29,vscdc,type2,N/A,N/A,N/A,Code for the type of converter dc control
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,30,3,VSC DC LINE DATA,VSC DC LINE DATA,MODE2,30,3,VSC DC LINE DATA,VSC DC LINE DATA,MODE2,30,vscdc,mode2,N/A,N/A,N/A,Converter ac control mode
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,31,3,VSC DC LINE DATA,VSC DC LINE DATA,DCSET2,31,3,VSC DC LINE DATA,VSC DC LINE DATA,DCSET2,31,vscdc,dcset2,N/A,N/A,N/A,Converter dc setpoint
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,32,3,VSC DC LINE DATA,VSC DC LINE DATA,ACSET2,32,3,VSC DC LINE DATA,VSC DC LINE DATA,ACSET2,32,vscdc,acset2,N/A,N/A,N/A,Converter ac setpoint
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,33,3,VSC DC LINE DATA,VSC DC LINE DATA,ALOSS2,33,3,VSC DC LINE DATA,VSC DC LINE DATA,ALOSS2,33,vscdc,aloss2,N/A,N/A,N/A,Coefficients of the linear equation used to calculate converter losses
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,34,3,VSC DC LINE DATA,VSC DC LINE DATA,BLOSS2,34,3,VSC DC LINE DATA,VSC DC LINE DATA,BLOSS2,34,vscdc,bloss2,N/A,N/A,N/A,Coefficients of the linear equation used to calculate converter losses
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,35,3,VSC DC LINE DATA,VSC DC LINE DATA,MINLOSS2,35,3,VSC DC LINE DATA,VSC DC LINE DATA,MINLOSS2,35,vscdc,minloss2,N/A,N/A,N/A,Minimum converter losses; entered in kW
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,36,3,VSC DC LINE DATA,VSC DC LINE DATA,SMAX2,36,3,VSC DC LINE DATA,VSC DC LINE DATA,SMAX2,36,vscdc,smax2,N/A,N/A,N/A,Converter MVA rating; entered in MVA
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,37,3,VSC DC LINE DATA,VSC DC LINE DATA,IMAX2,37,3,VSC DC LINE DATA,VSC DC LINE DATA,IMAX2,37,vscdc,imax2,N/A,N/A,N/A,Converter ac current rating; entered in amps
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,38,3,VSC DC LINE DATA,VSC DC LINE DATA,PWF2,38,3,VSC DC LINE DATA,VSC DC LINE DATA,PWF2,38,vscdc,pwf2,N/A,N/A,N/A,Power weighting factor fraction
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,39,3,VSC DC LINE DATA,VSC DC LINE DATA,MAXQ2,39,3,VSC DC LINE DATA,VSC DC LINE DATA,MAXQ2,39,vscdc,maxq2,N/A,N/A,N/A,Reactive power upper limit; entered in Mvar
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,40,3,VSC DC LINE DATA,VSC DC LINE DATA,MINQ2,40,3,VSC DC LINE DATA,VSC DC LINE DATA,MINQ2,40,vscdc,minq2,N/A,N/A,N/A,Reactive power lower limit; entered in Mvar
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,41,3,VSC DC LINE DATA,VSC DC LINE DATA,VSREG2,41,3,VSC DC LINE DATA,VSC DC LINE DATA,VSREG2,41,vscdc,vsreg2,N/A,N/A,N/A,Bus number
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,43,3,VSC DC LINE DATA,VSC DC LINE DATA,NREG2,42,3,VSC DC LINE DATA,VSC DC LINE DATA,NREG2,42,vscdc,nreg2,N/A,N/A,N/A,A node number of bus VSREG
+1.17. Voltage Source Converter (VSC) DC Transmission Line Data,42,3,VSC DC LINE DATA,VSC DC LINE DATA,RMPCT2,43,3,VSC DC LINE DATA,VSC DC LINE DATA,RMPCT2,43,vscdc,rmpct2,N/A,N/A,N/A,Percent of the total Mvar required to hold the voltage at the bus controlled by bus IBUS
+1.18 Transformer Impedance Correction Tables,1,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,I,1,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,I,1,impcor,itable,N/A,N/A,N/A,Impedance correction table number
+1.18 Transformer Impedance Correction Tables,2,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,Ti,2,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,Ti,2,impcor,tap,N/A,N/A,N/A,Either off-nominal turns ratio in pu of the controlling windings bus voltage base or phase shift angle in degrees
+1.18 Transformer Impedance Correction Tables,3,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,Re,3,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,Re,3,impcor,refact,N/A,N/A,N/A,Complex scaling factor by which transformer nominal impedance is to be multiplied to obtain the actual transformer impedance
+1.18 Transformer Impedance Correction Tables,4,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,Im,4,1,IMPEDANCE CORRECTION DATA,IMPEDANCE CORRECTION DATA,Im,4,impcor,imfact,N/A,N/A,N/A,Complex scaling factor by which transformer nominal impedance is to be multiplied to obtain the actual transformer impedance
+1.19 Multi-Terminal DC Transmission Line Data,1,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NAME,1,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NAME,1,ntermdc,name,N/A,N/A,N/A,The non-blank alphanumeric identifier assigned to this dc line
+1.19 Multi-Terminal DC Transmission Line Data,2,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NCONV,2,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NCONV,2,ntermdc,nconv,N/A,N/A,N/A,Number of ac converter station buses in multi-terminal dc line I
+1.19 Multi-Terminal DC Transmission Line Data,3,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NDCBS,3,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NDCBS,3,ntermdc,ndcbs,N/A,N/A,N/A,Number of dc buses in multi-terminal dc line I (NCONV NDCBS)
+1.19 Multi-Terminal DC Transmission Line Data,4,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NDCLN,4,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NDCLN,4,ntermdc,ndcln,N/A,N/A,N/A,Number of dc links in multi-terminal dc line I
+1.19 Multi-Terminal DC Transmission Line Data,5,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,MDC,5,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,MDC,5,ntermdc,mdc,N/A,N/A,N/A,Control mode
+1.19 Multi-Terminal DC Transmission Line Data,6,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,VCONV,6,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,VCONV,6,ntermdc,vconv,N/A,N/A,N/A,Bus number of the ac converter station bus that controls dc voltage on the positive pole of multi-terminal dc line I
+1.19 Multi-Terminal DC Transmission Line Data,7,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,VCMOD,7,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,VCMOD,7,ntermdc,vcmod,N/A,N/A,N/A,Mode switch dc voltage; entered in kV
+1.19 Multi-Terminal DC Transmission Line Data,8,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,VCONVN,8,1,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,VCONVN,8,ntermdc,vconvn,N/A,N/A,N/A,Bus number of the ac converter station bus that controls dc voltage on the negative pole of multi-terminal dc line I
+1.19 Multi-Terminal DC Transmission Line Data,N/A,2,N/A,MULTI-TERMINAL DC DATA,NAME,N/A,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NAME,1,ntermdcconv,name,N/A,N/A,N/A,Same name in ntermdc.
+1.19 Multi-Terminal DC Transmission Line Data,1,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IB,1,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IB,2,ntermdcconv,ib,N/A,N/A,N/A,ac converter bus number
+1.19 Multi-Terminal DC Transmission Line Data,2,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,N,2,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,N,3,ntermdcconv,nbrdg,N/A,N/A,N/A,Number of bridges in series
+1.19 Multi-Terminal DC Transmission Line Data,3,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,ANGMX,3,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,ANGMX,4,ntermdcconv,angmx,N/A,N/A,N/A,Nominal maximum ALPHA or GAMMA angle; entered in degrees
+1.19 Multi-Terminal DC Transmission Line Data,4,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,ANGMN,4,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,ANGMN,5,ntermdcconv,angmn,N/A,N/A,N/A,Minimum steady-state ALPHA or GAMMA angle; entered in degrees
+1.19 Multi-Terminal DC Transmission Line Data,5,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,RC,5,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,RC,6,ntermdcconv,rc,N/A,N/A,N/A,Commutating resistance per bridge; entered in ohms
+1.19 Multi-Terminal DC Transmission Line Data,6,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,XC,6,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,XC,7,ntermdcconv,xc,N/A,N/A,N/A,Commutating reactance per bridge; entered in ohms
+1.19 Multi-Terminal DC Transmission Line Data,7,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,EBAS,7,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,EBAS,8,ntermdcconv,ebas,N/A,N/A,N/A,Primary base ac voltage; entered in kV.
+1.19 Multi-Terminal DC Transmission Line Data,8,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TR,8,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TR,9,ntermdcconv,tr,N/A,N/A,N/A,Actual transformer ratio.
+1.19 Multi-Terminal DC Transmission Line Data,9,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TAP,9,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TAP,10,ntermdcconv,tap,N/A,N/A,N/A,Tap setting
+1.19 Multi-Terminal DC Transmission Line Data,10,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TPMX,10,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TPMX,11,ntermdcconv,tpmx,N/A,N/A,N/A,Maximum tap setting
+1.19 Multi-Terminal DC Transmission Line Data,11,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TPMN,11,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TPMN,12,ntermdcconv,tpmn,N/A,N/A,N/A,Minimum tap setting
+1.19 Multi-Terminal DC Transmission Line Data,12,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TSTP,12,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,TSTP,13,ntermdcconv,tstp,N/A,N/A,N/A,Tap step; must be a positive number
+1.19 Multi-Terminal DC Transmission Line Data,13,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,SETVL,13,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,SETVL,14,ntermdcconv,setvl,N/A,N/A,N/A,Converter setpoint
+1.19 Multi-Terminal DC Transmission Line Data,14,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,DCPF,14,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,DCPF,15,ntermdcconv,dcpf,N/A,N/A,N/A,Converter participation factor
+1.19 Multi-Terminal DC Transmission Line Data,15,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,MARG,15,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,MARG,16,ntermdcconv,marg,N/A,N/A,N/A,Rectifier margin entered in per unit of desired dc power or current
+1.19 Multi-Terminal DC Transmission Line Data,16,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,CNVCOD,16,2,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,CNVCOD,17,ntermdcconv,cnvcod,N/A,N/A,N/A,Converter code
+1.19 Multi-Terminal DC Transmission Line Data,N/A,3,N/A,MULTI-TERMINAL DC DATA,NAME,N/A,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NAME,1,ntermdcbus,name,N/A,N/A,N/A,Same name in ntermdc.
+1.19 Multi-Terminal DC Transmission Line Data,1,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IDC,1,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IDC,2,ntermdcbus,idc,N/A,N/A,N/A,dc bus number
+1.19 Multi-Terminal DC Transmission Line Data,2,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IB,2,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IB,3,ntermdcbus,ib,N/A,N/A,N/A,ac converter bus number
+1.19 Multi-Terminal DC Transmission Line Data,3,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,AREA,3,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,AREA,4,ntermdcbus,area,N/A,N/A,N/A,Area number
+1.19 Multi-Terminal DC Transmission Line Data,4,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,ZONE,4,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,ZONE,5,ntermdcbus,zone,N/A,N/A,N/A,Zone number
+1.19 Multi-Terminal DC Transmission Line Data,5,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,DCNAME,5,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,DCNAME,6,ntermdcbus,dcname,N/A,N/A,N/A,Alphanumeric identifier assigned to dc bus IDC
+1.19 Multi-Terminal DC Transmission Line Data,6,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IDC2,6,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IDC2,7,ntermdcbus,idc2,N/A,N/A,N/A,Second dc bus to which converter IB is connected
+1.19 Multi-Terminal DC Transmission Line Data,7,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,RGRND,7,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,RGRND,8,ntermdcbus,rgrnd,N/A,N/A,N/A,Resistance to ground at dc bus IDC; entered in ohms
+1.19 Multi-Terminal DC Transmission Line Data,8,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,OWNER,8,3,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,OWNER,9,ntermdcbus,owner,N/A,N/A,N/A,Owner number
+1.19 Multi-Terminal DC Transmission Line Data,N/A,4,N/A,MULTI-TERMINAL DC DATA,NAME,N/A,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,NAME,1,ntermdclink,name,N/A,N/A,N/A,Same name in ntermdc.
+1.19 Multi-Terminal DC Transmission Line Data,1,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IDC,1,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,IDC,2,ntermdclink,idc,N/A,N/A,N/A,Branch from bus dc bus number
+1.19 Multi-Terminal DC Transmission Line Data,2,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,JDC,2,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,JDC,3,ntermdclink,jdc,N/A,N/A,N/A,Branch to bus dc bus number
+1.19 Multi-Terminal DC Transmission Line Data,3,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,CKT,3,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,CKT,4,ntermdclink,dcckt,N/A,N/A,N/A,One-character uppercase alphanumeric branch circuit identifier
+1.19 Multi-Terminal DC Transmission Line Data,4,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,MET,4,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,MET,5,ntermdclink,met,N/A,N/A,N/A,Metered end flag
+1.19 Multi-Terminal DC Transmission Line Data,5,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,RDC,5,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,RDC,6,ntermdclink,rdc,N/A,N/A,N/A,"dc link resistance, entered in ohms"
+1.19 Multi-Terminal DC Transmission Line Data,6,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,LDC,6,4,MULTI-TERMINAL DC DATA,MULTI-TERMINAL DC DATA,LDC,7,ntermdclink,ldc,N/A,N/A,N/A,"dc link inductance, entered in mH"
+1.20 Multi-Section Line Grouping Data,1,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,I,1,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,I,1,msline,ibus,N/A,N/A,N/A,From bus number
+1.20 Multi-Section Line Grouping Data,2,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,J,2,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,J,2,msline,jbus,N/A,N/A,N/A,To bus number
+1.20 Multi-Section Line Grouping Data,3,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,ID,3,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,ID,3,msline,mslid,N/A,N/A,N/A,Two-character upper case alphanumeric multi-section line grouping identifier
+1.20 Multi-Section Line Grouping Data,4,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,MET,4,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,MET,4,msline,met,N/A,N/A,N/A,Metered end flag
+1.20 Multi-Section Line Grouping Data,5,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM1,5,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM1,5,msline,dum1,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,6,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM2,6,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM2,6,msline,dum2,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,7,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM3,7,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM3,7,msline,dum3,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,8,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM4,8,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM4,8,msline,dum4,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,9,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM5,9,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM5,9,msline,dum5,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,10,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM6,10,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM6,10,msline,dum6,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,11,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM7,11,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM7,11,msline,dum7,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,12,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM8,12,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM8,12,msline,dum8,N/A,N/A,N/A,Bus numbers
+1.20 Multi-Section Line Grouping Data,13,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM9,13,1,MULTI-SECTION LINE DATA,MULTI-SECTION LINE DATA,DUM9,13,msline,dum9,N/A,N/A,N/A,Bus numbers
+1.21 Zone Data,1,1,ZONE DATA,ZONE DATA,I,1,1,ZONE DATA,ZONE DATA,I,1,zone,izone,DATA_ZONE,ZoneNum,N/A,Zone number
+1.21 Zone Data,2,1,ZONE DATA,ZONE DATA,ZONAME,2,1,ZONE DATA,ZONE DATA,ZONAME,2,zone,zoname,DATA_ZONE,ZoneName,N/A,Alphanumeric identifier assigned to zone I
+1.22 Interarea Transfer Data,1,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,ARFROM,1,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,ARFROM,1,iatransfer,arfrom,N/A,N/A,N/A,From area number
+1.22 Interarea Transfer Data,2,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,ARTO,2,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,ARTO,2,iatransfer,arto,N/A,N/A,N/A,To area number
+1.22 Interarea Transfer Data,3,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,TRID,3,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,TRID,3,iatransfer,trid,N/A,N/A,N/A,Single-character interarea transfer identifier used to distinguish among multiple transfers between areas ARFROM and ARTO
+1.22 Interarea Transfer Data,4,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,PTRAN,4,1,INTER-AREA TRANSFER DATA,INTER-AREA TRANSFER DATA,PTRAN,4,iatransfer,ptran,N/A,N/A,N/A,MW comprising this transfer. A positive PTRAN indicates that area ARFROM is selling to area ARTO
+1.23 Owner Data,1,1,OWNER DATA,OWNER DATA,I,1,1,OWNER DATA,OWNER DATA,I,1,owner,iowner,N/A,N/A,N/A,Owner number
+1.23 Owner Data,2,1,OWNER DATA,OWNER DATA,OWNAME,2,1,OWNER DATA,OWNER DATA,OWNAME,2,owner,owname,N/A,N/A,N/A,Alphanumeric identifier assigned to owner I.
+1.24 FACTS Device Data,1,1,FACTS DEVICE DATA,FACTS DEVICE DATA,NAME,1,1,FACTS DEVICE DATA,FACTS DEVICE DATA,NAME,1,facts,name,N/A,N/A,N/A,The non-blank alphanumeric identifier assigned to this FACTS device
+1.24 FACTS Device Data,2,1,FACTS DEVICE DATA,FACTS DEVICE DATA,I,2,1,FACTS DEVICE DATA,FACTS DEVICE DATA,I,2,facts,ibus,N/A,N/A,N/A,Sending end bus number
+1.24 FACTS Device Data,3,1,FACTS DEVICE DATA,FACTS DEVICE DATA,J,3,1,FACTS DEVICE DATA,FACTS DEVICE DATA,J,3,facts,jbus,N/A,N/A,N/A,Terminal end bus number
+1.24 FACTS Device Data,4,1,FACTS DEVICE DATA,FACTS DEVICE DATA,MODE,4,1,FACTS DEVICE DATA,FACTS DEVICE DATA,MODE,4,facts,mode,N/A,N/A,N/A,Controlmode
+1.24 FACTS Device Data,5,1,FACTS DEVICE DATA,FACTS DEVICE DATA,PDES,5,1,FACTS DEVICE DATA,FACTS DEVICE DATA,PDES,5,facts,pdes,N/A,N/A,N/A,Desired active power flow arriving at the terminal end bus; entered in MW
+1.24 FACTS Device Data,6,1,FACTS DEVICE DATA,FACTS DEVICE DATA,QDES,6,1,FACTS DEVICE DATA,FACTS DEVICE DATA,QDES,6,facts,qdes,N/A,N/A,N/A,Desired reactive power flow arriving at the terminal end bus; entered in MVAR
+1.24 FACTS Device Data,7,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VSET,7,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VSET,7,facts,vset,N/A,N/A,N/A,Voltage setpoint at the sending end bus; entered in pu
+1.24 FACTS Device Data,8,1,FACTS DEVICE DATA,FACTS DEVICE DATA,SHMX,8,1,FACTS DEVICE DATA,FACTS DEVICE DATA,SHMX,8,facts,shmx,N/A,N/A,N/A,Maximum shunt current at the sending end bus; entered in MVA at unity voltage
+1.24 FACTS Device Data,9,1,FACTS DEVICE DATA,FACTS DEVICE DATA,TRMX,9,1,FACTS DEVICE DATA,FACTS DEVICE DATA,TRMX,9,facts,trmx,N/A,N/A,N/A,Maximum bridge active power transfer; entered in MW
+1.24 FACTS Device Data,10,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VTMN,10,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VTMN,10,facts,vtmn,N/A,N/A,N/A,Minimum voltage at the terminal end bus; entered in pu.
+1.24 FACTS Device Data,11,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VTMX,11,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VTMX,11,facts,vtmx,N/A,N/A,N/A,Maximum voltage at the terminal end bus; entered in pu.
+1.24 FACTS Device Data,12,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VSMX,12,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VSMX,12,facts,vsmx,N/A,N/A,N/A,Maximum series voltage; entered in pu
+1.24 FACTS Device Data,13,1,FACTS DEVICE DATA,FACTS DEVICE DATA,IMX,13,1,FACTS DEVICE DATA,FACTS DEVICE DATA,IMX,13,facts,imx,N/A,N/A,N/A,"Maximum series current, or zero for no series current limit; entered in MVA at unity voltage"
+1.24 FACTS Device Data,14,1,FACTS DEVICE DATA,FACTS DEVICE DATA,LINX,14,1,FACTS DEVICE DATA,FACTS DEVICE DATA,LINX,14,facts,linx,N/A,N/A,N/A,Reactance of the dummy series element used during power flow solutions; entered in pu
+1.24 FACTS Device Data,15,1,FACTS DEVICE DATA,FACTS DEVICE DATA,RMPCT,15,1,FACTS DEVICE DATA,FACTS DEVICE DATA,RMPCT,15,facts,rmpct,N/A,N/A,N/A,Percent of the total Mvar required to hold the voltage at the bus controlled by the shunt element
+1.24 FACTS Device Data,16,1,FACTS DEVICE DATA,FACTS DEVICE DATA,OWNER,16,1,FACTS DEVICE DATA,FACTS DEVICE DATA,OWNER,16,facts,owner,N/A,N/A,N/A,Owner number
+1.24 FACTS Device Data,17,1,FACTS DEVICE DATA,FACTS DEVICE DATA,SET1,17,1,FACTS DEVICE DATA,FACTS DEVICE DATA,SET1,17,facts,set1,N/A,N/A,N/A,
+1.24 FACTS Device Data,18,1,FACTS DEVICE DATA,FACTS DEVICE DATA,SET2,18,1,FACTS DEVICE DATA,FACTS DEVICE DATA,SET2,18,facts,set2,N/A,N/A,N/A,
+1.24 FACTS Device Data,19,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VSREF,19,1,FACTS DEVICE DATA,FACTS DEVICE DATA,VSREF,19,facts,vsref,N/A,N/A,N/A,"Series voltage reference code to indicate the series voltage reference of SET1 and SET2 when MODE is 4, 7 or 8"
+1.24 FACTS Device Data,20,1,FACTS DEVICE DATA,FACTS DEVICE DATA,FCREG,20,1,FACTS DEVICE DATA,FACTS DEVICE DATA,FCREG,20,facts,fcreg,N/A,N/A,N/A,Bus number
+1.24 FACTS Device Data,22,1,FACTS DEVICE DATA,FACTS DEVICE DATA,NREG,21,1,FACTS DEVICE DATA,FACTS DEVICE DATA,NREG,21,facts,nreg,N/A,N/A,N/A,A node number of bus FCREG
+1.24 FACTS Device Data,21,1,FACTS DEVICE DATA,FACTS DEVICE DATA,MNAME,22,1,FACTS DEVICE DATA,FACTS DEVICE DATA,MNAME,22,facts,mname,N/A,N/A,N/A,The name of the FACTS device that is the IPFC master device when this FACTS device is the slave device of an IPFC
+1.25 Switched Shunt Data,1,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,I,1,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,I,1,swshunt,ibus,DATA_SWSHUNT,BusNum,N/A,Bus number
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,2,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,ID,2,swshunt,shntid,DATA_SWSHUNT,ShuntID,N/A,One- or two-character uppercase non-blank alphanumeric switched shunt identifier
+1.25 Switched Shunt Data,2,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,MODSW,3,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,MODSW,3,swshunt,modsw,DATA_SWSHUNT,Mode,N/A,Control mode
+1.25 Switched Shunt Data,3,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,ADJM,4,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,ADJM,4,swshunt,adjm,DATA_SWSHUNT,BlockOrder,N/A,Adjustment method
+1.25 Switched Shunt Data,4,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,STATUS,5,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,STAT,5,swshunt,stat,DATA_SWSHUNT,Status,N/A,Initial status for entire switched shunt.
+1.25 Switched Shunt Data,5,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,VSWHI,6,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,VSWHI,6,swshunt,vswhi,DATA_SWSHUNT,VMAX,N/A,
+1.25 Switched Shunt Data,6,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,VSWLO,7,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,VSWLO,7,swshunt,vswlo,DATA_SWSHUNT,VMIN,N/A,
+1.25 Switched Shunt Data,7,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,SWREG,8,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,SWREG,8,swshunt,swreg,DATA_SWSHUNT,CtlBs#,N/A,Bus number of the bus for which voltage or connected equipment reactive power output is controlled by this switched shunt
+1.25 Switched Shunt Data,27,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,NREG,9,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,NREG,9,swshunt,nreg,DATA_SWSHUNT,N/A,N/A,A node number of bus SWREG
+1.25 Switched Shunt Data,8,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,RMPCT,10,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,RMPCT,10,swshunt,rmpct,DATA_SWSHUNT,RemPcnt,N/A,Percent of the total Mvar required to hold the voltage at the bus controlled by bus I
+1.25 Switched Shunt Data,9,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,RMIDNT,11,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,RMIDNT,11,swshunt,rmidnt,DATA_SWSHUNT,N/A,N/A,
+1.25 Switched Shunt Data,10,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,BINIT,12,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,BINIT,12,swshunt,binit,DATA_SWSHUNT,BShuntCur,N/A,Initial switched shunt admittance; entered in Mvar at unity voltage
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,13,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S1,13,swshunt,s1,DATA_SWSHUNT,BankStatus1,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,11,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N1,14,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N1,14,swshunt,n1,DATA_SWSHUNT,NBank1,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,12,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B1,15,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B1,15,swshunt,b1,DATA_SWSHUNT,BankSize1,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,16,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S2,16,swshunt,s2,DATA_SWSHUNT,BankStatus2,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,13,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N2,17,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N2,17,swshunt,n2,DATA_SWSHUNT,NBank2,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,14,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B2,18,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B2,18,swshunt,b2,DATA_SWSHUNT,BankSize2,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,19,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S3,19,swshunt,s3,DATA_SWSHUNT,BankStatus3,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,15,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N3,20,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N3,20,swshunt,n3,DATA_SWSHUNT,NBank3,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,16,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B3,21,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B3,21,swshunt,b3,DATA_SWSHUNT,BankSize3,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,22,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S4,22,swshunt,s4,DATA_SWSHUNT,BankStatus4,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,17,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N4,23,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N4,23,swshunt,n4,DATA_SWSHUNT,NBank4,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,18,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B4,24,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B4,24,swshunt,b4,DATA_SWSHUNT,BankSize4,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,25,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S5,25,swshunt,s5,DATA_SWSHUNT,BankStatus5,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,19,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N5,26,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N5,26,swshunt,n5,DATA_SWSHUNT,NBank5,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,20,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B5,27,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B5,27,swshunt,b5,DATA_SWSHUNT,BankSize5,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,28,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S6,28,swshunt,s6,DATA_SWSHUNT,BankStatus6,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,21,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N6,29,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N6,29,swshunt,n6,DATA_SWSHUNT,NBank6,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,22,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B6,30,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B6,30,swshunt,b6,DATA_SWSHUNT,BankSize6,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,31,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S7,31,swshunt,s7,DATA_SWSHUNT,BankStatus7,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,23,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N7,32,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N7,32,swshunt,n7,DATA_SWSHUNT,NBank7,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,24,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B7,33,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B7,33,swshunt,b7,DATA_SWSHUNT,BankSize7,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.25 Switched Shunt Data,N/A,1,N/A,N/A,N/A,34,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,S8,34,swshunt,s8,DATA_SWSHUNT,BankStatus8,N/A,Initial switched shunt status of one for in-service and zero for out-of-service for block i
+1.25 Switched Shunt Data,25,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N8,35,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,N8,35,swshunt,n8,DATA_SWSHUNT,NBank8,N/A,Number of steps for block i. The first zero value of Ni or Bi is interpreted as the end of the switched shunt blocks for bus I.
+1.25 Switched Shunt Data,26,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B8,36,1,SWITCHED SHUNT DATA,SWITCHED SHUNT DATA,B8,36,swshunt,b8,DATA_SWSHUNT,BankSize8,N/A,Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
+1.26 GNE Device Data,1,1,GNE DATA,GNE DATA,NAME,1,1,GNE DATA,GNE DATA,NAME,1,gne,name,N/A,N/A,N/A,The non-blank alphanumeric identifier assigned to this GNE device
+1.26 GNE Device Data,2,1,GNE DATA,GNE DATA,MODEL,2,1,GNE DATA,GNE DATA,MODEL,2,gne,model,N/A,N/A,N/A,The name of the BOSL model
+1.26 GNE Device Data,3,1,GNE DATA,GNE DATA,NTERM,3,1,GNE DATA,GNE DATA,NTERM,3,gne,nterm,N/A,N/A,N/A,The number of buses to which this instance of the model is connected
+1.26 GNE Device Data,4,1,GNE DATA,GNE DATA,BUS1,4,1,GNE DATA,GNE DATA,BUS1,4,gne,bus1,N/A,N/A,N/A,Bus number
+1.26 GNE Device Data,5,1,GNE DATA,GNE DATA,BUSNTERM,5,1,GNE DATA,GNE DATA,BUSNTERM,5,gne,bus2,N/A,N/A,N/A,Bus number
+1.26 GNE Device Data,6,1,GNE DATA,GNE DATA,NREAL,6,1,GNE DATA,GNE DATA,NREAL,6,gne,nreal,N/A,N/A,N/A,Number of floating point data items required by model MODEL
+1.26 GNE Device Data,7,1,GNE DATA,GNE DATA,NINTG,7,1,GNE DATA,GNE DATA,NINTG,7,gne,nintg,N/A,N/A,N/A,Number of buses required in calculating the inputs required by model MODEL
+1.26 GNE Device Data,8,1,GNE DATA,GNE DATA,NCHAR,8,1,GNE DATA,GNE DATA,NCHAR,8,gne,nchar,N/A,N/A,N/A,Number of two-character identifiers required in calculating the inputs required by model MODEL
+1.26 GNE Device Data,9,2,GNE DATA,GNE DATA,STATUS,9,2,GNE DATA,GNE DATA,STATUS,9,gne,stat,N/A,N/A,N/A,Device status of one for in-service and zero for out-of-service
+1.26 GNE Device Data,10,2,GNE DATA,GNE DATA,OWNER,10,2,GNE DATA,GNE DATA,OWNER,10,gne,owner,N/A,N/A,N/A,Owner to which the device is assigned
+1.26 GNE Device Data,11,2,GNE DATA,GNE DATA,NMETR,11,2,GNE DATA,GNE DATA,NMETR,11,gne,nmet,N/A,N/A,N/A,Bus number of the non-metered end bus
+1.26 GNE Device Data,12,3,GNE DATA,GNE DATA,REAL1,12,3,GNE DATA,GNE DATA,REAL1,12,gne,real1,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,13,3,GNE DATA,GNE DATA,REAL2,13,3,GNE DATA,GNE DATA,REAL2,13,gne,real2,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,14,3,GNE DATA,GNE DATA,REAL3,14,3,GNE DATA,GNE DATA,REAL3,14,gne,real3,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,15,3,GNE DATA,GNE DATA,REAL4,15,3,GNE DATA,GNE DATA,REAL4,15,gne,real4,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,16,3,GNE DATA,GNE DATA,REAL5,16,3,GNE DATA,GNE DATA,REAL5,16,gne,real5,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,17,3,GNE DATA,GNE DATA,REAL6,17,3,GNE DATA,GNE DATA,REAL6,17,gne,real6,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,18,3,GNE DATA,GNE DATA,REAL7,18,3,GNE DATA,GNE DATA,REAL7,18,gne,real7,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,19,3,GNE DATA,GNE DATA,REAL8,19,3,GNE DATA,GNE DATA,REAL8,19,gne,real8,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,20,3,GNE DATA,GNE DATA,REAL9,20,3,GNE DATA,GNE DATA,REAL9,20,gne,real9,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,21,3,GNE DATA,GNE DATA,REAL10,21,3,GNE DATA,GNE DATA,REAL10,21,gne,real10,N/A,N/A,N/A,NREAL floating point data items required by model MODEL
+1.26 GNE Device Data,22,4,GNE DATA,GNE DATA,INTG1,22,4,GNE DATA,GNE DATA,INTG1,22,gne,intg1,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,23,4,GNE DATA,GNE DATA,INTG2,23,4,GNE DATA,GNE DATA,INTG2,23,gne,intg2,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,24,4,GNE DATA,GNE DATA,INTG3,24,4,GNE DATA,GNE DATA,INTG3,24,gne,intg3,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,25,4,GNE DATA,GNE DATA,INTG4,25,4,GNE DATA,GNE DATA,INTG4,25,gne,intg4,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,26,4,GNE DATA,GNE DATA,INTG5,26,4,GNE DATA,GNE DATA,INTG5,26,gne,intg5,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,27,4,GNE DATA,GNE DATA,INTG6,27,4,GNE DATA,GNE DATA,INTG6,27,gne,intg6,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,28,4,GNE DATA,GNE DATA,INTG7,28,4,GNE DATA,GNE DATA,INTG7,28,gne,intg7,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,29,4,GNE DATA,GNE DATA,INTG8,29,4,GNE DATA,GNE DATA,INTG8,29,gne,intg8,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,30,4,GNE DATA,GNE DATA,INTG9,30,4,GNE DATA,GNE DATA,INTG9,30,gne,intg9,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,31,4,GNE DATA,GNE DATA,INTG10,31,4,GNE DATA,GNE DATA,INTG10,31,gne,intg10,N/A,N/A,N/A,NINTG bus numbers or extended bus names required by model MODEL
+1.26 GNE Device Data,32,5,GNE DATA,GNE DATA,CHAR1,32,5,GNE DATA,GNE DATA,CHAR1,32,gne,char1,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,33,5,GNE DATA,GNE DATA,CHAR2,33,5,GNE DATA,GNE DATA,CHAR2,33,gne,char2,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,34,5,GNE DATA,GNE DATA,CHAR3,34,5,GNE DATA,GNE DATA,CHAR3,34,gne,char3,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,35,5,GNE DATA,GNE DATA,CHAR4,35,5,GNE DATA,GNE DATA,CHAR4,35,gne,char4,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,36,5,GNE DATA,GNE DATA,CHAR5,36,5,GNE DATA,GNE DATA,CHAR5,36,gne,char5,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,37,5,GNE DATA,GNE DATA,CHAR6,37,5,GNE DATA,GNE DATA,CHAR6,37,gne,char6,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,38,5,GNE DATA,GNE DATA,CHAR7,38,5,GNE DATA,GNE DATA,CHAR7,38,gne,char7,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,39,5,GNE DATA,GNE DATA,CHAR8,39,5,GNE DATA,GNE DATA,CHAR8,39,gne,char8,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,40,5,GNE DATA,GNE DATA,CHAR9,40,5,GNE DATA,GNE DATA,CHAR9,40,gne,char9,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.26 GNE Device Data,41,5,GNE DATA,GNE DATA,CHAR10,41,5,GNE DATA,GNE DATA,CHAR10,41,gne,char10,N/A,N/A,N/A,NCHAR two-character identifiers required by model MODEL
+1.27 Induction Machine Data,1,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,I,1,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,I,1,indmach,ibus,N/A,N/A,N/A,Bus number
+1.27 Induction Machine Data,2,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,ID,2,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,ID,2,indmach,imid,N/A,N/A,N/A,Alphanumeric machine identifier used to distinguish among multiple induction machines at bus I.
+1.27 Induction Machine Data,3,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,STATUS,3,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,STATUS,3,indmach,stat,N/A,N/A,N/A,Machine status of 1 for in-service and 0 for out-of-service
+1.27 Induction Machine Data,4,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,SCODE,4,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,SCODE,4,indmach,sc,N/A,N/A,N/A,Machine standard code
+1.27 Induction Machine Data,5,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,DCODE,5,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,DCODE,5,indmach,dc,N/A,N/A,N/A,Machine design code
+1.27 Induction Machine Data,6,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,AREA,6,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,AREA,6,indmach,area,N/A,N/A,N/A,Area to which the induction machine is assigned
+1.27 Induction Machine Data,7,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,ZONE,7,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,ZONE,7,indmach,zone,N/A,N/A,N/A,Zone to which the induction machine is assigned
+1.27 Induction Machine Data,8,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,OWNER,8,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,OWNER,8,indmach,owner,N/A,N/A,N/A,Owner to which the induction machine is assigned
+1.27 Induction Machine Data,9,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,TCODE,9,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,TCODE,9,indmach,tc,N/A,N/A,N/A,Type of mechanical load torque variation
+1.27 Induction Machine Data,10,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,BCODE,10,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,BCODE,10,indmach,bc,N/A,N/A,N/A,Machine base power code
+1.27 Induction Machine Data,11,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,MBASE,11,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,MBASE,11,indmach,mbase,N/A,N/A,N/A,Machine base power; entered in MW or MVA
+1.27 Induction Machine Data,12,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,RATEKV,12,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,RATEKV,12,indmach,ratekv,N/A,N/A,N/A,Machine rated voltage; entered in kV line-to-line
+1.27 Induction Machine Data,13,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,PCODE,13,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,PCODE,13,indmach,pcode,N/A,N/A,N/A,Scheduled power code
+1.27 Induction Machine Data,14,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,PSET,14,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,PSET,14,indmach,pset,N/A,N/A,N/A,Scheduled active power for a terminal voltage at the machine of 1.0 pu of the machine rated voltage; entered in MW
+1.27 Induction Machine Data,15,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,H,15,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,H,15,indmach,hconst,N/A,N/A,N/A,Machine inertia; entered in per unit on MBASE base
+1.27 Induction Machine Data,16,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,A,16,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,A,16,indmach,aconst,N/A,N/A,N/A,Constant that describes the variation of the torque of the mechanical load with speed
+1.27 Induction Machine Data,17,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,B,17,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,B,17,indmach,bconst,N/A,N/A,N/A,Constant that describes the variation of the torque of the mechanical load with speed
+1.27 Induction Machine Data,18,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,D,18,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,D,18,indmach,dconst,N/A,N/A,N/A,Constant that describes the variation of the torque of the mechanical load with speed
+1.27 Induction Machine Data,19,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,E,19,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,E,19,indmach,econst,N/A,N/A,N/A,Constant that describes the variation of the torque of the mechanical load with speed
+1.27 Induction Machine Data,20,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,RA,20,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,RA,20,indmach,ra,N/A,N/A,N/A,Armature resistance
+1.27 Induction Machine Data,21,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,XA,21,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,XA,21,indmach,xa,N/A,N/A,N/A,Armature leakage reactance
+1.27 Induction Machine Data,22,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,XM,22,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,XM,22,indmach,xm,N/A,N/A,N/A,Unsaturated magnetizing reactance
+1.27 Induction Machine Data,23,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,R1,23,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,R1,23,indmach,r1,N/A,N/A,N/A,Resistance of the first rotor winding
+1.27 Induction Machine Data,24,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,X1,24,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,X1,24,indmach,x1,N/A,N/A,N/A,Reactance of the first rotor winding
+1.27 Induction Machine Data,25,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,R2,25,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,R2,25,indmach,r2,N/A,N/A,N/A,Resistance of the second rotor winding
+1.27 Induction Machine Data,26,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,X2,26,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,X2,26,indmach,x2,N/A,N/A,N/A,Reactance of the second rotor winding
+1.27 Induction Machine Data,27,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,X3,27,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,X3,27,indmach,x3,N/A,N/A,N/A,Third rotor reactance
+1.27 Induction Machine Data,28,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,E1,28,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,E1,28,indmach,e1,N/A,N/A,N/A,First terminal voltage point from the open circuit saturation curve
+1.27 Induction Machine Data,29,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,SE1,29,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,SE1,29,indmach,se1,N/A,N/A,N/A,Saturation factor at terminal voltage E1
+1.27 Induction Machine Data,30,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,E2,30,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,E2,30,indmach,e2,N/A,N/A,N/A,"Second terminal voltage point from the open circuit saturation curve, E2 (> 0.0); entered in per unit on RATEKV base"
+1.27 Induction Machine Data,31,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,SE2,31,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,SE2,31,indmach,se2,N/A,N/A,N/A,Saturation factor at terminal voltage E2
+1.27 Induction Machine Data,32,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,IA1,32,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,IA1,32,indmach,ia1,N/A,N/A,N/A,"Stator currents in PU specifying saturation of the stator leakage reactance, XA"
+1.27 Induction Machine Data,33,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,IA2,33,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,IA2,33,indmach,ia2,N/A,N/A,N/A,"Stator currents in PU specifying saturation of the stator leakage reactance, XA"
+1.27 Induction Machine Data,34,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,XAMULT,34,1,INDUCTION MACHINE DATA,INDUCTION MACHINE DATA,XAMULT,34,indmach,xamult,N/A,N/A,N/A,Multiplier for the saturated value. Allowed value 0 to 1.0
+1.28.1 Substation Data Record,1,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,IS,1,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,IS,1,sub,isub,N/A,N/A,N/A,Substation number
+1.28.1 Substation Data Record,2,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,NAME,2,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,NAME,2,sub,name,N/A,N/A,N/A,Substation name
+1.28.1 Substation Data Record,3,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,LATI,3,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,LATI,3,sub,lati,N/A,N/A,N/A,Substation latitude in degrees
+1.28.1 Substation Data Record,4,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,LONG,4,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,LONG,4,sub,long,N/A,N/A,N/A,Substation longitude in degrees
+1.28.1 Substation Data Record,5,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,SRG,5,1,SUBSTATION DATA,SUBSTATION DATA BLOCK,SRG,5,sub,sgr,N/A,N/A,N/A,Substation grounding DC resistance in ohms
+1.28.2 Node Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subnode,isub,N/A,N/A,N/A,Substation number
+1.28.2 Node Data,1,1,SUBSTATION DATA,SUBSTATION NODE DATA,NI,1,1,SUBSTATION DATA,SUBSTATION NODE DATA,NI,2,subnode,inode,N/A,N/A,N/A,Node number
+1.28.2 Node Data,2,1,SUBSTATION DATA,SUBSTATION NODE DATA,NAME,2,1,SUBSTATION DATA,SUBSTATION NODE DATA,NAME,3,subnode,name,N/A,N/A,N/A,Node name
+1.28.2 Node Data,3,1,SUBSTATION DATA,SUBSTATION NODE DATA,I,3,1,SUBSTATION DATA,SUBSTATION NODE DATA,I,4,subnode,ibus,N/A,N/A,N/A,Electrical Bus number in bus branch model
+1.28.2 Node Data,4,1,SUBSTATION DATA,SUBSTATION NODE DATA,STATUS,4,1,SUBSTATION DATA,SUBSTATION NODE DATA,STATUS,5,subnode,stat,N/A,N/A,N/A,Node status
+1.28.2 Node Data,5,1,SUBSTATION DATA,SUBSTATION NODE DATA,VM,5,1,SUBSTATION DATA,SUBSTATION NODE DATA,VM,6,subnode,vm,N/A,N/A,N/A,Node voltage magnitude; entered in pu
+1.28.2 Node Data,6,1,SUBSTATION DATA,SUBSTATION NODE DATA,VA,6,1,SUBSTATION DATA,SUBSTATION NODE DATA,VA,7,subnode,va,N/A,N/A,N/A,Node voltage phase angle; entered in degrees
+1.28.3 Station Switching Device Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subswd,isub,N/A,N/A,N/A,Substation number
+1.28.3 Station Switching Device Data,1,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NI,1,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NI,2,subswd,inode,N/A,N/A,N/A,From node number
+1.28.3 Station Switching Device Data,2,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NJ,2,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NJ,3,subswd,jnode,N/A,N/A,N/A,To node number
+1.28.3 Station Switching Device Data,3,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,CKT,3,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,CKT,4,subswd,swlid,N/A,N/A,N/A,Two-character uppercase non-blank alphanumeric switching device identifier
+1.28.3 Station Switching Device Data,4,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NAME,4,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NAME,5,subswd,name,N/A,N/A,N/A,Switching device name
+1.28.3 Station Switching Device Data,5,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,TYPE,5,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,TYPE,6,subswd,type,N/A,N/A,N/A,Switching device type
+1.28.3 Station Switching Device Data,6,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,STATUS,6,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,STATUS,7,subswd,stat,N/A,N/A,N/A,Switching device status
+1.28.3 Station Switching Device Data,7,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NSTAT,7,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,NSTAT,8,subswd,nstat,N/A,N/A,N/A,Switching device normal status
+1.28.3 Station Switching Device Data,8,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,X,8,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,X,9,subswd,xpu,N/A,N/A,N/A,Switching device reactance; entered in pu
+1.28.3 Station Switching Device Data,9,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,RATE1,9,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,RATE1,10,subswd,rate1,N/A,N/A,N/A,First rating
+1.28.3 Station Switching Device Data,10,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,RATE2,10,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,RATE2,11,subswd,rate2,N/A,N/A,N/A,Second rating
+1.28.3 Station Switching Device Data,11,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,RATE3,11,1,SUBSTATION SWITCHING DEVICE DATA,SUBSTATION SWITCHING DEVICE DATA,RATE3,12,subswd,rate3,N/A,N/A,N/A,Third rating
+1.28.4 Equipment Terminal Data,1,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,I,1,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,I,N/A,subterm,isub,N/A,N/A,N/A,Bus number
+1.28.4 Equipment Terminal Data,2,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,NI,2,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,NI,N/A,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 Equipment Terminal Data,3,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,TYPE,3,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,TYPE,N/A,subterm,type,N/A,N/A,N/A,"Type: M: mchine terminal, 3: 3-winding, 2: 2-winding, B: branch, F: fixed shunt, L: load, S: switched shunt, I: induction machine, D: 2-term DC line, V: voltage source converter (vsc), N: multi-terminal DC line, A: FACTS device"
+1.28.4 Equipment Terminal Data,N/A,N/A,N/A,N/A,N/A,N/A,N/A,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,N/A,N/A,subterm,type,N/A,N/A,N/A,"Type: M: mchine terminal, 3: 3-winding, 2: 2-winding, B: branch, F: fixed shunt, L: load, S: switched shunt, I: induction machine, D: 2-term DC line, V: voltage source converter (vsc), N: multi-terminal DC line, A: FACTS device"
+1.28.4 Equipment Terminal Data,4,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,J,4,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,J,N/A,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 Equipment Terminal Data,5,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,K,5,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,K,N/A,subterm,jbus,N/A,N/A,N/A,Bus number
+1.28.4 Equipment Terminal Data,6,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,ID,6,1,SUBSTATION TERMINAL DATA,SUBSTATION TERMINAL DATA,ID,N/A,subterm,kbus,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Load Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Load Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Load Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Load Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �L� to indicate the record contains terminal information for a Load
+1.28.4 ETD - Load Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Fixed Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Fixed Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Fixed Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Fixed Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �F� to indicate the record contains terminal information for a Fixed Shunt
+1.28.4 ETD - Fixed Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Fixed Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �M� to indicate the record contains terminal information for a Machine
+1.28.4 ETD - Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Branch and two winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Branch and two winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,From bus number
+1.28.4 ETD - Branch and two winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,From node number
+1.28.4 ETD - Branch and two winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Specifies that the record contains terminal information for a non-transformer or twowinding transformer
+1.28.4 ETD - Branch and two winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,6,subterm,jbus,N/A,N/A,N/A,To bus number
+1.28.4 ETD - Branch and two winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,One or two-character uppercase non-blank alphanumeric switching device identifier
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,From bus number
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,From node number
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �3� to indicate the record contains terminal information for a threewinding transformer
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,6,subterm,jbus,N/A,N/A,N/A,To bus number
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,7,subterm,kbus,N/A,N/A,N/A,To bus number
+1.28.4 ETD - Three winding Transformer Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,One or two-character uppercase non-blank alphanumeric switching device identifier
+1.28.4 ETD - Switched Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Switched Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Switched Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Switched Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �S� to indicate the record contains terminal information for a switched shunt.
+1.28.4 ETD - Switched Shunt Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Induction Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Induction Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Induction Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Induction Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �I� to indicate the record contains terminal information for an induction machine
+1.28.4 ETD - Induction Machine Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Two-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Two-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Two-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Two-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �D� to indicate that the record contains terminal information for a twoterminal dc line connection
+1.28.4 ETD - Two-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Voltage Source Converter (VSC) DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Voltage Source Converter (VSC) DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Voltage Source Converter (VSC) DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Voltage Source Converter (VSC) DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �V� to indicate that the record contains terminal information for a VSC dc line connection
+1.28.4 ETD - Voltage Source Converter (VSC) DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - Multi-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - Multi-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - Multi-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - Multi-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �N� to indicate that the record contains terminal information for a multi- terminal dc line connection
+1.28.4 ETD - Multi-terminal DC Line Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
+1.28.4 ETD - FACTS Device Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,1,subterm,isub,N/A,N/A,N/A,Substation number
+1.28.4 ETD - FACTS Device Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,5,subterm,ibus,N/A,N/A,N/A,Bus number
+1.28.4 ETD - FACTS Device Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,2,subterm,inode,N/A,N/A,N/A,Node number
+1.28.4 ETD - FACTS Device Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,3,subterm,type,N/A,N/A,N/A,Single character �A� to indicate that the record contains terminal information for a FACTS device connectionconnection
+1.28.4 ETD - FACTS Device Terminal Data,N/A,1,N/A,N/A,N/A,N/A,1,N/A,N/A,N/A,4,subterm,equid,N/A,N/A,N/A,Equipment ID
