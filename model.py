@@ -2295,11 +2295,15 @@ class Model:
         general_df.to_csv(csv_path)
         logger.info(f'Elapsed export time: {((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
-        # Export each DataFrame from the network section
+        # Export each DataFrame from the network section.
+        # Include the index only when it holds named fields (MultiIndex or named
+        # single index).  A plain RangeIndex has index.names == [None] and
+        # should be excluded to avoid a spurious unnamed column in the CSV.
         for section, df in self.network_dfs().items():
             csv_path = csv_folder / f'network_{section}.csv'
             logger.info(f'Exporting {str(csv_path)}...')
-            df.to_csv(csv_path, index=True)
+            include_index = any(name is not None for name in df.index.names)
+            df.to_csv(csv_path, index=include_index)
             logger.info(f'Elapsed export time: {((perf_counter_ns() - start_time) / 1e9):.9f} seconds...')
         logger.info(f'Finished exporting to CSV files: {csv_path.parent}')
 

@@ -661,9 +661,20 @@ class ModelComparison:
 
     @staticmethod
     def _write_csv(csv_path: [Path | str], df: pd.DataFrame) -> None:
-        """Helper method to write a DataFrame to CSV.  Prevents hard exception."""
-        # Assuming df is your DataFrame
-        index = True if df.index.name is not None else False
+        """Helper method to write a DataFrame to CSV.  Prevents hard exception.
+
+        The index is included when it carries meaningful field names (i.e. when
+        any entry in ``df.index.names`` is not None).  A plain RangeIndex has
+        ``index.names == [None]`` and is excluded to avoid a spurious unnamed
+        column in the output.
+
+        Note: ``df.index.name`` is always ``None`` for a MultiIndex — using it
+        as the sole check caused bus/branch identifier columns to be silently
+        dropped from every composite-key section (acline, generator, load, …).
+        """
+        # Include the index only when it holds named fields.
+        # MultiIndex.name is always None, so we must inspect .names instead.
+        index = any(name is not None for name in df.index.names)
         try:
             df.to_csv(csv_path, index=index)
         except PermissionError as e:
