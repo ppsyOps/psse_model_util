@@ -34,6 +34,7 @@ dependencies = [
     # Platform / system
     "platformdirs>=3.0",
     "portalocker>=2.0",
+    "arrow>=1.4.0",
 ]
 
 [project.optional-dependencies]
@@ -73,3 +74,21 @@ ignore = ["E501"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+addopts = [
+    "--tb=short",
+]
+
+[tool.coverage.run]
+source = ["."]
+omit = [
+    "tests/*",
+    "dist/*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
