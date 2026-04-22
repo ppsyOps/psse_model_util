@@ -1,0 +1,405 @@
+QA TEST
+
+SCENARIOS:
+
+-Bus number change
+
+	BUS DATA
+
+	Bus number changed from 101 to 111
+	Bus number 101 only in model_1
+	Bus number 111 only in Model_2
+
+	Bus number changed from 213 to 219
+	Bus number 213 only in model_1
+	Bus number 219 only in Model_2
+
+
+-Bus name change
+
+	BUS DATA
+
+	Bus number 201 changed name from 'HYDRO' to 'HHHHH'
+
+
+-Bus number and name changed
+
+	BUS DATA
+
+	Bus number changed from 3001 to 3111
+	Bus number 3111 changed name from 'MINE' to 'YOURS'
+
+	AC LINE DATA
+
+	ibus 3001 - jbus 3003 changed to ibus 3111 - jbus 3003
+
+	TRANSFORMER DATA
+
+	ibus 3001 - jbus 3002 - kbus 3011 changed to ibus 3111 - jbus 3002 - kbus 3011
+
+
+-Bus electric parameters change
+
+	BUS DATA
+
+	Bus number 211 changed baskv from 20.0000 to 30.0000
+	Bus number 211 changed vm from 1.00000 to 1.10000
+	Bus number 211 changed evlo from 0.90000 to 0.92000
+
+	Bus number 3010 changed vm from 0.96390 to 0.90000
+	Bus number 3010 changed va from -3.3103 to -2.3103
+	Bus number 3010 changed nvhi from 1.10000 to 1.05000
+	Bus number 3010 changed nvlo from 0.90000 to 0.91000
+	Bus number 3010 changed evhi from 1.10000 to 1.05000
+	Bus number 3010 changed evlo from 0.90000 to 0.91000
+
+
+-Addition of new bus
+
+	BUS DATA
+
+	Addition of new bus with number 161 //all bus parameters are new
+
+	Addition of new bus with number 156 //all bus parameters are new
+
+	Addition of new bus with number 210 //all bus parameters are new
+
+
+-Deletion of bus
+
+	BUS DATA
+
+	Deletion of ibus 3010
+
+	Deletion of ibus 2000
+
+	Deletion of ibus 2001
+
+
+-Change bus number of a load
+
+	BUS DATA
+
+	Bus number changed from 152 to 160
+
+	LOAD DATA
+
+	ibus 152 - loadid 1 chnged to ibus 160 - loadid 1
+
+	AC LINE DATA
+
+	ibus 151 - jbus 152 ckt 1 & 2 changed to ibus 151 - jbus 160 ckt 1 & 2
+
+	ibus 152 - jbus 202 changed to ibus 160 - jbus 202
+
+	ibus 152 - jbus 3004 changed to ibus 160 - jbus 3004
+
+
+-Load id change in a bus
+
+	LOAD DATA
+
+	ibus 153 changed loadid from 1 to 10
+
+
+-Load electric parameters change
+
+	LOAD DATA
+
+	ibus 201 changed loadid from 'SC' to 'SA'
+	ibus 201 changed stat from 1 to 0
+
+	ibus 214 changed pl from 500.000 to 450.000
+	ibus 214 changed ql from 75.000 to 65.000
+	ibus 214 changed ip from 0.000 to 80.000
+	ibus 214 changed iq from 0.000 to 20.000
+	ibus 214 changed yp from 0.000 to 10.000
+	ibus 214 changed yq from 0.000 to 7.000
+	ibus 214 changed dgenp from 0.000 to 100.000
+	ibus 214 changed from dgenq from 0.000 to 50.000
+
+
+-Addition of a new load
+
+	BUS DATA
+
+	Addition of new bus with number 156 //all bus parameters are new
+
+	LOAD DATA
+
+	Addition of new load at bus 156 with loadid 'AA' //all load parameters are new
+
+
+-Deletion of one of the loads in a bus
+
+	LOAD DATA
+
+	Deletion of loadid 'C' at ibus 205
+
+-Deletion of a load in a bus when bus is deleted
+
+	BUS DATA
+
+	Deletion of ibus 3010
+
+
+-Fixed shunt bus number and id changed
+
+	FIXED SHUNT DATA
+
+	ibus 213 - shntid 1 changed to ibus 219 - shntid 'AA'
+
+	AC LINE DATA
+
+	ibus 213 - jbus 214 changed to ibus 219 - jbus 214
+
+
+-Addition of a new fixed shunt
+
+	BUS DATA
+
+	Addition of new bus with number 161 //all bus parameters are new
+
+	FIXED SHUNT DATA
+
+	Addition of new shunt at bus 161 with shntid 'BB' //all parameters are new
+
+
+-Shunt electric parameters change
+
+	FIXED SHUNT DATA
+
+	ibus 3021 changed stat from 1 to 0
+	ibus 3021 changed gl from 0.000 to 9.000
+	ibus 3021 changed bl from 1080.000 to 1100.000
+
+
+-Generator bus number and id changed
+
+	BUS DATA
+
+	Bus number changed from 101 to 111
+
+	GEN DATA
+
+	ibus 101 - genid 1 changed to ibus 111 - genid 'A'
+
+	TRANSFORMER DATA
+
+	ibus 101 - jbus 151 changed to ibus 111 - jbus 151
+
+
+-Addition of a new generator
+
+	BUS DATA
+
+	Addition of new bus with number 156 //all bus parameters are new
+
+	GEN DATA
+
+	Addition of new gen bus 156 with genid 'GG' //all parameters are new
+
+
+-Generator electrical parameters changed
+
+	GEN DATA
+
+	ibus 401 changed pg from 321.000 to 531.000
+	ibus 401 changed qg from 142.325 to 150.000
+	ibus 401 changed qt from 600.000 to 500.000
+	ibus 401 changed qb from -100.000 to -90.000
+	ibus 401 changed vs from 1.00000 to 1.10000
+	ibus 401 changed ireg from 401 to 402
+	ibus 401 changed mbase from 600.000 to 500.000
+	ibus 401 changed zr 1.23000E-2 to 2.23000E-2
+	ibus 401 changed zx 2.22300E-1 to 5.22300E-1
+	ibus 401 changed rt 0.00000E+0 to 1.00000E-1
+	ibus 401 changed xt 0.00000E+0 to 1.00000E-1
+
+
+-Deletion of a generator
+
+	BUS DATA
+
+	Deletion of ibus 2000
+
+	GEN DATA
+
+	Deletion of ibus 2000
+
+
+-AC line changes bus numbers
+
+	BUS DATA
+
+	Bus number changed from 213 to 219
+
+	AC LINE DATA
+
+	ibus 213 - jbus 214 changed to ibus 219 - jbus 214
+
+
+-Split AC line with two new buses in between
+
+	BUS DATA
+
+	Addition of new bus with number 3013 //all bus parameters are new
+
+	Addition of new bus with number 3014 //all bus parameters are new
+
+	AC LINE DATA
+
+	ibus 3008 - jbus 3009 changed to ibus 3008 - jbus 3013 and acline name changed from BRANCH_FROM_3008_TO_3009__CIRCUIT_ID__1 to BRANCH_FROM_3008_TO_3013___CIRCUIT_ID__1
+	Addition of acline ibus 3013 - jbus 3014 with name BRANCH_FROM_3013_TO_3014___CIRCUIT_ID__1 //all parameters are new
+	Addition of acline ibus 3014 - jbus 3009 with name BRANCH_FROM_3014_TO_3009___CIRCUIT_ID__1 //all parameters are new
+
+
+-Add a new branch
+
+	BUS DATA
+
+	Addition of new bus with number 156 //all bus parameters are new
+
+	AC LINE DATA
+
+	Addition of acline ibus 154 - jbus 156 with name BRANCH_FROM__154_TO__156__CIRCUIT_ID__1
+
+
+-Merge AC line eliminating one bus and eliminating the gen connected to it
+
+	BUS DATA
+
+	Deletion of ibus 2000
+
+	AC LINE DATA
+
+	AC lines ibus 213 - jbus 2000 & ibus 2000 - jbus 214 merged into ibus 219 - jbus 214 remvoing bus 2000 and new name BRANCH_FROM__219_TO__214___CIRCUIT_ID__1
+
+
+-Merge AC line without changes in bus name
+
+	BUS DATA
+
+	Deletion of ibus 2001
+
+	AC LINE DATA
+
+	AC lines ibus 3003 - jbus 2001 & ibus 2001 - jbus 3005 merged into ibus 3003 - jbus 3005 and new name BRANCH_FROM_3003_TO_3005___CIRCUIT_ID__2
+
+
+-AC line is removed disconnecting the buses
+
+	AC LINE DATA
+
+	ibus 154 - jbus 203 line has been removed
+
+
+-Transformer changes bus numbers
+
+	BUS DATA
+
+	Bus number changed from 101 to 111
+
+	Bus number changed from 3001 to 3111
+
+	TRANSFORMER DATA
+
+	ibus 101 - jbus 151 changed to ibus 111 - jbus 151
+
+	ibus 3001 - jbus 3002 - kbus 3003 changed to ibus 3111 - jbus 3002 - kbus 3003
+
+
+-Transformer change name
+
+	TRANSFORMER DATA
+
+	ibus 3008 - jbus 3012 changed name from 3WNDSTAT2 to 2WNDSTAT2
+
+	ibus 205 - jbus 206 - kbus 210 changed name from 'URB TX' to 'URB AUS'
+
+
+-Transformer changes electrical parameters
+
+	TRANSFORMER DATA
+
+	ibus 205 - jbus 215 - kbus 208 changed CKT from '3' to 'W3'
+	ibus 205 - jbus 215 - kbus 208 changed CW from 1 to 2
+	ibus 205 - jbus 215 - kbus 208 changed CZ from 1 to 2
+	ibus 205 - jbus 215 - kbus 208 changed CM from 1 to 2
+	ibus 205 - jbus 215 - kbus 208 changed MAG1 from 3.42000E+04 to 3.0000E+04
+	ibus 205 - jbus 215 - kbus 208 changed MAG2 from 2.28000E-03 to 2.0000E-03
+	ibus 205 - jbus 215 - kbus 208 changed name from 'THREE WDG WITH COMPLEX IMP COR FACTORS 1' to 'THREE WDG WITH COMPLEX IMP COR FACTORS 2'
+	ibus 205 - jbus 215 - kbus 208 changed r1_2 from 7.52998E-4 to 8.00000E-4
+	ibus 205 - jbus 215 - kbus 208 changed x1_2 from 5.36670E-2 to 4.36670E-3
+	ibus 205 - jbus 215 - kbus 208 changed sbase1_2 from 150.00 to 200.00
+	ibus 205 - jbus 215 - kbus 208 changed windv1 from 1.00000 to 1.90000
+	ibus 205 - jbus 215 - kbus 208 changed nomv1 from 230.000 to 300.000
+	ibus 205 - jbus 215 - kbus 208 changed ang1 from 0.000 to 9.000
+	ibus 205 - jbus 215 - kbus 208 changed wdg1rate1 from 150.00 to 200.00
+	ibus 205 - jbus 215 - kbus 208 changed wdg1rate2 from 130.00 to 150.00
+	ibus 205 - jbus 215 - kbus 208 changed wdg1rate3 from 130.00 to 100.00
+	ibus 205 - jbus 215 - kbus 208 changed rma1 from 1.10000 to 1.00000
+	ibus 205 - jbus 215 - kbus 208 changed rmi1 from 0.90000 to 0.91000
+	ibus 205 - jbus 215 - kbus 208 changed vma1 from 1.10000 to 1.00000
+	ibus 205 - jbus 215 - kbus 208 changed vmi1 from 0.90000 to 0.91000
+	ibus 205 - jbus 215 - kbus 208 changed ntp2 from 33 to 40
+	ibus 205 - jbus 215 - kbus 208 changed tab2 from 0 to 5
+	ibus 205 - jbus 215 - kbus 208 changed cr3 from 0.00000 to 1.00000
+	ibus 205 - jbus 215 - kbus 208 changed cx3 from 0.00000 to 1.10000
+	ibus 205 - jbus 215 - kbus 208 changed cnxa3 from 0.000 to 1.500
+
+
+-Transformer replacement from 3W to 2W
+
+	BUS DATA
+
+	Deletion of ibus 3010
+
+	TRANSFORMER DATA
+
+	ibus 3008 - jbus 3012 - kbus 3010 changed to ibus 3008 - jbus 3012 //changed from 3W Trans to 2W Trans - values deleted from windv3 to cnxa3
+	ibus 3008 - jbus 3012 changed name from 3WNDSTAT2 to 2WNDSTAT2
+
+
+-Transformer replacement from 2W to 3W
+
+	BUS DATA
+
+	Addition of new bus with number 210 //all bus parameters are new
+
+	TRANSFORMER DATA
+
+	ibus 205 - jbus 206 changed to ibus 205 - jbus 206 - kbus 210 //changed from 2W Trans to 3W Trans - new values from r2_3 to anstar and from ang2 to cnax3 - zero value for winding rates from 4 to 12
+	ibus 205 - jbus 206 - kbus 210 changed name from 'URB TX' to 'URB AUS'
+
+
+-Addition of a new switched shunt
+
+	BUS DATA
+
+	Addition of new bus with number 161 //all bus parameters are new
+
+	SWITCHED SHUNT DATA
+
+	Addition of new shunt at bus 161 with shntid 'CC //all parameters are new
+
+
+-Shunt electric parameters change
+
+	SWITCHED SHUNT DATA
+
+	ibus 3022 changed modesw from 2 to 1
+	ibus 3022 changed adjm from 0 to 1
+	ibus 3022 changed stat from 1 to 0
+	ibus 3022 changed vswhi from 1.00000 to 1.10000
+	ibus 3022 changed vswlo from 1.00000 to 0.90000
+	ibus 3022 changed swreg from 3022 to 3021
+	ibus 3022 changed rmpct from 100.0 to 99.0
+	ibus 3022 changed rmidnt from '' to 'A'
+	ibus 3022 changed binit from 594.29 to 600.00
+	ibus 3022 changed n1 from 4 to 5
+	ibus 3022 changed b1 from 100.00 to 200.00
+
+
+
+--------------------------------------------------------------------------------------------

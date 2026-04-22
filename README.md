@@ -154,7 +154,18 @@ psse_model_util/
 │   ├── rawx_json_template.py  # RAWX section schema (fields, data_types, id_cols, bus_cols)
 │   └── rawx_raw_map.csv       # RAW ↔ RAWX field mapping (v34 + v35 columns)
 └── tests/
-    └── test_placeholder.py    # Placeholder — test suite (Phase 1.4)
+    ├── test_placeholder.py    # Placeholder — test suite (Phase 1.4)
+    └── data/                  # Test fixtures (do not delete)
+        ├── Model_1.raw        # Synthetic v34 — baseline for ModelComparison tests
+        ├── Model_2.raw        # Synthetic v34 — intentionally modified from Model_1
+        ├── sample_34.raw      # Minimal v34 RAW file
+        ├── sample2_34.raw     # Second minimal v34 RAW file
+        ├── sample_v35.raw     # Minimal v35 RAW file
+        ├── sample_v35.rawx    # Minimal v35 RAWX file
+        ├── sample2_v35.rawx   # Second minimal v35 RAWX file
+        ├── transformer.raw    # Transformer-focused test case
+        ├── minimal.raw        # Smallest valid RAW file
+        └── Model_1 and 2 differences.txt  # Documented delta between Model_1/Model_2
 ```
 
 ---
@@ -194,7 +205,7 @@ Uses calver: `YYYY.M.micro` — managed by Hatch via `__about__.py`.
 | RAWX export bug — exported `.rawx` doesn't load in PSS/E | 2.1 |
 | CSV export missing columns (index dropped with `index=False`) | 1.5 |
 | INCH/IDEV export scaffolded but not functional | 3.2 |
-| No real test data (anonymized BES model needed for UAT) | 2.3 |
+| Anonymized BES model for large-scale UAT | 2.3 |
 
 ---
 

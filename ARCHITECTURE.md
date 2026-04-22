@@ -264,5 +264,5 @@ All runtime paths are managed by `common/dirs.py` using `platformdirs`:
 | RAWX export bug | Exported `.rawx` doesn't reload in PSS/E — small format diff. Tracked for Phase 2.1. |
 | CSV export drops index columns | `index=False` in `to_csv()` loses bus numbers. Fix in Phase 1.5. |
 | `v33` support | Inferred but not explicitly tested. v34/v35 are primary targets. |
-| No test data in repo | Anonymized BES model needed for real UAT (Phase 2.3). |
+| No large-scale BES test data | Anonymized BES model needed for MMWG/IDC-scale UAT (Phase 2.3). Synthetic test fixtures in `tests/data/` cover unit and integration tests. |
 | Substation section parsing | Present but complex; substations excluded from NetworkX graph. |
