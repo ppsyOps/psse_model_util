@@ -1,4 +1,4 @@
-from functools import reduce
+
 
 def multi_replace(string: str, replacements: dict[str, str]):
     """

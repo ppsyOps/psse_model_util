@@ -56,37 +56,35 @@ pickle, to make loading it in the future much cheaper and much faster!
 """
 
 # Rest of the module code follows...
-import json
-import warnings
-from collections import namedtuple, defaultdict
-from typing import Dict, Any, List, Union, Callable  # Union
-from pathlib import Path
-from datetime import datetime as dtdt
 import copy
-from time import perf_counter_ns
+import json
 import pickle
-import logging
+import warnings
+from collections import defaultdict, namedtuple
+from datetime import datetime as dtdt
+from pathlib import Path
+from time import perf_counter_ns
+from typing import Any, Callable, Dict, List, Union  # Union
 
+import networkx as nx
 import networkx.exception
-
-from psse_model_util.common.dataframe_util import convert_df_column_dtypes
-from psse_model_util.common.dirs import site_cache_dir, site_data_dir, copy_doc
-from psse_model_util.common.file_util import to_pickle, read_pickle
-from psse_model_util.common.json_util import load_and_clean_json
-from psse_model_util.common.constants import INCLUDE_AREAS
-from psse_model_util.dataformat.rawx_json_template import rawx_json_template
-from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
-from psse_model_util.common.logging_config import setup_logger, get_log_file_path
 
 # from psse_model_util.common.classes import ModelDF
 # from psse_model_util.common.dirs import site_data_dir
 # from psse_model_util.common.classes import (BusId, IdStr, IdInt,
 #                                             ZoneId, AreaId, OwnerId, SwShID)
-
 import numpy as np
 import pandas as pd
-import networkx as nx
 import plotly.graph_objects as go
+
+from psse_model_util.common.constants import INCLUDE_AREAS
+from psse_model_util.common.dataframe_util import convert_df_column_dtypes
+from psse_model_util.common.dirs import copy_doc, site_cache_dir, site_data_dir
+from psse_model_util.common.file_util import read_pickle, to_pickle
+from psse_model_util.common.json_util import load_and_clean_json
+from psse_model_util.common.logging_config import get_log_file_path, setup_logger
+from psse_model_util.dataformat.rawx_json_template import rawx_json_template
+from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
 logger = setup_logger('model')
@@ -168,7 +166,7 @@ class General:
             try:
                 if dtype == dtdt:
                     return dtdt.fromisoformat(value)
-                elif dtype == int:
+                elif dtype is int or (isinstance(dtype, type) and issubclass(dtype, int)):
                     # Try to convert to int, but only if it doesn't
                     # result in data loss
                     float_value = float(value)
@@ -215,7 +213,6 @@ class AbstractSection:
         :param data: Dictionary containing 'fields' and 'data' keys
         :return: pandas DataFrame
         """
-        orig_keys = tuple(data.keys())
         fields: list = data.pop('fields')
         values: list = data.pop('data')
         meta: dict = data
@@ -250,9 +247,6 @@ class AbstractSection:
             logger.warning(f'    data: {len(data)} {data}')
             logger.warning(f'    meta: {len(meta)} {meta}')
             raise
-
-        # Get metadata like data_type, bus_cols, and id_cols from rawx_json_template.
-        metadata = df._metadata or {}
 
         return df
 
@@ -325,7 +319,7 @@ class Network(AbstractSection):
 
     Example:
         # >>> from model import Model
-        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
         >>> model = Model(fp, name="Summer_Peak")
         >>> network = model.network
         >>>
@@ -373,7 +367,7 @@ class Network(AbstractSection):
         self.vscdc: pd.DataFrame = pd.DataFrame()
         self.zone: pd.DataFrame = pd.DataFrame()
 
-        logger.info(f'Network.__init__ starting...')
+        logger.info('Network.__init__ starting...')
         for subsection, data in section.items():
             logger.info(f'Network.__init__ creating dataframe {subsection}...')
             self.subsection = subsection  # Added to aid in debugging
@@ -1201,7 +1195,6 @@ class Network(AbstractSection):
                 case 3:
                     # Transformer
                     assert len(id_cols) == 4
-                    edge_data = []
                     for row in df.itertuples():
                         props = row._asdict()
                         props.update({'section': section, 'id_cols': id_cols, 'bus_cols': bus_cols})
@@ -1298,7 +1291,6 @@ class Network(AbstractSection):
                         return voltage_colors[0][1]
                     # Interpolate between colors
                     prev_volt, prev_color = voltage_colors[i - 1]
-                    ratio = (kv - prev_volt) / (volt - prev_volt)
                     return color
             return voltage_colors[-1][1]  # Return highest voltage color if above all levels
 
@@ -1488,7 +1480,6 @@ class Network(AbstractSection):
         traces.append(edge_trace)
 
         # Add voltage color key before creating the figure:
-        voltage_key_y = np.linspace(0, 1, len(voltage_colors))
         voltage_key_text = [f"{int(volt)} kV" for volt, _ in voltage_colors]
         # Add "< " to first and "> " to last value
         voltage_key_text[0] = f"< {voltage_key_text[0]}"
@@ -1692,7 +1683,7 @@ class Model:
     Example:
         >>> # Load from RAW file
         >>> from model import Model
-        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
         >>> model = Model(fp, name="Summer_Peak")
         >>>
         >>> # Filter to specific areas
@@ -1800,7 +1791,7 @@ class Model:
 
         # Record the start time for performance tracking
         start_time = perf_counter_ns()
-        logger.info(f'Model __init__ starting.')
+        logger.info('Model __init__ starting.')
 
         # Initialize basic attributes
         self.name: str = name  # If not name, self._read_json will set a name.
@@ -1808,7 +1799,7 @@ class Model:
         self.json_data = {}
 
         # Load the RAW or RAWX data
-        logger.info(f'Model __init__ loading model from disk...')
+        logger.info('Model __init__ loading model from disk...')
         self._read_json(file_path_or_json, force_recalculate=force_recalculate)
 
         # Set up the pickle path for caching
@@ -1828,7 +1819,7 @@ class Model:
 
         logger.info(f'Model __init__ elapsed time: '
                     f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
-        logger.info(f'Model __init__ building pd.DataFrames...')
+        logger.info('Model __init__ building pd.DataFrames...')
 
         # Initialize section objects
         self.general: General = None
@@ -1852,7 +1843,7 @@ class Model:
                 try:
                     # self.__setattr__(section, self.json_data[section])
                     setattr(self, section_name, self.json_data[section_name])
-                except Exception as e:
+                except Exception:
                     warnings.warn(f"Parsing of {section_name} failed.  str(e)")
 
         # Set the version attribute.  A "general" section may not be included
@@ -1871,7 +1862,7 @@ class Model:
             # self.name = self.
 
         # Cache the processed model for future use
-        logger.info(f'Model __init__ caching to disk...')
+        logger.info('Model __init__ caching to disk...')
         self.to_pickle()
 
         logger.info(f'Model __init__ elapsed time: '
@@ -2334,10 +2325,10 @@ class Model:
         Example:
         --------
         >>> from model import Model
-        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
         >>> model = Model(fp)
         >>> print(model.pickle_path)
-        C:\Personal\Projects\psse_model_util\cache\Model_1.model
+        C:\\Personal\\Projects\\psse_model_util\\cache\\Model_1.model
         """
         if not hasattr(self, '_pickle_path'):
             self._pickle_path = None
@@ -2379,7 +2370,7 @@ class Model:
         Example:
         --------
          >>> from model import Model
-        >>> fp = r"C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw"
+        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
         >>> model = Model(fp)
         >>> model.pickle_path = '/custom/path/mymodel.model'
         >>> print(model.pickle_path)
@@ -2457,7 +2448,7 @@ class Model:
 if __name__ == '__main__':
     export_format = 'None'  # 'csv' or 'None'
 
-    logger.info(f'Starting psse_model_util/model.py...')
+    logger.info('Starting psse_model_util/model.py...')
     start = perf_counter_ns()
 
     from psse_model_util.common.dirs import clear_site_cache

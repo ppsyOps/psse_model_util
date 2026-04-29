@@ -71,7 +71,22 @@ In the Model class, this template is used extensively in the _create_dataframe m
 data into appropriate pandas DataFrames with the correct metadata. It guides the entire process of transforming the raw
 JSON data into a structured, queryable model representation.
 """
-from psse_model_util.dataformat.classes import *
+from psse_model_util.dataformat.classes import (
+    AreaId,
+    BusId,
+    IdInt,
+    IdStr,
+    Name,
+    OwnerFraction,
+    OwnerId,
+    Rating,
+    Reactance,
+    Resistance,
+    Status,
+    Susceptance,
+    Voltage,
+    ZoneId,
+)
 
 # from psse_model_util.common.classes import (AreaId, BusId, IdInt, IdStr, Impedance, Name, PowerFactor, Resistance,
 #                                             Reactance, OwnerId, OwnerFraction, Rating, ReactivePower, ActivePower,

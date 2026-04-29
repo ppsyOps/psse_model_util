@@ -33,25 +33,26 @@ Note: This module is designed to handle large power system models efficiently.
 """
 
 import argparse
-import sys
-from time import perf_counter_ns
-import warnings
-from pathlib import Path
-from collections import namedtuple
 import pickle
-from typing import Dict, Any, Optional, List
-import configparser
+import warnings
+from collections import namedtuple
+from pathlib import Path
+from time import perf_counter_ns
+from typing import Any, Dict, List, Optional
 
 import networkx as nx
 import numpy as np
 import pandas as pd
 
-from psse_model_util.model import Model
-from psse_model_util.common import dirs
-from psse_model_util.common.constants import INCLUDE_AREAS, \
-    ALT_PATH_MAX_PATH_LENGTH, DEFAULT_KV_FILTER, NETWORK_DF_COMPARISON_QUERIES
-from psse_model_util.common.file_util import to_pickle
+from psse_model_util.common.constants import (
+    ALT_PATH_MAX_PATH_LENGTH,
+    DEFAULT_KV_FILTER,
+    INCLUDE_AREAS,
+    NETWORK_DF_COMPARISON_QUERIES,
+)
 from psse_model_util.common.dirs import site_cache_dir, site_data_dir
+from psse_model_util.common.file_util import to_pickle
+from psse_model_util.model import Model
 
 # Define named tuples for storing comparison results
 FpPickleType = namedtuple('FpPickleType',
@@ -78,7 +79,7 @@ COMMAND_LINE_HELP_TEXT = """
 PSSE Model Comparison Tool
 --------------------------
 
-This tool compares two PSSE RAW or RAWX models and provides detailed analysis of 
+This tool compares two PSSE RAW or RAWX models and provides detailed analysis of
 their differences.
 
 Usage:
@@ -94,14 +95,14 @@ Options:
                                 : Format to export results (default: csv)
     -b, --add_bus_info_to_branches
                                 : Add bus information to branch DataFrames
-    -a, --areas AREAS           : Comma-separated list of area numbers to 
+    -a, --areas AREAS           : Comma-separated list of area numbers to
                                   include (e.g., "101,102,103")
 
 Example:
     python compare.py path/to/model1.rawx path/to/model2.rawx -f -e csv -b -a 101,102,103
 
-This example compares model1.rawx and model2.rawx, forces recalculation, exports 
-results to CSV, adds bus information to branches, and includes only areas 101, 
+This example compares model1.rawx and model2.rawx, forces recalculation, exports
+results to CSV, adds bus information to branches, and includes only areas 101,
 102, and 103 in the comparison.
 """
 
@@ -332,8 +333,8 @@ class ModelComparison:
                                       right_index=True, suffixes=('_model1', '_model2'))
             except Exception as e:
                 print(f'Could not bypass dataframes: {df_name}. Exception: {str(e)}')
-                print(f'Model 1 columns:', df1.columns)
-                print(f'Model 2 columns:', df2.columns)
+                print('Model 1 columns:', df1.columns)
+                print('Model 2 columns:', df2.columns)
                 continue
 
             columns = list(set(df1.columns) | set(df2.columns))
@@ -441,7 +442,7 @@ class ModelComparison:
 
                 try:
                     edge = g1.edges[node_a, node_b]
-                except KeyError as e:
+                except KeyError:
                     # TODO: Add logging
                     continue
 
@@ -695,7 +696,6 @@ class ModelComparison:
         for section, df in self.network_df_comparison.items():
             if section.startswith('sub') or section == 'gne':
                 continue
-            sheet_name = f'compare_{section}'
             csv_path = self.csv_folder / f'network_{section}.csv'
             if isinstance(df, pd.DataFrame):
                 if df.empty:
@@ -904,7 +904,7 @@ def main(raw1_path: Path | str,
     if areas is None:
         areas = []
     start_time = perf_counter_ns()
-    print(f'Starting model comparison...')
+    print('Starting model comparison...')
 
     include_areas = INCLUDE_AREAS
     raw1_path, raw2_path = Path(raw1_path), Path(raw2_path)
@@ -958,7 +958,7 @@ def main(raw1_path: Path | str,
 
     if export_format == 'csv':
         # Export comparison results to CSV
-        print(f'Export to CSV ...')
+        print('Export to CSV ...')
         comparison.to_csv(models_to_csv=False,
                           df_comparison_to_csv=True,
                           graph_comparison_to_csv=True)
@@ -973,7 +973,7 @@ def main(raw1_path: Path | str,
 if __name__ == '__main__':
     """
     Run "python compare.py -h" for help.
-    
+
     For sample use inside of an IDE, run "tests/example_compare.py"
     """
 

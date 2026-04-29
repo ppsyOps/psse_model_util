@@ -315,7 +315,7 @@ class TestWriteCsvFixed:
         mi = pd.MultiIndex.from_tuples([(1, 2, "1")], names=["ibus", "jbus", "ckt"])
         df = pd.DataFrame({"rpu": [0.01]}, index=mi)
         readonly_path = Path("/root/no_write_permission.csv")
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True):
             warnings.simplefilter("always")
             try:
                 self.write_csv(readonly_path, df)

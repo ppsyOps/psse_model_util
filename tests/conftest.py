@@ -7,6 +7,8 @@ is importable as `psse_model_util` (e.g. `from psse_model_util.raw_to_rawx impor
 import sys
 from pathlib import Path
 
+import pytest
+
 # /opt/openclaw-workspace/projects/psse_model_util  → parent = /opt/.../projects
 PROJECT_DIR = Path(__file__).resolve().parent.parent
 PARENT_DIR = PROJECT_DIR.parent
@@ -15,7 +17,7 @@ if str(PARENT_DIR) not in sys.path:
     sys.path.insert(0, str(PARENT_DIR))
 
 # Shared fixture: path to the test data directory
-import pytest
+
 
 @pytest.fixture(scope="session")
 def data_dir() -> Path:

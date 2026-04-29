@@ -1,12 +1,8 @@
-from collections import namedtuple
-from dataclasses import make_dataclass, field
-from types import NoneType
-from typing import get_type_hints, List
-from typing import Any, Type, List, Set, Tuple, Dict
-import datetime  # Make sure to import datetime
 import copy
-import builtins
-import inspect
+from collections import namedtuple
+from dataclasses import field, make_dataclass
+from types import NoneType
+from typing import Any, List
 
 import pandas as pd
 
@@ -30,7 +26,7 @@ class ModelDF(pd.DataFrame):
     def meta(self, new_dict):
         assert isinstance(new_dict, dict), f'new_dict must be a dict, not {type(new_dict)}.'
         if 'data_type' in new_dict and not isinstance(new_dict['data_type'], dict):
-            assert 'fields' in new_dict, f'Cannot set new_dict["data_type"] in ModelDF unless it is a dict or new_dict["field"] exists.'
+            assert 'fields' in new_dict, 'Cannot set new_dict["data_type"] in ModelDF unless it is a dict or new_dict["field"] exists.'
             assert len(new_dict['fields']) == len(new_dict['data_type'])
             new_dict['data_type'] = {k: v for k, v in zip(new_dict['fields'], new_dict['data_type'])}
         self._metadata = new_dict

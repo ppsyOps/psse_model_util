@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import List
 
 from psse_model_util.compare import ModelComparison
-from psse_model_util.dataformat.inch_templates import INCH_TEMPLATE
 
 
 @dataclass
@@ -67,7 +66,7 @@ class Inch(object):
         # TODO: write code for add_bus
         assert isinstance(self.comparison, ModelComparison) and self.comparison is not None
         df = self.comparison.network_df_comparison['bus']
-        bus = df[df['bus_id'] == bus_id].to_dict('records')[0]
+        _ = df[df['bus_id'] == bus_id].to_dict('records')[0]
         ...
 
     def modify_bus(self, bus_id):

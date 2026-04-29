@@ -8,8 +8,9 @@ All paths are packaging-safe: no references to the source tree.
 """
 
 import shutil
-import platformdirs
 from pathlib import Path
+
+import platformdirs
 
 APP_NAME = 'psse_model_util'
 

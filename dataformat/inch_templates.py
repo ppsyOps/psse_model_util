@@ -1,6 +1,7 @@
 from textwrap import dedent
+
 """
-PowerGEM incremental change (INCH) files are used to modify the power system 
+PowerGEM incremental change (INCH) files are used to modify the power system
 model.  This module introduces the INCH_TEMPLATE constant to support creation
 of the INCH files using this library (psse_model_util.Inch class).
 
@@ -11,14 +12,14 @@ code to create INCH files.
 
 command (str): the INCH file command recognized by PowerGEM TARA software.
 inch_fields list[str]: valid INCH file field names
-rawx_section (str): a valid section name in a RAWX file, such as 'bus', 
+rawx_section (str): a valid section name in a RAWX file, such as 'bus',
                     'acline', 'generator', etc.
-rawx_fields (list[str]): list of corresponding model.Model.network dataframe 
+rawx_fields (list[str]): list of corresponding model.Model.network dataframe
                          field names
 template (str): template section of INCH file.
                 line 1: // comment
                 line 2: #COMMAND [csv INCH field name list]
-                line 3: csv value list 
+                line 3: csv value list
 """
 
 INCH_TEMPLATE = {
@@ -32,7 +33,7 @@ INCH_TEMPLATE = {
                            //ADD NEW BUS DATA
                            #ADD_BUS [BusNum,BusName,BusNomVolt,BusType,AreaNum,ZoneNum,OwnerNum,BusVoltPU,BusAngle,VmaxNorm,VminNorm,VmaxCont,VminCont]
                            ibus,name,baskv,ide,area,zone,owner,vm,va,nvhi,nvlo,evhi,evlo
-                           #END 			
+                           #END
                            ''').strip('\n\t')
                 },
 
