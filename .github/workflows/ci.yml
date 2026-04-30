@@ -65,10 +65,10 @@ jobs:
           python-version: '3.11'
 
       - name: Install PDM
-        run: pip install pdm
+        run: pip install pdm hatch
 
       - name: Install dependencies
-        run: pdm install
+        run: pdm install -G dev
 
       - name: Build package
         run: pdm run hatch build
