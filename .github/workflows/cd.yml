@@ -4,38 +4,53 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
-  build-and-deploy:
+  release:
+    name: Build & GitHub Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create releases and upload assets
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-      
-      - name: Install PDM
-        run: pip install pdm
-      
+
+      - name: Install PDM + Hatch
+        run: pip install pdm hatch
+
       - name: Install dependencies
-        run: pdm install -G lint
-      
-      - name: Run tests with coverage
-        run: pdm run pytest --cov=psse_model_util --cov-report=html
-      
-      - name: Enforce coverage threshold
+        run: pdm install -G dev
+
+      - name: Read version
+        id: version
         run: |
-          # Check if coverage is at least 80%
-          # (This would require a script or a coverage threshold tool)
-      
-      - name: Build package
+          VERSION=$(python -c "import re; m=re.search(r'__version__\s*=\s*[\'\"](.*?)[\'\"]', open('__about__.py').read()); print(m.group(1))")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build wheel + sdist
         run: pdm run hatch build
-      
-      - name: Deploy to staging
-        # Placeholder for deployment steps
-        # Example: Use a deployment action or custom script
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: psse-model-util ${{ steps.version.outputs.tag }}
+          body: |
+            ## psse-model-util ${{ steps.version.outputs.tag }}
+
+            Built from commit ${{ github.sha }} on branch `main`.
+
+            ### Install
+            Download the `.whl` file below and install with:
+            ```
+            pip install psse_model_util-*.whl
+            ```
+          files: dist/*
+          fail_on_unmatched_files: false
+          make_latest: true
