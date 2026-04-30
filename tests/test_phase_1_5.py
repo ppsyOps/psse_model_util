@@ -324,3 +324,6 @@ class TestWriteCsvFixed:
                 pass  # Already suppressed by the method — if it raised, test fails below
         # No assertion needed: the method must not raise an unhandled exception
         assert True
+
+
+

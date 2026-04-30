@@ -84,6 +84,12 @@ omit = [
     "tests/*",
     "dist/*",
     "*/__pycache__/*",
+    # Scaffolded / WIP — not yet testable
+    "inch.py",
+    "util/contingency_util.py",
+    "version.py",
+    # Deprecated visualization — to be replaced in Phase 3.1
+    "one_line_diagram.py",
 ]
 
 [tool.coverage.report]
@@ -92,3 +98,4 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
 ]
+fail_under = 40

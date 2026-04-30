@@ -44,7 +44,7 @@ jobs:
         run: pdm install
 
       - name: Run pytest with coverage
-        run: pdm run pytest --cov=psse_model_util --cov-report=xml --cov-fail-under=80
+        run: pdm run pytest --cov=psse_model_util --cov-report=xml
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v4

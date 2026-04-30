@@ -582,6 +582,12 @@ class Network(AbstractSection):
             original_index_columns = [original_index_name]
             df.reset_index(drop=True, inplace=True)
 
+        # Build an area-number → area-name lookup from network.area (if available).
+        # Used below to produce a human-readable {bus_col}_area_name column.
+        area_name_map: pd.Series | None = None
+        if isinstance(self.area, pd.DataFrame) and not self.area.empty and 'arname' in self.area.columns:
+            area_name_map = self.area['arname']
+
         # Join with bus DataFrame for each bus column
         for bus_col in bus_cols:
             # If the model has been filtered inplace, then not all buses are
@@ -596,6 +602,13 @@ class Network(AbstractSection):
                 right_index=True,
                 how='left',  # left outer join
             )
+
+            # Add {bus_col}_area_name by mapping the joined area number through
+            # the area DataFrame.  Falls back gracefully when area data is absent.
+            area_col = f'{bus_col}_area'
+            area_name_col = f'{bus_col}_area_name'
+            if area_name_map is not None and area_col in df.columns:
+                df[area_name_col] = df[area_col].map(area_name_map)
 
         # Restore the original index
         df.set_index(original_index_columns, inplace=True)

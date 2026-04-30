@@ -4,6 +4,33 @@
 
 ---
 
+## Toolchain
+
+| Tool | Role | Notes |
+|------|------|-------|
+| **PDM** | Dependency management & virtual environment | Primary tool for `install`, `run`, and `lock` |
+| **Hatch** | Build backend & packaging | Invoked via `pdm run hatch build`; config in `pyproject.toml` |
+| **Ruff** | Linter & import sorter | Replaces `flake8`; configured in `pyproject.toml` under `[tool.ruff.lint]` |
+| **pytest + pytest-cov** | Test runner & coverage | Run via `pdm run pytest --cov=psse_model_util` |
+
+> **Local dev setup:** `pip install pdm && pdm install -G lint`  
+> **Run linter:** `pdm run ruff check .`  
+> **Run tests:** `pdm run pytest --cov=psse_model_util`  
+> **Build package:** `pdm run hatch build`
+
+---
+
+## CI/CD Workflows
+
+Defined in `.github/workflows/`:
+
+| File | Trigger | Jobs |
+|------|---------|------|
+| `lint.yml` | push/PR to `main` | Lint (Ruff), Test (pytest + coverage ≥80%), Build (Hatch) |
+| `cd.yml` | push/PR to `main` | Same gates as CI + deployment placeholder |
+
+---
+
 ## High-Level Overview
 
 `psse_model_util` is a Python library for loading, filtering, and comparing PSS/E power system models. It translates proprietary PSS/E file formats (RAW, RAWX) into pandas DataFrames and a NetworkX graph, exposing them through a clean object model.

@@ -306,10 +306,23 @@ class ModelComparison:
             if series1.dtype != series2.dtype:
                 return series1 != series2
 
-            if np.issubdtype(series1.dtype, np.number):
+            # np.issubdtype raises TypeError on pandas extension dtypes (e.g.
+            # StringDtype).  Fall back to object-style comparison for those.
+            try:
+                is_numeric = np.issubdtype(series1.dtype, np.number)
+            except TypeError:
+                is_numeric = False
+
+            if is_numeric:
                 return series2 - series1
             else:
                 return (series1 != series2).astype(bool)
+
+        # Enrich both models' DataFrames with bus info (name, baskv, area, etc.)
+        # before the merge, so the joined columns appear naturally in every
+        # network_*.csv without any additional post-processing.
+        self.model1.network.append_bus_info_to_dfs()
+        self.model2.network.append_bus_info_to_dfs()
 
         result: Dict[str, pd.DataFrame] = {}
         df1_names = [_ for _ in dir(self.model1.network)
@@ -483,15 +496,75 @@ class ModelComparison:
         result['added_edges'] = _get_added_edges()
         result['added_nodes'] = set(graph2.nodes) - set(graph1.nodes)
 
+        # Build a bus_num → attribute dict from graph node data (both models).
+        # Graph nodes carry all bus DataFrame columns as attributes, e.g.
+        # graph.nodes[('bus', 101)] == {'name': 'NUC-A', 'baskv': 21.6, 'ide': 2, ...}
+        # Storing full attrs (not just name) lets _bus_label expose baskv and ide.
+        # model2 fills in buses that only exist in the updated topology.
+        bus_node_attrs: dict[int, dict] = {}
+        for node, attrs in graph1.nodes(data=True):
+            if isinstance(node, tuple) and node[0] == 'bus':
+                bus_node_attrs[node[1]] = dict(attrs)
+        for node, attrs in graph2.nodes(data=True):
+            if isinstance(node, tuple) and node[0] == 'bus' and node[1] not in bus_node_attrs:
+                bus_node_attrs[node[1]] = dict(attrs)
+
+        def _bus_label(bus_num: int) -> str:
+            """Return 'NAME (bus_num, baskv kV, ide)' for a single bus number.
+
+            Includes the three fields a user needs to identify a bus at a glance:
+              - name   : bus name string
+              - baskv  : nominal voltage in kV
+              - ide    : bus type code (1=load, 2=gen, 3=swing, 4=isolated)
+            """
+            attrs = bus_node_attrs.get(bus_num, {})
+            name = str(attrs.get('name', f'BUS {bus_num}')).strip()
+            baskv = attrs.get('baskv', '')
+            ide = attrs.get('ide', '')
+            kv_str = f'{baskv} kV' if baskv != '' else ''
+            ide_str = f'ide={ide}' if ide != '' else ''
+            detail = ', '.join(filter(None, [kv_str, ide_str]))
+            suffix = f' [{detail}]' if detail else ''
+            return f'{name} ({bus_num}){suffix}'
+
+        def format_edge(edge) -> str:
+            """Format an edge tuple (('bus', A), ('bus', B)) with bus names.
+
+            Edges are non-directional; the label is ordered lower-bus-number first
+            for consistency regardless of which direction the edge was stored.
+            """
+            try:
+                a, b = sorted([edge[0][1], edge[1][1]])
+                return f'{_bus_label(a)} - {_bus_label(b)}'
+            except (IndexError, TypeError):
+                return str(edge)
+
+        def format_alt_paths(list_of_paths) -> str:
+            """Format a list of alternative paths as a ' | '-delimited string."""
+            formatted: list[str] = []
+            try:
+                for path in list_of_paths:
+                    nodes_str = ' -> '.join(_bus_label(node[1]) for node in path)
+                    formatted.append(nodes_str)
+                return ' | '.join(formatted)
+            except (IndexError, TypeError, AttributeError):
+                return str(list_of_paths)
+
         print('Finding path sectionalizes...')
-        df = _find_alt_paths(result['removed_edges'], g1=graph1, g2=graph2)
-        df.columns = [self.model1.name, self.model2.name]
-        result['path_sectionalizations'] = df
+        df_sec = _find_alt_paths(result['removed_edges'], g1=graph1, g2=graph2)
+        if not df_sec.empty:
+            df_sec.columns = ['original_path', 'alternate_paths']
+            df_sec['original_path_named'] = df_sec['original_path'].apply(format_edge)
+            df_sec['alternate_paths_named'] = df_sec['alternate_paths'].apply(format_alt_paths)
+        result['path_sectionalizations'] = df_sec
 
         print('Finding path bypass...')
-        df = _find_alt_paths(result['added_edges'], g1=graph2, g2=graph1)
-        df.columns = [self.model2.name, self.model1.name]
-        result['path_bypasses'] = df
+        df_byp = _find_alt_paths(result['added_edges'], g1=graph2, g2=graph1)
+        if not df_byp.empty:
+            df_byp.columns = ['original_path', 'alternate_paths']
+            df_byp['original_path_named'] = df_byp['original_path'].apply(format_edge)
+            df_byp['alternate_paths_named'] = df_byp['alternate_paths'].apply(format_alt_paths)
+        result['path_bypasses'] = df_byp
 
         self.graph_comparison = result
         return self.graph_comparison
@@ -681,6 +754,56 @@ class ModelComparison:
         except PermissionError as e:
             warnings.warn(f'Unable to write general information to {csv_path}.  {str(e)}')
 
+    @staticmethod
+    def _reorder_columns(df: pd.DataFrame) -> pd.DataFrame:
+        """Reorder DataFrame columns so that bus-info and *_named columns are
+        placed immediately after the base identifier columns they annotate.
+
+        Rules applied (in priority order):
+        1. ``<base>_named`` is inserted right after ``<base>`` (e.g.
+           ``original_path_named`` after ``original_path``).
+        2. ``<bus_col>_<suffix>`` columns produced by
+           ``append_bus_info_to_dfs`` / ``section_with_bus`` (e.g.
+           ``ibus_name_model1``) are inserted right after the matching
+           ``<bus_col>_<suffix>`` numeric column (e.g. after ``ibus_model1``).
+        3. Any remaining columns keep their current order.
+        """
+        if df.empty:
+            return df
+
+        cols = list(df.columns)
+        ordered: list[str] = []
+        placed: set[str] = set()
+
+        for col in cols:
+            if col in placed:
+                continue
+            ordered.append(col)
+            placed.add(col)
+            # Rule 1: <base>_named immediately after <base>
+            named_col = f'{col}_named'
+            if named_col in cols and named_col not in placed:
+                ordered.append(named_col)
+                placed.add(named_col)
+            # Rule 2: bus info columns (e.g. ibus_name_model1) after ibus_model1
+            # Pattern: col is like 'ibus_model1'; companion is 'ibus_name_model1'
+            for suffix in ('_model1', '_model2'):
+                if col.endswith(suffix):
+                    base = col[: -len(suffix)]
+                    for companion in [f'{base}_name{suffix}',
+                                      f'{base}_baskv{suffix}',
+                                      f'{base}_area{suffix}']:
+                        if companion in cols and companion not in placed:
+                            ordered.append(companion)
+                            placed.add(companion)
+
+        # Append anything not yet placed (should be empty, but safe-guard)
+        for col in cols:
+            if col not in placed:
+                ordered.append(col)
+
+        return df[ordered]
+
     def _df_comparison_to_csv(self):
         """Export comparison results to CSV."""
 
@@ -701,7 +824,7 @@ class ModelComparison:
                 if df.empty:
                     warnings.warn("Dataframe is empty: " + section)
                 else:
-                    self._write_csv(csv_path, df)
+                    self._write_csv(csv_path, self._reorder_columns(df))
             else:
                 warnings.warn("Dataframe not found: " + section)
 
