@@ -33,21 +33,23 @@ Example Usage:
 print('Loading code (contingency_util.py)...')
 print('    Starting imports...')
 # Standard library imports
-import os
-import shutil
-import warnings
-import re
-from collections import namedtuple
-from itertools import chain,permutations
+import os  # noqa: E402
+import re  # noqa: E402
+import shutil  # noqa: E402
+import warnings  # noqa: E402
+from collections import namedtuple  # noqa: E402
+from itertools import chain, permutations  # noqa: E402
+
 # from datetime import datetime as dtdt
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
 # Third-party imports
-import pandas as pd
+import pandas as pd  # noqa: E402
+
+from psse_model_util import Model  # noqa: E402
 
 # Local imports
-from psse_model_util.common.logging_config import setup_logger, LOG_FILE, get_log_file_path
-from psse_model_util import Model
+from psse_model_util.common.logging_config import get_log_file_path, setup_logger  # noqa: E402
 
 print('    Starting logger...')
 logger = setup_logger("contingency_util")
@@ -731,16 +733,16 @@ logger.debug('    Finished loading code (cotingency_util.py).')
 
 
 if __name__ == '__main__':
-    logger.debug(f"Starting arg parsing...")
+    logger.debug("Starting arg parsing...")
 
     import argparse
     import sys
 
     parser = argparse.ArgumentParser(
         description="""
-        Create area-specific contingency definition files from PSS/E RAW 
+        Create area-specific contingency definition files from PSS/E RAW
         model and input contingency files.
-        
+
         This script processes power system contingency definitions by:
         1. Loading network model from RAW file
         2. Validating contingency components
@@ -815,7 +817,7 @@ if __name__ == '__main__':
     logger.info(f"  Max # input con files to process: {MAX_INPUT_FILES}")
     logger.info(f"  Delete old output files: {True}\n\n")
     if pause:
-        input(f" Press [Enter] to continue... ")
+        input(" Press [Enter] to continue... ")
 
     create_area_con_files(
         raw_file=args.raw_file,

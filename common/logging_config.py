@@ -1,11 +1,10 @@
 import logging
 import logging.handlers
+import sys
 from pathlib import Path
 from typing import Optional
-import sys
 
 from psse_model_util.common.dirs import user_log_dir
-
 
 # You can adjust the log directory and file name as needed
 LOG_FILE = user_log_dir / "application.log"

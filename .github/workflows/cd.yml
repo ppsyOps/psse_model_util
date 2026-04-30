@@ -1,0 +1,41 @@
+name: Continuous Deployment
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Install PDM
+        run: pip install pdm
+      
+      - name: Install dependencies
+        run: pdm install -G lint
+      
+      - name: Run tests with coverage
+        run: pdm run pytest --cov=psse_model_util --cov-report=html
+      
+      - name: Enforce coverage threshold
+        run: |
+          # Check if coverage is at least 80%
+          # (This would require a script or a coverage threshold tool)
+      
+      - name: Build package
+        run: pdm run hatch build
+      
+      - name: Deploy to staging
+        # Placeholder for deployment steps
+        # Example: Use a deployment action or custom script

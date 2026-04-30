@@ -3,18 +3,16 @@ The purpose of this module is to convert to parse a raw file into a dict similar
 to the dict created when reading from a rawx file, then create a compatible model.
 """
 import argparse
-import re
+import csv
 import io
 import json
-import csv
-import warnings
+import re
 from io import StringIO
-from typing import Tuple, List
 from pathlib import Path
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
-import json
 
 from psse_model_util.common.dirs import site_temp_dir
 
@@ -123,7 +121,6 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
     # initial
     global raw_rawx_columns
     section, raw_column_names, rawx_column_names = '', [], []
-    key = None
     end_record_line_index = -1
     result: dict = {}  # rawx dict
     result['network'] = {}
@@ -148,8 +145,8 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
         assert f[4].startswith('GENERAL,'), \
             'Expected 1st line of file to start with "GENERAL,"'
 
-        category, section, rawx_section = None, None, None
-        record_data, data, finished_sys_wide = [], [], False
+        section, rawx_section = None, None
+        record_data, data = [], []
 
         # Case Info (First 2 lines of raw file), which maps to result['general']
         # _____________________________________________________________________
@@ -176,7 +173,6 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
         result['network'].update(syswide)
 
         # Read Network Data (after system-wide data)
-        f_list = f[end_syswide_line_num:]  # Convert to list for easier indexing
         line_num = end_syswide_line_num
 
         while line_num < len(f):
@@ -212,7 +208,7 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
                 if rawx_section and rawx_section.startswith('substation'):
                     # Parse substation section
                     substation_data, end_line = _parse_substation_section(
-                        f, 
+                        f,
                         line_num,
                         raw_rawx_columns=raw_rawx_columns
                     )
@@ -227,7 +223,7 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
                             raw_rawx_columns_df=raw_rawx_columns
                         )
                         rawx_column_names = [col[1] for col in raw_rawx_column_names]
-                    
+
                     line_data = split_csv_line(line)
                     if len(line_data) >= 4:  # Ensure we have all required fields
                         # Convert values to appropriate types based on column position
@@ -237,7 +233,7 @@ def raw_file_to_rawx_dict(raw_filepath: str | Path,
                                 row_data.append(int(float(value)) if value.strip() else 0)
                             else:  # tap, refact, imfact - float
                                 row_data.append(float(value) if value.strip() else 0.0)
-                        
+
                         # Pad with None if we don't have enough values
                         row_data += [None] * (len(rawx_column_names) - len(row_data))
                         data.append(row_data)
@@ -371,7 +367,7 @@ def _parse_substation_section(lines, start_line=0, raw_rawx_columns=None):
             continue
 
         parts = split_csv_line(line)
-        
+
         if in_switching_section:
             # Parse switching device data
             if not line.startswith('Q'):  # Skip end of file marker
@@ -379,15 +375,21 @@ def _parse_substation_section(lines, start_line=0, raw_rawx_columns=None):
                     # Map fields using the column names from the mapping
                     field_map = substation_columns.get('SUBSTATION SWITCHING DEVICE DATA', {})
                     device = {}
-                    
+
                     # Map fields by position
-                    if len(parts) > 0: device[field_map.get('NI', 'inode')] = parts[0]  # from node
-                    if len(parts) > 1: device[field_map.get('NJ', 'jnode')] = parts[1]  # to node
-                    if len(parts) > 2: device[field_map.get('CKT', 'swlid')] = parts[2]  # device id
-                    if len(parts) > 3: device[field_map.get('TYPE', 'type')] = parts[3]  # device type
-                    if len(parts) > 4: device[field_map.get('STATUS', 'stat')] = parts[4]  # status
-                    if len(parts) > 5: device['description'] = parts[5]  # description
-                    
+                    if len(parts) > 0:
+                        device[field_map.get('NI', 'inode')] = parts[0]  # from node
+                    if len(parts) > 1:
+                        device[field_map.get('NJ', 'jnode')] = parts[1]  # to node
+                    if len(parts) > 2:
+                        device[field_map.get('CKT', 'swlid')] = parts[2]  # device id
+                    if len(parts) > 3:
+                        device[field_map.get('TYPE', 'type')] = parts[3]  # device type
+                    if len(parts) > 4:
+                        device[field_map.get('STATUS', 'stat')] = parts[4]  # status
+                    if len(parts) > 5:
+                        device['description'] = parts[5]  # description
+
                     substation_data['switching_devices'].append(device)
         else:
             # Parse substation and node data
@@ -709,7 +711,8 @@ def main(sample_raw34_path: Path | str,
 
         json_temp_file = site_temp_dir / f'{raw34_path.stem}.json'
         json_temp_file.parent.mkdir(parents=True, exist_ok=True)
-        if save_json: save_rawx_dict_to_json(rawx_dict=result_34, output_file=json_temp_file, compact=True)
+        if save_json:
+            save_rawx_dict_to_json(rawx_dict=result_34, output_file=json_temp_file, compact=True)
 
         print(json_temp_file)
 
@@ -719,7 +722,8 @@ def main(sample_raw34_path: Path | str,
         print(result_35)
 
         json_temp_file = site_temp_dir / f'{raw35_path.stem}.json'
-        if save_json: save_rawx_dict_to_json(rawx_dict=result_35, output_file=json_temp_file, compact=False)
+        if save_json:
+            save_rawx_dict_to_json(rawx_dict=result_35, output_file=json_temp_file, compact=False)
         print(json_temp_file)
 
 
@@ -733,9 +737,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # If raw34_path or raw35_poth not provided, prompt user to enter paths.
-    if args.raw34_path == None:
+    if args.raw34_path is None:
         args.raw34_path = input('Enter the path to the sample v34 RAW file: ').strip()
-    if args.raw35_path == None:
+    if args.raw35_path is None:
         args.raw35_path = input('Enter the path to the sample v35 RAW file: ').strip()
 
     main(sample_raw34_path=args.raw34_path,

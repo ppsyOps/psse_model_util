@@ -1,18 +1,15 @@
-import msvcrt
-from copy import deepcopy
 import csv
-import glob
 import io
-from pathlib import Path
-import time
-import warnings
 import pickle
+import warnings
+from copy import deepcopy
+from pathlib import Path
 from typing import List
 
-from psse_model_util.common.constants import DOWNLOAD_WAIT_SECONDS, RESILIENT
-from psse_model_util.common.dirs import site_temp_dir, site_data_dir
-
 import pandas as pd
+
+from psse_model_util.common.constants import RESILIENT
+from psse_model_util.common.dirs import site_data_dir
 
 
 def uneven_lists_to_df(list_of_lists: list, columns: list = [],

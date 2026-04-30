@@ -1,0 +1,1015 @@
+C:\Personal\Projects\psse_model_util\venv\Scripts\python.exe C:\Personal\Projects\psse_model_util\tests\example_model.py 
+2024-11-12 13:17:57,854 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:57,855 - model - INFO - Model __init__ loading model from disk...
+
+
+Version:  34.6
+
+caseid: 34
+
+section: BUS DATA bus
+rawx_column_names: 13 ['ibus', 'name', 'baskv', 'ide', 'area', 'zone', 'owner', 'vm', 'va', 'nvhi', 'nvlo', 'evhi', 'evlo']
+data[0]: 13 ['101', 'NUC-A', '21.6000', '2', '1', '1', '1', '1.01000', '-19.0142', '1.10000', '0.90000', '1.10000', '0.90000']
+
+section: LOAD DATA load
+rawx_column_names: 17 ['ibus', 'loadid', 'stat', 'area', 'zone', 'pl', 'ql', 'ip', 'iq', 'yp', 'yq', 'owner', 'scale', 'intrpt', 'dgenp', 'dgenq', 'dgenm']
+data[0]: 17 ['152', '1', '1', '1', '1', '1200.000', '360.000', '868.340', '360.502', '837.794', '-351.338', '1', '1', '0', '0.000', '0.000', '0']
+
+section: FIXED SHUNT DATA fixshunt
+rawx_column_names: 5 ['ibus', 'shntid', 'stat', 'gl', 'bl']
+data[0]: 5 ['151', 'F1', '1', '5.000', '-400.000']
+
+section: GENERATOR DATA generator
+rawx_column_names: 29 ['ibus', 'machid', 'pg', 'qg', 'qt', 'qb', 'vs', 'ireg', 'mbase', 'zr', 'zx', 'rt', 'xt', 'gtap', 'stat', 'rmpct', 'pt', 'pb', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'wmod', 'wpf', 'nreg']
+data[0]: 29 ['101', '1', '750.000', '165.207', '400.000', '-100.000', '1.01000', '101', '900.000', '1.00000E-2', '3.00000E-1', '0.00000E+0', '0.00000E+0', '1.00000', '1', '100.0', '800.000', '50.000', '1', '0.1289', '2', '0.2524', '3', '0.1031', '4', '0.5156', None, None, None]
+
+section: BRANCH DATA acline
+rawx_column_names: 34 ['ibus', 'jbus', 'ckt', 'rpu', 'xpu', 'bpu', 'name', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'gi', 'bi', 'gj', 'bj', 'stat', 'method', 'len', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4']
+data[0]: 34 ['151', '152', '1', '2.60000E-3', '4.60000E-2', '3.50000', 'BRANCH_FROM__151_TO__152___CIRCUIT_ID__1', '1200.00', '1100.00', '1000.00', '1200.40', '1100.50', '1000.60', '1200.70', '1100.80', '1000.90', '1200.10', '1100.11', '1000.12', '0.01000', '-0.25000', '0.01100', '-0.15000', '1', '2', '150.00', '1', '0.2000', '2', '0.3000', '3', '0.4000', '4', '0.1000']
+
+section: SYSTEM SWITCHING DEVICE DATA sysswd
+rawx_column_names: 21 ['ibus', 'jbus', 'ckt', 'xpu', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'stat', 'nstat', 'met', 'stype', 'name']
+data[0]: 21 ['151', '201', '*1', '1.00000E-4', '1206.00', '1106.00', '1006.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '1', '2', '3', '']
+
+section: TRANSFORMER DATA transformer
+rawx_column_names: 114 ['ibus', 'jbus', 'kbus', 'ckt', 'cw', 'cz', 'cm', 'mag1', 'mag2', 'nmet', 'name', 'stat', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'vecgrp', 'zcod', 'r1_2', 'x1_2', 'sbase1_2', 'r2_3', 'x2_3', 'sbase2_3', 'r3_1', 'x3_1', 'sbase3_1', 'vmstar', 'anstar', 'windv1', 'nomv1', 'ang1', 'wdg1rate1', 'wdg1rate2', 'wdg1rate3', 'wdg1rate4', 'wdg1rate5', 'wdg1rate6', 'wdg1rate7', 'wdg1rate8', 'wdg1rate9', 'wdg1rate10', 'wdg1rate11', 'wdg1rate12', 'cod1', 'cont1', 'rma1', 'rmi1', 'vma1', 'vmi1', 'ntp1', 'tab1', 'cr1', 'cx1', 'cnxa1', 'node1', 'windv2', 'nomv2', 'ang2', 'wdg2rate1', 'wdg2rate2', 'wdg2rate3', 'wdg2rate4', 'wdg2rate5', 'wdg2rate6', 'wdg2rate7', 'wdg2rate8', 'wdg2rate9', 'wdg2rate10', 'wdg2rate11', 'wdg2rate12', 'cod2', 'cont2', 'rma2', 'rmi2', 'vma2', 'vmi2', 'ntp2', 'tab2', 'cr2', 'cx2', 'cnxa2', 'node2', 'windv3', 'nomv3', 'ang3', 'wdg3rate1', 'wdg3rate2', 'wdg3rate3', 'wdg3rate4', 'wdg3rate5', 'wdg3rate6', 'wdg3rate7', 'wdg3rate8', 'wdg3rate9', 'wdg3rate10', 'wdg3rate11', 'wdg3rate12', 'cod3', 'cont3', 'rma3', 'rmi3', 'vma3', 'vmi3', 'ntp3', 'tab3', 'cr3', 'cx3', 'cnxa3', 'node3']
+data[0]: 114 ['101', '151', '0', 'T1', '2', '2', '1', '1.71470E-01', '-1.02880E-01', '2', 'EL DORADO NUCLEAR UNIT A GSU TRANSFORMER', '1', '1', '0.3200', '2', '0.3900', '3', '0.1400', '4', '0.1500', 'Dyn1', None, '1.10000E-3', '9.10000E-2', '1200.00', None, None, None, None, None, None, None, None, '21.6000', '21.600', '0.000', '1200.00', '1100.00', '1000.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '101', '22.68000', '20.52000', '1.05000', '0.95000', '25', '0', '0.00021', '0.00051', '0.000', '0', '500.000', '500.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: AREA DATA area
+rawx_column_names: 5 ['iarea', 'isw', 'pdes', 'ptol', 'arname']
+data[0]: 5 ['1', '101', '-2800.000', '10.000', 'CENTRAL']
+
+section: TWO-TERMINAL DC DATA twotermdc
+rawx_column_names: 48 ['name', 'mdc', 'rdc', 'setvl', 'vschd', 'vcmod', 'rcomp', 'delti', 'meter', 'dcvmin', 'cccitmx', 'cccacc', 'ipr', 'nbr', 'anmxr', 'anmnr', 'rcr', 'xcr', 'ebasr', 'trr', 'tapr', 'tmxr', 'tmnr', 'stpr', 'icr', 'ifr', 'itr', 'idr', 'xcapr', 'ndr', 'ipi', 'nbi', 'anmxi', 'anmni', 'rci', 'xci', 'ebasi', 'tri', 'tapi', 'tmxi', 'tmni', 'stpi', 'ici', 'ifi', 'iti', 'idi', 'xcapi', 'ndi']
+data[0]: 48 ['TWO_TERM_DC1', '1', '7.8543', '1490.65', '525.00', '400.00', '3.9420', '0.15560', 'I', '0.00', '20', '1.00000', '301', '2', '13.00', '7.50', '0.0111', '3.8800', '500.0', '0.44000', '1.06275', '1.10000', '0.90000', '0.00525', '0', '0', '0', '1', '2.0034', '0', '3021', '2', '21.00', '18.50', '0.0000', '3.0470', '230.0', '0.95652', '1.07500', '1.10000', '0.80000', '0.00625', '0', '152', '3021', 'T4', '2.0000', '0']
+
+section: VSC DC LINE DATA vscdc
+rawx_column_names: 43 ['name', 'mdc', 'rdc', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'ibus1', 'type1', 'mode1', 'dcset1', 'acset1', 'aloss1', 'bloss1', 'minloss1', 'smax1', 'imax1', 'pwf1', 'maxq1', 'minq1', 'vsreg1', 'rmpct1', 'nreg1', 'ibus2', 'type2', 'mode2', 'dcset2', 'acset2', 'aloss2', 'bloss2', 'minloss2', 'smax2', 'imax2', 'pwf2', 'maxq2', 'minq2', 'vsreg2', 'rmpct2', 'nreg2']
+data[0]: 43 ['VDCLINE1', '1', '0.7100', '1', '0.3204', '2', '0.3883', '3', '0.1942', '4', '0.0971', '3005', '2', '2', '-209.00', '0.95000', '100.000', '0.100', '50.000', '400.00', '1200.00', '0.10000', '100.00', '-110.00', '3005', '100.0', '0', '3008', '1', '1', '100.00', '0.99000', '90.000', '0.150', '40.000', '350.00', '1200.00', '0.15000', '150.00', '-140.00', '3008', '100.0', '0']
+
+section: MULTI-TERMINAL DC DATA ntermdc
+rawx_column_names: 38 ['name', 'ib', 'idc', 'idc', 'nconv', 'nbrdg', 'ib', 'jdc', 'dcckt', 'area', 'ndcbs', 'angmx', 'met', 'ndcln', 'angmn', 'zone', 'rdc', 'dcname', 'mdc', 'rc', 'vconv', 'xc', 'idc2', 'ldc', 'rgrnd', 'vcmod', 'ebas', 'owner', 'vconvn', 'tr', 'tap', 'tpmx', 'tpmn', 'tstp', 'setvl', 'dcpf', 'marg', 'cnvcod']
+data[0]: 38 ['MULTERM_DC_1', '4', '5', '4', '1', '212', '400.00', '0', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: MULTI-SECTION LINE DATA msline
+rawx_column_names: 13 ['ibus', 'jbus', 'mslid', 'met', 'dum1', 'dum2', 'dum3', 'dum4', 'dum5', 'dum6', 'dum7', 'dum8', 'dum9']
+data[0]: 13 ['201', '204', '&1', '2', '207', None, None, None, None, None, None, None, None]
+
+section: ZONE DATA zone
+rawx_column_names: 2 ['izone', 'zoname']
+data[0]: 2 ['1', 'NORTH_A1']
+
+section: INTER-AREA TRANSFER DATA iatransfer
+rawx_column_names: 4 ['arfrom', 'arto', 'trid', 'ptran']
+data[0]: 4 ['1', '2', 'A', '1000.00']
+
+section: OWNER DATA owner
+rawx_column_names: 2 ['iowner', 'owname']
+data[0]: 2 ['1', 'OWNER 1']
+
+section: FACTS DEVICE DATA facts
+rawx_column_names: 22 ['name', 'ibus', 'jbus', 'mode', 'pdes', 'qdes', 'vset', 'shmx', 'trmx', 'vtmn', 'vtmx', 'vsmx', 'imx', 'linx', 'rmpct', 'owner', 'set1', 'set2', 'vsref', 'fcreg', 'mname', 'nreg']
+data[0]: 22 ['FACTS_DVCE_1', '153', '0', '1', '0.000', '0.000', '1.01500', '50.000', '100.000', '0.92630', '1.13400', '1.00000', '0.000', '0.05652', '100.0', '1', '0.00000', '0.00000', '0', '153', '', '0']
+
+section: SWITCHED SHUNT DATA swshunt
+rawx_column_names: 27 ['ibus', 'modsw', 'adjm', 'stat', 'vswhi', 'vswlo', 'swreg', 'rmpct', 'rmidnt', 'binit', 'n1', 'b1', 'n2', 'b2', 'n3', 'b3', 'n4', 'b4', 'n5', 'b5', 'n6', 'b6', 'n7', 'b7', 'n8', 'b8', 'nreg']
+data[0]: 27 ['152', '1', '0', '1', '1.04500', '0.95500', '152', '100.0', '', '-233.00', '1', '-15.00', '2', '-5.00', '3', '-10.00', '4', '-8.00', '5', '-7.00', '6', '-5.00', '7', '-7.00', '8', '-4.00', None]
+C:\Personal\Projects\psse_model_util\psse_model_util\raw_to_rawx.py:158: UserWarning: SKIPPING 'IMPEDANCE CORRECTION DATA' section.  Parsing of this section is not yet supported.
+  warnings.warn(f"SKIPPING '{section}' section.  Parsing of this section is not yet supported.")
+
+section: INDUCTION MACHINE DATA indmach
+rawx_column_names: 34 ['ibus', 'imid', 'stat', 'sc', 'dc', 'area', 'zone', 'owner', 'tc', 'bc', 'mbase', 'ratekv', 'pcode', 'pset', 'hconst', 'aconst', 'bconst', 'dconst', 'econst', 'ra', 'xa', 'xm', 'r1', 'x1', 'r2', 'x2', 'x3', 'e1', 'se1', 'e2', 'se2', 'ia1', 'ia2', 'xamult']
+data[0]: 34 ['3010', '1', '1', '1', '2', '5', '4', '5', '1', '1', '1.000', '21.600', '1', '1.0000', '1.000', '1.000', '1.000', '1.000', '1.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+2024-11-12 13:17:57,920 - model - INFO - Model __init__ elapsed time: 0.065994000 seconds.
+2024-11-12 13:17:57,921 - model - INFO - Model __init__ building pd.DataFrames...
+2024-11-12 13:17:57,923 - model - INFO - Network.__init__ starting...
+2024-11-12 13:17:57,925 - model - INFO - Network.__init__ creating dataframe caseid...
+2024-11-12 13:17:57,928 - model - INFO - Network.__init__ elapsed: 0.006820000 seconds.
+2024-11-12 13:17:57,928 - model - INFO - Network.__init__ creating dataframe rating...
+2024-11-12 13:17:57,929 - model - INFO - Network.__init__ elapsed: 0.008540800 seconds.
+2024-11-12 13:17:57,930 - model - INFO - Network.__init__ creating dataframe general...
+2024-11-12 13:17:57,931 - model - INFO - Network.__init__ elapsed: 0.010150800 seconds.
+2024-11-12 13:17:57,931 - model - INFO - Network.__init__ creating dataframe gauss...
+2024-11-12 13:17:57,933 - model - INFO - Network.__init__ elapsed: 0.012210900 seconds.
+2024-11-12 13:17:57,934 - model - INFO - Network.__init__ creating dataframe newton...
+2024-11-12 13:17:57,936 - model - INFO - Network.__init__ elapsed: 0.014709900 seconds.
+2024-11-12 13:17:57,937 - model - INFO - Network.__init__ creating dataframe adjust...
+2024-11-12 13:17:57,939 - model - INFO - Network.__init__ elapsed: 0.018471500 seconds.
+2024-11-12 13:17:57,940 - model - INFO - Network.__init__ creating dataframe tysl...
+2024-11-12 13:17:57,942 - model - INFO - Network.__init__ elapsed: 0.020956500 seconds.
+2024-11-12 13:17:57,943 - model - INFO - Network.__init__ creating dataframe solver...
+2024-11-12 13:17:57,945 - model - INFO - Network.__init__ elapsed: 0.024279800 seconds.
+2024-11-12 13:17:57,945 - model - INFO - Network.__init__ creating dataframe bus...
+2024-11-12 13:17:57,949 - model - INFO - Network.__init__ elapsed: 0.028235500 seconds.
+2024-11-12 13:17:57,949 - model - INFO - Network.__init__ creating dataframe load...
+2024-11-12 13:17:57,960 - model - INFO - Network.__init__ elapsed: 0.039020000 seconds.
+2024-11-12 13:17:57,960 - model - INFO - Network.__init__ creating dataframe fixshunt...
+2024-11-12 13:17:57,963 - model - INFO - Network.__init__ elapsed: 0.042960100 seconds.
+2024-11-12 13:17:57,965 - model - INFO - Network.__init__ creating dataframe generator...
+2024-11-12 13:17:57,973 - model - INFO - Network.__init__ elapsed: 0.052009000 seconds.
+2024-11-12 13:17:57,973 - model - INFO - Network.__init__ creating dataframe acline...
+2024-11-12 13:17:57,982 - model - INFO - Network.__init__ elapsed: 0.060827900 seconds.
+2024-11-12 13:17:57,983 - model - INFO - Network.__init__ creating dataframe sysswd...
+2024-11-12 13:17:57,989 - model - INFO - Network.__init__ elapsed: 0.068187600 seconds.
+2024-11-12 13:17:57,990 - model - INFO - Network.__init__ creating dataframe transformer...
+2024-11-12 13:17:58,017 - model - INFO - Network.__init__ elapsed: 0.095798000 seconds.
+2024-11-12 13:17:58,018 - model - INFO - Network.__init__ creating dataframe area...
+2024-11-12 13:17:58,020 - model - INFO - Network.__init__ elapsed: 0.099643200 seconds.
+2024-11-12 13:17:58,021 - model - INFO - Network.__init__ creating dataframe twotermdc...
+2024-11-12 13:17:58,034 - model - INFO - Network.__init__ elapsed: 0.113140100 seconds.
+2024-11-12 13:17:58,034 - model - INFO - Network.__init__ creating dataframe vscdc...
+2024-11-12 13:17:58,044 - model - INFO - Network.__init__ elapsed: 0.123789900 seconds.
+2024-11-12 13:17:58,045 - model - INFO - Network.__init__ creating dataframe ntermdc...
+2024-11-12 13:17:58,073 - model - INFO - Network.__init__ elapsed: 0.152119400 seconds.
+2024-11-12 13:17:58,074 - model - INFO - Network.__init__ creating dataframe msline...
+2024-11-12 13:17:58,081 - model - INFO - Network.__init__ elapsed: 0.159539300 seconds.
+2024-11-12 13:17:58,081 - model - INFO - Network.__init__ creating dataframe zone...
+2024-11-12 13:17:58,082 - model - INFO - Network.__init__ elapsed: 0.161563200 seconds.
+2024-11-12 13:17:58,083 - model - INFO - Network.__init__ creating dataframe iatransfer...
+2024-11-12 13:17:58,084 - model - INFO - Network.__init__ elapsed: 0.162704400 seconds.
+2024-11-12 13:17:58,084 - model - INFO - Network.__init__ creating dataframe owner...
+2024-11-12 13:17:58,085 - model - INFO - Network.__init__ elapsed: 0.163749500 seconds.
+2024-11-12 13:17:58,085 - model - INFO - Network.__init__ creating dataframe facts...
+2024-11-12 13:17:58,087 - model - INFO - Network.__init__ elapsed: 0.165861800 seconds.
+2024-11-12 13:17:58,088 - model - INFO - Network.__init__ creating dataframe swshunt...
+2024-11-12 13:17:58,090 - model - INFO - Network.__init__ elapsed: 0.168911000 seconds.
+2024-11-12 13:17:58,090 - model - INFO - Network.__init__ creating dataframe indmach...
+2024-11-12 13:17:58,093 - model - INFO - Network.__init__ elapsed: 0.172608500 seconds.
+2024-11-12 13:17:58,094 - model - INFO - Network.__init__  finished: 0.173553200 seconds.
+2024-11-12 13:17:58,094 - model - INFO - Model __init__ caching to disk...
+Cached object to disk as "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:58,103 - model - INFO - Saved: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+2024-11-12 13:17:58,103 - model - INFO - Model __init__ elapsed time: 0.249265100 seconds.
+2024-11-12 13:17:58,103 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) finished: 0.249697700 seconds.
+2024-11-12 13:17:58,104 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:58,109 - model - INFO - Model __init__ loading model from disk...
+
+
+Version:  34.6
+
+caseid: 34
+
+section: BUS DATA bus
+rawx_column_names: 13 ['ibus', 'name', 'baskv', 'ide', 'area', 'zone', 'owner', 'vm', 'va', 'nvhi', 'nvlo', 'evhi', 'evlo']
+data[0]: 13 ['101', 'NUC-A', '21.6000', '2', '1', '1', '1', '1.01000', '-19.0142', '1.10000', '0.90000', '1.10000', '0.90000']
+
+section: LOAD DATA load
+rawx_column_names: 17 ['ibus', 'loadid', 'stat', 'area', 'zone', 'pl', 'ql', 'ip', 'iq', 'yp', 'yq', 'owner', 'scale', 'intrpt', 'dgenp', 'dgenq', 'dgenm']
+data[0]: 17 ['152', '1', '1', '1', '1', '1200.000', '360.000', '868.340', '360.502', '837.794', '-351.338', '1', '1', '0', '0.000', '0.000', '0']
+
+section: FIXED SHUNT DATA fixshunt
+rawx_column_names: 5 ['ibus', 'shntid', 'stat', 'gl', 'bl']
+data[0]: 5 ['151', 'F1', '1', '5.000', '-400.000']
+
+section: GENERATOR DATA generator
+rawx_column_names: 29 ['ibus', 'machid', 'pg', 'qg', 'qt', 'qb', 'vs', 'ireg', 'mbase', 'zr', 'zx', 'rt', 'xt', 'gtap', 'stat', 'rmpct', 'pt', 'pb', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'wmod', 'wpf', 'nreg']
+data[0]: 29 ['101', '1', '750.000', '165.207', '400.000', '-100.000', '1.01000', '101', '900.000', '1.00000E-2', '3.00000E-1', '0.00000E+0', '0.00000E+0', '1.00000', '1', '100.0', '800.000', '50.000', '1', '0.1289', '2', '0.2524', '3', '0.1031', '4', '0.5156', None, None, None]
+
+section: BRANCH DATA acline
+rawx_column_names: 34 ['ibus', 'jbus', 'ckt', 'rpu', 'xpu', 'bpu', 'name', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'gi', 'bi', 'gj', 'bj', 'stat', 'method', 'len', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4']
+data[0]: 34 ['151', '152', '1', '2.60000E-3', '4.60000E-2', '3.50000', 'BRANCH_FROM__151_TO__152___CIRCUIT_ID__1', '1200.00', '1100.00', '1000.00', '1200.40', '1100.50', '1000.60', '1200.70', '1100.80', '1000.90', '1200.10', '1100.11', '1000.12', '0.01000', '-0.25000', '0.01100', '-0.15000', '1', '2', '150.00', '1', '0.2000', '2', '0.3000', '3', '0.4000', '4', '0.1000']
+
+section: SYSTEM SWITCHING DEVICE DATA sysswd
+rawx_column_names: 21 ['ibus', 'jbus', 'ckt', 'xpu', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'stat', 'nstat', 'met', 'stype', 'name']
+data[0]: 21 ['151', '201', '*1', '1.00000E-4', '1206.00', '1106.00', '1006.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '1', '2', '3', '']
+
+section: TRANSFORMER DATA transformer
+rawx_column_names: 114 ['ibus', 'jbus', 'kbus', 'ckt', 'cw', 'cz', 'cm', 'mag1', 'mag2', 'nmet', 'name', 'stat', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'vecgrp', 'zcod', 'r1_2', 'x1_2', 'sbase1_2', 'r2_3', 'x2_3', 'sbase2_3', 'r3_1', 'x3_1', 'sbase3_1', 'vmstar', 'anstar', 'windv1', 'nomv1', 'ang1', 'wdg1rate1', 'wdg1rate2', 'wdg1rate3', 'wdg1rate4', 'wdg1rate5', 'wdg1rate6', 'wdg1rate7', 'wdg1rate8', 'wdg1rate9', 'wdg1rate10', 'wdg1rate11', 'wdg1rate12', 'cod1', 'cont1', 'rma1', 'rmi1', 'vma1', 'vmi1', 'ntp1', 'tab1', 'cr1', 'cx1', 'cnxa1', 'node1', 'windv2', 'nomv2', 'ang2', 'wdg2rate1', 'wdg2rate2', 'wdg2rate3', 'wdg2rate4', 'wdg2rate5', 'wdg2rate6', 'wdg2rate7', 'wdg2rate8', 'wdg2rate9', 'wdg2rate10', 'wdg2rate11', 'wdg2rate12', 'cod2', 'cont2', 'rma2', 'rmi2', 'vma2', 'vmi2', 'ntp2', 'tab2', 'cr2', 'cx2', 'cnxa2', 'node2', 'windv3', 'nomv3', 'ang3', 'wdg3rate1', 'wdg3rate2', 'wdg3rate3', 'wdg3rate4', 'wdg3rate5', 'wdg3rate6', 'wdg3rate7', 'wdg3rate8', 'wdg3rate9', 'wdg3rate10', 'wdg3rate11', 'wdg3rate12', 'cod3', 'cont3', 'rma3', 'rmi3', 'vma3', 'vmi3', 'ntp3', 'tab3', 'cr3', 'cx3', 'cnxa3', 'node3']
+data[0]: 114 ['101', '151', '0', 'T1', '2', '2', '1', '1.71470E-01', '-1.02880E-01', '2', 'EL DORADO NUCLEAR UNIT A GSU TRANSFORMER', '1', '1', '0.3200', '2', '0.3900', '3', '0.1400', '4', '0.1500', 'Dyn1', None, '1.10000E-3', '9.10000E-2', '1200.00', None, None, None, None, None, None, None, None, '21.6000', '21.600', '0.000', '1200.00', '1100.00', '1000.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '101', '22.68000', '20.52000', '1.05000', '0.95000', '25', '0', '0.00021', '0.00051', '0.000', '0', '500.000', '500.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: AREA DATA area
+rawx_column_names: 5 ['iarea', 'isw', 'pdes', 'ptol', 'arname']
+data[0]: 5 ['1', '101', '-2800.000', '10.000', 'CENTRAL']
+
+section: TWO-TERMINAL DC DATA twotermdc
+rawx_column_names: 48 ['name', 'mdc', 'rdc', 'setvl', 'vschd', 'vcmod', 'rcomp', 'delti', 'meter', 'dcvmin', 'cccitmx', 'cccacc', 'ipr', 'nbr', 'anmxr', 'anmnr', 'rcr', 'xcr', 'ebasr', 'trr', 'tapr', 'tmxr', 'tmnr', 'stpr', 'icr', 'ifr', 'itr', 'idr', 'xcapr', 'ndr', 'ipi', 'nbi', 'anmxi', 'anmni', 'rci', 'xci', 'ebasi', 'tri', 'tapi', 'tmxi', 'tmni', 'stpi', 'ici', 'ifi', 'iti', 'idi', 'xcapi', 'ndi']
+data[0]: 48 ['TWO_TERM_DC1', '1', '7.8543', '1490.65', '525.00', '400.00', '3.9420', '0.15560', 'I', '0.00', '20', '1.00000', '301', '2', '13.00', '7.50', '0.0111', '3.8800', '500.0', '0.44000', '1.06275', '1.10000', '0.90000', '0.00525', '0', '0', '0', '1', '2.0034', '0', '3021', '2', '21.00', '18.50', '0.0000', '3.0470', '230.0', '0.95652', '1.07500', '1.10000', '0.80000', '0.00625', '0', '152', '3021', 'T4', '2.0000', '0']
+
+section: VSC DC LINE DATA vscdc
+rawx_column_names: 43 ['name', 'mdc', 'rdc', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'ibus1', 'type1', 'mode1', 'dcset1', 'acset1', 'aloss1', 'bloss1', 'minloss1', 'smax1', 'imax1', 'pwf1', 'maxq1', 'minq1', 'vsreg1', 'rmpct1', 'nreg1', 'ibus2', 'type2', 'mode2', 'dcset2', 'acset2', 'aloss2', 'bloss2', 'minloss2', 'smax2', 'imax2', 'pwf2', 'maxq2', 'minq2', 'vsreg2', 'rmpct2', 'nreg2']
+data[0]: 43 ['VDCLINE1', '1', '0.7100', '1', '0.3204', '2', '0.3883', '3', '0.1942', '4', '0.0971', '3005', '2', '2', '-209.00', '0.95000', '100.000', '0.100', '50.000', '400.00', '1200.00', '0.10000', '100.00', '-110.00', '3005', '100.0', '0', '3008', '1', '1', '100.00', '0.99000', '90.000', '0.150', '40.000', '350.00', '1200.00', '0.15000', '150.00', '-140.00', '3008', '100.0', '0']
+
+section: MULTI-TERMINAL DC DATA ntermdc
+rawx_column_names: 38 ['name', 'ib', 'idc', 'idc', 'nconv', 'nbrdg', 'ib', 'jdc', 'dcckt', 'area', 'ndcbs', 'angmx', 'met', 'ndcln', 'angmn', 'zone', 'rdc', 'dcname', 'mdc', 'rc', 'vconv', 'xc', 'idc2', 'ldc', 'rgrnd', 'vcmod', 'ebas', 'owner', 'vconvn', 'tr', 'tap', 'tpmx', 'tpmn', 'tstp', 'setvl', 'dcpf', 'marg', 'cnvcod']
+data[0]: 38 ['MULTERM_DC_1', '4', '5', '4', '1', '212', '400.00', '0', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: MULTI-SECTION LINE DATA msline
+rawx_column_names: 13 ['ibus', 'jbus', 'mslid', 'met', 'dum1', 'dum2', 'dum3', 'dum4', 'dum5', 'dum6', 'dum7', 'dum8', 'dum9']
+data[0]: 13 ['201', '204', '&1', '2', '207', None, None, None, None, None, None, None, None]
+C:\Personal\Projects\psse_model_util\psse_model_util\raw_to_rawx.py:158: UserWarning: SKIPPING 'IMPEDANCE CORRECTION DATA' section.  Parsing of this section is not yet supported.
+  warnings.warn(f"SKIPPING '{section}' section.  Parsing of this section is not yet supported.")
+
+section: ZONE DATA zone
+rawx_column_names: 2 ['izone', 'zoname']
+data[0]: 2 ['1', 'NORTH_A1']
+
+section: INTER-AREA TRANSFER DATA iatransfer
+rawx_column_names: 4 ['arfrom', 'arto', 'trid', 'ptran']
+data[0]: 4 ['1', '2', 'A', '1000.00']
+
+section: OWNER DATA owner
+rawx_column_names: 2 ['iowner', 'owname']
+data[0]: 2 ['1', 'OWNER 1']
+
+section: FACTS DEVICE DATA facts
+rawx_column_names: 22 ['name', 'ibus', 'jbus', 'mode', 'pdes', 'qdes', 'vset', 'shmx', 'trmx', 'vtmn', 'vtmx', 'vsmx', 'imx', 'linx', 'rmpct', 'owner', 'set1', 'set2', 'vsref', 'fcreg', 'mname', 'nreg']
+data[0]: 22 ['FACTS_DVCE_1', '153', '0', '1', '0.000', '0.000', '1.01500', '50.000', '100.000', '0.92630', '1.13400', '1.00000', '0.000', '0.05652', '100.0', '1', '0.00000', '0.00000', '0', '153', '', '0']
+
+section: SWITCHED SHUNT DATA swshunt
+rawx_column_names: 27 ['ibus', 'modsw', 'adjm', 'stat', 'vswhi', 'vswlo', 'swreg', 'rmpct', 'rmidnt', 'binit', 'n1', 'b1', 'n2', 'b2', 'n3', 'b3', 'n4', 'b4', 'n5', 'b5', 'n6', 'b6', 'n7', 'b7', 'n8', 'b8', 'nreg']
+data[0]: 27 ['152', '1', '0', '1', '1.04500', '0.95500', '152', '100.0', '', '-233.00', '1', '-15.00', '2', '-5.00', '3', '-10.00', '4', '-8.00', '5', '-7.00', '6', '-5.00', '7', '-7.00', '8', '-4.00', None]
+
+section: INDUCTION MACHINE DATA indmach
+rawx_column_names: 34 ['ibus', 'imid', 'stat', 'sc', 'dc', 'area', 'zone', 'owner', 'tc', 'bc', 'mbase', 'ratekv', 'pcode', 'pset', 'hconst', 'aconst', 'bconst', 'dconst', 'econst', 'ra', 'xa', 'xm', 'r1', 'x1', 'r2', 'x2', 'x3', 'e1', 'se1', 'e2', 'se2', 'ia1', 'ia2', 'xamult']
+data[0]: 34 ['3010', '1', '1', '1', '2', '5', '4', '5', '1', '1', '1.000', '21.600', '1', '1.0000', '1.000', '1.000', '1.000', '1.000', '1.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+2024-11-12 13:17:58,247 - model - INFO - Model __init__ elapsed time: 0.142130700 seconds.
+2024-11-12 13:17:58,247 - model - INFO - Model __init__ building pd.DataFrames...
+2024-11-12 13:17:58,251 - model - INFO - Network.__init__ starting...
+2024-11-12 13:17:58,252 - model - INFO - Network.__init__ creating dataframe caseid...
+2024-11-12 13:17:58,257 - model - INFO - Network.__init__ elapsed: 0.009229900 seconds.
+2024-11-12 13:17:58,258 - model - INFO - Network.__init__ creating dataframe rating...
+2024-11-12 13:17:58,260 - model - INFO - Network.__init__ elapsed: 0.012179900 seconds.
+2024-11-12 13:17:58,261 - model - INFO - Network.__init__ creating dataframe general...
+2024-11-12 13:17:58,262 - model - INFO - Network.__init__ elapsed: 0.014402200 seconds.
+2024-11-12 13:17:58,262 - model - INFO - Network.__init__ creating dataframe gauss...
+2024-11-12 13:17:58,265 - model - INFO - Network.__init__ elapsed: 0.016615900 seconds.
+2024-11-12 13:17:58,265 - model - INFO - Network.__init__ creating dataframe newton...
+2024-11-12 13:17:58,267 - model - INFO - Network.__init__ elapsed: 0.019129200 seconds.
+2024-11-12 13:17:58,267 - model - INFO - Network.__init__ creating dataframe adjust...
+2024-11-12 13:17:58,271 - model - INFO - Network.__init__ elapsed: 0.023147200 seconds.
+2024-11-12 13:17:58,271 - model - INFO - Network.__init__ creating dataframe tysl...
+2024-11-12 13:17:58,272 - model - INFO - Network.__init__ elapsed: 0.025171300 seconds.
+2024-11-12 13:17:58,272 - model - INFO - Network.__init__ creating dataframe solver...
+2024-11-12 13:17:58,278 - model - INFO - Network.__init__ elapsed: 0.030066900 seconds.
+2024-11-12 13:17:58,278 - model - INFO - Network.__init__ creating dataframe bus...
+2024-11-12 13:17:58,284 - model - INFO - Network.__init__ elapsed: 0.036477500 seconds.
+2024-11-12 13:17:58,285 - model - INFO - Network.__init__ creating dataframe load...
+2024-11-12 13:17:58,293 - model - INFO - Network.__init__ elapsed: 0.045415700 seconds.
+2024-11-12 13:17:58,293 - model - INFO - Network.__init__ creating dataframe fixshunt...
+2024-11-12 13:17:58,298 - model - INFO - Network.__init__ elapsed: 0.050337000 seconds.
+2024-11-12 13:17:58,298 - model - INFO - Network.__init__ creating dataframe generator...
+2024-11-12 13:17:58,312 - model - INFO - Network.__init__ elapsed: 0.064282700 seconds.
+2024-11-12 13:17:58,312 - model - INFO - Network.__init__ creating dataframe acline...
+2024-11-12 13:17:58,323 - model - INFO - Network.__init__ elapsed: 0.075180900 seconds.
+2024-11-12 13:17:58,323 - model - INFO - Network.__init__ creating dataframe sysswd...
+2024-11-12 13:17:58,329 - model - INFO - Network.__init__ elapsed: 0.081704500 seconds.
+2024-11-12 13:17:58,330 - model - INFO - Network.__init__ creating dataframe transformer...
+2024-11-12 13:17:58,367 - model - INFO - Network.__init__ elapsed: 0.119485500 seconds.
+2024-11-12 13:17:58,367 - model - INFO - Network.__init__ creating dataframe area...
+2024-11-12 13:17:58,372 - model - INFO - Network.__init__ elapsed: 0.124363400 seconds.
+2024-11-12 13:17:58,373 - model - INFO - Network.__init__ creating dataframe twotermdc...
+2024-11-12 13:17:58,385 - model - INFO - Network.__init__ elapsed: 0.137142700 seconds.
+2024-11-12 13:17:58,385 - model - INFO - Network.__init__ creating dataframe vscdc...
+2024-11-12 13:17:58,396 - model - INFO - Network.__init__ elapsed: 0.148116400 seconds.
+2024-11-12 13:17:58,396 - model - INFO - Network.__init__ creating dataframe ntermdc...
+2024-11-12 13:17:58,415 - model - INFO - Network.__init__ elapsed: 0.167268200 seconds.
+2024-11-12 13:17:58,415 - model - INFO - Network.__init__ creating dataframe msline...
+2024-11-12 13:17:58,420 - model - INFO - Network.__init__ elapsed: 0.172742200 seconds.
+2024-11-12 13:17:58,421 - model - INFO - Network.__init__ creating dataframe zone...
+2024-11-12 13:17:58,422 - model - INFO - Network.__init__ elapsed: 0.174611200 seconds.
+2024-11-12 13:17:58,422 - model - INFO - Network.__init__ creating dataframe iatransfer...
+2024-11-12 13:17:58,423 - model - INFO - Network.__init__ elapsed: 0.175381000 seconds.
+2024-11-12 13:17:58,423 - model - INFO - Network.__init__ creating dataframe owner...
+2024-11-12 13:17:58,424 - model - INFO - Network.__init__ elapsed: 0.176202000 seconds.
+2024-11-12 13:17:58,424 - model - INFO - Network.__init__ creating dataframe facts...
+2024-11-12 13:17:58,425 - model - INFO - Network.__init__ elapsed: 0.177414900 seconds.
+2024-11-12 13:17:58,425 - model - INFO - Network.__init__ creating dataframe swshunt...
+2024-11-12 13:17:58,426 - model - INFO - Network.__init__ elapsed: 0.178620200 seconds.
+2024-11-12 13:17:58,426 - model - INFO - Network.__init__ creating dataframe indmach...
+2024-11-12 13:17:58,428 - model - INFO - Network.__init__ elapsed: 0.180696300 seconds.
+2024-11-12 13:17:58,429 - model - INFO - Network.__init__  finished: 0.181229900 seconds.
+2024-11-12 13:17:58,429 - model - INFO - Model __init__ caching to disk...
+Cached object to disk as "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:58,435 - model - INFO - Saved: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+2024-11-12 13:17:58,436 - model - INFO - Model __init__ elapsed time: 0.331437000 seconds.
+2024-11-12 13:17:58,436 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) finished: 0.331738800 seconds.
+model: my_model
+model raw file: C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw
+model cache: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+model csv folder: C:\Personal\Projects\psse_model_util\data\Model_1
+2024-11-12 13:17:58,437 - model - INFO - Exporting model (C:\Personal\Projects\psse_model_util\cache\Model_1.model) ...
+2024-11-12 13:17:58,437 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\general.csv...
+2024-11-12 13:17:58,443 - model - INFO - Elapsed export time: 0.006188700 seconds.
+2024-11-12 13:17:58,444 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_acline.csv...
+2024-11-12 13:17:58,449 - model - INFO - Elapsed export time: 0.012358600 seconds...
+2024-11-12 13:17:58,450 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_adjust.csv...
+2024-11-12 13:17:58,453 - model - INFO - Elapsed export time: 0.016745700 seconds...
+2024-11-12 13:17:58,454 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_area.csv...
+2024-11-12 13:17:58,457 - model - INFO - Elapsed export time: 0.020986500 seconds...
+2024-11-12 13:17:58,458 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_bus.csv...
+2024-11-12 13:17:58,462 - model - INFO - Elapsed export time: 0.025968800 seconds...
+2024-11-12 13:17:58,463 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_caseid.csv...
+2024-11-12 13:17:58,466 - model - INFO - Elapsed export time: 0.030002000 seconds...
+2024-11-12 13:17:58,467 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_facts.csv...
+2024-11-12 13:17:58,471 - model - INFO - Elapsed export time: 0.035066500 seconds...
+2024-11-12 13:17:58,472 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_fixshunt.csv...
+2024-11-12 13:17:58,477 - model - INFO - Elapsed export time: 0.040620700 seconds...
+2024-11-12 13:17:58,477 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_gauss.csv...
+2024-11-12 13:17:58,482 - model - INFO - Elapsed export time: 0.045556000 seconds...
+2024-11-12 13:17:58,482 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_general.csv...
+2024-11-12 13:17:58,488 - model - INFO - Elapsed export time: 0.050981100 seconds...
+2024-11-12 13:17:58,488 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_generator.csv...
+2024-11-12 13:17:58,495 - model - INFO - Elapsed export time: 0.057726200 seconds...
+2024-11-12 13:17:58,495 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_iatransfer.csv...
+2024-11-12 13:17:58,500 - model - INFO - Elapsed export time: 0.063432700 seconds...
+2024-11-12 13:17:58,500 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_indmach.csv...
+2024-11-12 13:17:58,507 - model - INFO - Elapsed export time: 0.069668100 seconds...
+2024-11-12 13:17:58,507 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_load.csv...
+2024-11-12 13:17:58,513 - model - INFO - Elapsed export time: 0.076233000 seconds...
+2024-11-12 13:17:58,514 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_msline.csv...
+2024-11-12 13:17:58,519 - model - INFO - Elapsed export time: 0.082480200 seconds...
+2024-11-12 13:17:58,521 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_newton.csv...
+2024-11-12 13:17:58,527 - model - INFO - Elapsed export time: 0.089600700 seconds...
+2024-11-12 13:17:58,527 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_ntermdc.csv...
+2024-11-12 13:17:58,533 - model - INFO - Elapsed export time: 0.096379300 seconds...
+2024-11-12 13:17:58,534 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_owner.csv...
+2024-11-12 13:17:58,539 - model - INFO - Elapsed export time: 0.102617300 seconds...
+2024-11-12 13:17:58,540 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_rating.csv...
+2024-11-12 13:17:58,545 - model - INFO - Elapsed export time: 0.107709800 seconds...
+2024-11-12 13:17:58,545 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_solver.csv...
+2024-11-12 13:17:58,550 - model - INFO - Elapsed export time: 0.113438200 seconds...
+2024-11-12 13:17:58,551 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_swshunt.csv...
+2024-11-12 13:17:58,557 - model - INFO - Elapsed export time: 0.119884800 seconds...
+2024-11-12 13:17:58,557 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_sysswd.csv...
+2024-11-12 13:17:58,562 - model - INFO - Elapsed export time: 0.125884300 seconds...
+2024-11-12 13:17:58,563 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_transformer.csv...
+2024-11-12 13:17:58,572 - model - INFO - Elapsed export time: 0.135211900 seconds...
+2024-11-12 13:17:58,572 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_twotermdc.csv...
+2024-11-12 13:17:58,578 - model - INFO - Elapsed export time: 0.141481400 seconds...
+2024-11-12 13:17:58,578 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_tysl.csv...
+2024-11-12 13:17:58,584 - model - INFO - Elapsed export time: 0.146686100 seconds...
+2024-11-12 13:17:58,584 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_vscdc.csv...
+2024-11-12 13:17:58,590 - model - INFO - Elapsed export time: 0.154041800 seconds...
+2024-11-12 13:17:58,591 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\data\Model_1\network_zone.csv...
+2024-11-12 13:17:58,595 - model - INFO - Elapsed export time: 0.158569100 seconds...
+2024-11-12 13:17:58,595 - model - INFO - Finished exporting to CSV files: C:\Personal\Projects\psse_model_util\data\Model_1
+model.network DataFrames: {'acline':                    rpu      xpu   bpu  ...      f3  o4      f4
+ibus jbus ckt                          ...                    
+151  152  1    0.00260  0.04600  3.50  ...  0.4000   4  0.1000
+          2    0.00261  0.04610  3.51  ...  0.3704   3  0.0926
+152  202  1    0.00080  0.01000  0.95  ...  0.3030   4  0.0758
+     3004 1    0.00300  0.03000  2.50  ...  0.3667   3  0.0922
+153  154  2    0.00600  0.05400  0.15  ...  0.3636   5  0.0909
+154  155  1    0.00500  0.04500  0.10  ...  0.3065   3  0.2486
+     203  1    0.00400  0.04000  0.10  ...  0.4000   5  0.1000
+     205  1    0.00033  0.00333  0.09  ...  0.3333   4  0.2500
+     3008 1    0.00270  0.02200  0.30  ...  0.3083   3  0.2442
+201  202  1    0.00200  0.02500  2.00  ...  0.3810   5  0.1429
+     207  C1   0.00150  0.01500  1.25  ...  0.2500   4  0.1250
+203  205  1    0.00500  0.04500  0.08  ...  0.3083   3  0.2442
+204  207  C2   0.00150  0.01500  1.25  ...  0.4000   5  0.1000
+205  212  1   -0.00000  0.01000  0.00  ...  0.4000   4  0.1000
+     214  2    0.00200  0.02500  2.00  ...  0.3364   3  0.1755
+     216  3    0.00500  0.04500  0.08  ...  0.3636   5  0.1818
+     217  4    0.00500  0.04500  0.08  ...  0.3333   4  0.2500
+     218  5    0.00500  0.04500  0.08  ...  0.2643   3  0.3521
+213  2000 1   -0.00000  0.01000  0.00  ...  0.2857   5  0.3571
+2000 214  1   -0.00000  0.01000  0.00  ...  0.2857   5  0.3571
+3001 3003 1   -0.00000  0.00800  0.00  ...  0.3279   4  0.2623
+3002 3004 1    0.00600  0.05400  0.09  ...  0.3083   3  0.2442
+3003 3005 1    0.00600  0.05400  0.09  ...  0.4000   5  0.1000
+     2001 2    0.00600  0.05400  0.09  ...  0.2667   4  0.4000
+2001 3005 2    0.00600  0.05400  0.09  ...  0.2667   4  0.4000
+3005 3006 1    0.00350  0.03000  0.07  ...  0.2643   3  0.3521
+     3007 1    0.00300  0.02500  0.06  ...  0.3053   5  0.3130
+     3008 1    0.00600  0.05000  0.12  ...  0.3604   4  0.1892
+3007 3008 1    0.00300  0.02500  0.06  ...  0.4023   3  0.1657
+3008 3009 1    0.00300  0.02500  0.06  ...  0.3594   4  0.1914
+
+[30 rows x 31 columns], 'adjust':    adjthr  acctap  taplim  swvbnd  mxtpss  mxswim
+0   0.005     1.0    0.05   100.0      99      10, 'area':         isw    pdes  ptol       arname
+iarea                                 
+1       101 -2800.0  10.0      CENTRAL
+2       206 -1600.0  10.0         EAST
+3       301  2900.0  55.0   CENTRAL_DC
+4       401   300.0  15.0  EAST_COGEN1
+5      3011   900.0  10.0         WEST
+6       402   300.0  20.0  EAST_COGEN2, 'bus':                name    baskv  ide  area  zone  ...       va  nvhi  nvlo  evhi  evlo
+ibus                                           ...                                 
+101           NUC-A   21.600    2     1     1  ... -19.0142   1.1   0.9   1.1   0.9
+102           NUC-B   21.600    2     1     1  ... -19.3678   1.1   0.9   1.1   0.9
+151         NUCPLNT  500.000    1     1     1  ... -22.1613   1.1   0.9   1.1   0.9
+152          MID500  500.000    1     1     2  ... -29.7672   1.1   0.9   1.1   0.9
+153          MID230  230.000    1     1     3  ... -31.4386   1.1   0.9   1.1   0.9
+154          DOWNTN  230.000    1     1     3  ... -36.8635   1.1   0.9   1.1   0.9
+155        FACTS TE  230.000    1     1     4  ... -28.0349   1.1   0.9   1.1   0.9
+201           HYDRO  500.000    1     2     7  ... -22.1613   1.1   0.9   1.1   0.9
+202         EAST500  500.000    1     2     2  ... -30.9424   1.1   0.9   1.1   0.9
+203         EAST230  230.000    1     2     8  ... -34.1478   1.1   0.9   1.1   0.9
+204          SUB500  500.000    1     2     8  ... -34.9445   1.1   0.9   1.1   0.9
+205          SUB230  230.000    1     2     8  ... -37.3467   1.1   0.9   1.1   0.9
+206          URBGEN   18.000    2     2     8  ... -34.8918   1.1   0.9   1.1   0.9
+207          DUPONT  500.000    1     2     7  ... -28.7073   1.1   0.9   1.1   0.9
+208    URBANEAST208  230.000    4     2     8  ... -31.5246   1.1   0.9   1.1   0.9
+209    URBANEAST209  230.000    4     2     8  ... -31.5246   1.1   0.9   1.1   0.9
+211         HYDRO_G   20.000    2     2     7  ... -17.5386   1.1   0.9   1.1   0.9
+212         INVERT1  230.000    1     2     7  ... -35.7231   1.1   0.9   1.1   0.9
+213         INVERT2  230.000    1     2     7  ... -38.9888   1.1   0.9   1.1   0.9
+214          LOADER  230.000    1     2     7  ... -40.4187   1.1   0.9   1.1   0.9
+215    URBANEAST215   18.000    1     2     8  ... -37.2809   1.1   0.9   1.1   0.9
+216    URBANEAST216  230.000    1     2     8  ... -37.3236   1.1   0.9   1.1   0.9
+217    URBANEAST217  230.000    1     2     8  ... -37.3298   1.1   0.9   1.1   0.9
+218    URBANEAST218  230.000    1     2     8  ... -37.3320   1.1   0.9   1.1   0.9
+301           NORTH  765.000    3     3     5  ...   0.0000   1.1   0.9   1.1   0.9
+401         COGEN-1  500.000    3     4     9  ...   0.0000   1.1   0.9   1.1   0.9
+402         COGEN-2  500.000    3     6     9  ...   0.0000   1.1   0.9   1.1   0.9
+2000        COGEN-3  500.000    3     6     9  ...   0.0000   1.1   0.9   1.1   0.9
+2001          MAINE  230.000    1     5     6  ... -11.9796   1.1   0.9   1.1   0.9
+3001           MINE  230.000    1     5     6  ... -11.9796   1.1   0.9   1.1   0.9
+3002        E. MINE  500.000    1     5     6  ... -10.5569   1.1   0.9   1.1   0.9
+3003        S. MINE  230.000    1     5     6  ... -15.2068   1.1   0.9   1.1   0.9
+3004           WEST  500.000    1     5     6  ... -25.1440   1.1   0.9   1.1   0.9
+3005           WEST  230.000    1     5     2  ... -26.0971   1.1   0.9   1.1   0.9
+3006         UPTOWN  230.000    1     5     4  ... -31.4386   1.1   0.9   1.1   0.9
+3007          RURAL  230.000    1     5     4  ... -29.4773   1.1   0.9   1.1   0.9
+3008         CATDOG  230.000    1     5     4  ... -30.0543   1.1   0.9   1.1   0.9
+3009   URBNWEST3009  230.000    1     5     4  ... -30.0739   1.1   0.9   1.1   0.9
+3010      INDMOTOR1   21.600    1     5     4  ...  -3.3103   1.1   0.9   1.1   0.9
+3011         MINE_G   19.400    3     5     6  ...   0.0000   1.1   0.9   1.1   0.9
+3012   URBNWEST3012  230.000    4     5     4  ...   0.0000   1.1   0.9   1.1   0.9
+3018       CATDOG_G   13.800    2     5     4  ... -26.2844   1.1   0.9   1.1   0.9
+3021           WDUM   18.000    1     3     5  ... -26.2760   1.1   0.9   1.1   0.9
+3022           EDUM   18.000    1     3     5  ... -25.5871   1.1   0.9   1.1   0.9
+9154        INDGEN1    4.160    1     1     3  ... -36.1817   1.1   0.9   1.1   0.9
+9204      INDMOTOR2    0.575    1     2     8  ... -38.6306   1.1   0.9   1.1   0.9
+93002       INDGEN2    0.690    1     5     6  ...  -4.3678   1.1   0.9   1.1   0.9
+
+[47 rows x 12 columns], 'caseid':    ic  sbase  rev  xfrrat  nxfrat  basfrq title1 title2
+0   0  100.0   34       0       1    60.0              , 'facts':              ibus jbus mode     pdes    qdes  ...     set2 vsref fcreg mname nreg
+name                                          ...                                
+FACTS_DVCE_1  153    0    1    0.000   0.000  ...  0.00000     0   153          0
+FACTS_DVCE_2  153  155    1  350.000  40.000  ...  0.00000     0   153          0
+
+[2 rows x 21 columns], 'fixshunt':             stat    gl      bl
+ibus shntid                   
+151  F1        1  5.00  -400.0
+     F2        1  3.00  -400.0
+     F3        1  3.12   200.0
+152  1         1  1.63    50.0
+154  1         1  2.45   200.0
+201  1         1  3.67  -500.0
+203  1         1 -5.00    30.0
+     2         1  5.00    20.0
+205  1         1  2.78   300.0
+212  1         1  5.13   400.0
+213  1         1  5.14   400.0
+3021 1         1  0.00  1320.0
+3022 1         1  0.00  1080.0, 'gauss':    itmx  accp  accq  accm     tol
+0   100   1.6   1.6   1.0  0.0001, 'general':    thrshz  pqbrak  blowup
+0  0.0001     0.7     5.0, 'generator':                    pg       qg     qt     qb  ...      f4  wmod   wpf  nreg
+ibus machid                                   ...                          
+101  1        750.000  165.207  400.0 -100.0  ...  0.5156  None  None  None
+102  1        650.000  151.880  410.0 -110.0  ...  0.3764  None  None  None
+206  1        800.000  283.913  500.0 -400.0  ...  0.4135  None  None  None
+211  1        600.000   18.351  510.0 -100.0  ...  0.4525  None  None  None
+301  1        996.884  299.543  700.0 -650.0  ...  0.5805  None  None  None
+     2        996.884  299.543  710.0 -600.0  ...  0.4691  None  None  None
+     3        996.884  299.543  720.0 -600.0  ...  0.4644  None  None  None
+401  1        321.000  142.325  600.0 -100.0  ...  0.4962  None  None  None
+402  1        321.000  142.325  610.0 -110.0  ...  0.4335  None  None  None
+2000 1        321.000  142.325  610.0 -110.0  ...  0.4335  None  None  None
+3011 1       1143.183  176.800  620.0 -120.0  ...  0.3945  None  None  None
+3018 1        400.000   -0.628  300.0 -150.0  ...  0.4171  None  None  None
+     2        100.000   -0.157   75.0  -75.0  ...  0.2782  None  None  None
+
+[13 rows x 27 columns], 'iatransfer':   arfrom arto trid     ptran
+0      1    2    A   1000.00
+1      1    5    B  -3800.00
+2      2    4    C   -300.00
+3      2    6    E   -300.00
+4      3    5    D   2900.00, 'indmach':            stat sc dc area zone owner  ...   se1    e2   se2   ia1   ia2 xamult
+ibus  imid                             ...                                     
+3010  1       1  1  2    5    4     5  ...  None  None  None  None  None   None
+9154  1       1  1  2    1    3     1  ...  None  None  None  None  None   None
+9204  1       1  1  2    2    8     2  ...  None  None  None  None  None   None
+93002 1       1  1  2    5    6     5  ...  None  None  None  None  None   None
+
+[4 rows x 32 columns], 'load':             stat  area  zone      pl  ...  intrpt    dgenp   dgenq  dgenm
+ibus loadid                           ...                                
+152  1         1     1     1  1200.0  ...       0    0.000   0.000      0
+153  1         1     1     1   300.0  ...       0  100.000  50.000      1
+154  1         1     1     1   400.0  ...       0   30.000  15.000      1
+     2         1     1     1   250.0  ...       0   20.000   8.000      1
+     3         1     1     1   250.0  ...       0    7.500   2.750      1
+     MO        1     1     1   100.0  ...       0    0.000   0.000      0
+201  SC        1     2     7     0.0  ...       0    0.000   0.000      0
+203  1         1     2     2   500.0  ...       0    0.000   0.000      0
+205  1         1     2     2  1800.0  ...       0   75.860  46.786      0
+     B         1     2     2    90.0  ...       0   65.123  20.456      1
+     C         1     2     2    60.0  ...       0   37.000  13.000      1
+214  1         1     2     2   500.0  ...       0    0.000   0.000      0
+215  U1        1     2     4     0.0  ...       0    0.000   0.000      0
+216  U1        1     2     4     0.0  ...       0    0.000   0.000      0
+217  U1        1     2     4     0.0  ...       0    0.000   0.000      0
+218  U1        1     2     4     0.0  ...       0    0.000   0.000      0
+3005 1         1     5     5   100.0  ...       0    0.000   0.000      0
+3007 1         1     5     5   200.0  ...       0    0.000   0.000      0
+3008 1         1     5     5   200.0  ...       0    0.000   0.000      0
+3009 1         1     5     4     1.1  ...       0    0.000   0.000      0
+3010 1         1     5     4    12.0  ...       0    0.000   0.000      0
+
+[21 rows x 15 columns], 'msline':                  met  dum1  dum2  dum3  dum4  dum5  dum6  dum7  dum8  dum9
+ibus jbus mslid                                                           
+201  204  &1       2   207  None  None  None  None  None  None  None  None, 'newton':    itmxn  accn  toln  vctolq   vctolv  dvlim  ndvfct
+0    100   1.0   0.1     0.1  0.00001   0.99    0.99, 'ntermdc':                  ib    idc    idc    nconv  ...  setvl  dcpf marg  cnvcod
+name                                        ...                          
+MULTERM_DC_1    4.0      5      4        1  ...    NaN   NaN  NaN     NaN
+402             4.0  10.00   8.00   0.0000  ...    NaN   NaN  NaN     NaN
+401             4.0  10.00   8.00   0.0000  ...    NaN   NaN  NaN     NaN
+212             4.0  20.00  18.00   0.0000  ...    NaN   NaN  NaN     NaN
+213             4.0  20.00  18.00   0.0000  ...    NaN   NaN  NaN     NaN
+1             401.0      4      4      DC1  ...    NaN   NaN  NaN     NaN
+2             212.0      2      2      DC2  ...    NaN   NaN  NaN     NaN
+3             402.0      4      4      DC3  ...    NaN   NaN  NaN     NaN
+4             213.0      2      2      DC4  ...    NaN   NaN  NaN     NaN
+5               0.0      4      4      DC5  ...    NaN   NaN  NaN     NaN
+1               5.0      1      1  29.0000  ...    NaN   NaN  NaN     NaN
+2               5.0      1      1  29.0000  ...    NaN   NaN  NaN     NaN
+3               5.0      1      1  29.0000  ...    NaN   NaN  NaN     NaN
+4               5.0      1      1  29.0000  ...    NaN   NaN  NaN     NaN
+
+[14 rows x 37 columns], 'owner':          owname
+iowner         
+1       OWNER 1
+2       OWNER 2
+3       OWNER 3
+4       OWNER 4
+5       OWNER 5, 'rating':     irate    name                              desc
+0       1  CRCUS1      Circus-Fibrous or threadlike
+1       2  CRSTR2                Cirrostrarus-Milky
+2       3  CRCUM3                Cirrocumulus-small
+3       4  ALTCU4    Altocumulus-bundles or rollers
+4       5  ALTST5                 Altostratus-dense
+5       6  STRTO6  Stratocumulus-plaices or rollers
+6       7  STRTS7               Stratus-Evenly grey
+7       8  CMULS8      Cumulus-Heap with flat basis
+8       9  CMULO9              Cumulonimbus-thunder
+9      10  NIBS10                 Nimbostratus-rain
+10     11  CPLL11                 capillatus-haired
+11     12  NBUL12                     nebulosus-fog, 'solver':   method  actaps  areain  phshft  dctaps  swshnt  flatst  varlim  nondiv
+0   FDNS       0       0       0       1       1       0      99       0, 'swshunt':       modsw adjm stat    vswhi    vswlo  ...    n7     b7    n8     b8  nreg
+ibus                                     ...                                
+152       1    0    1  1.04500  0.95500  ...     7  -7.00     8  -4.00  None
+154       1    0    1  1.04480  0.96500  ...     2   4.00     1   7.00  None
+3005      4    0    1  0.98000  0.64000  ...  None   None  None   None  None
+3021      2    0    1  1.00000  1.00000  ...  None   None  None   None  None
+3022      2    0    1  1.00000  1.00000  ...  None   None  None   None  None
+93002     1    0    1  0.99628  0.99628  ...  None   None  None   None  None
+
+[6 rows x 26 columns], 'sysswd':                   xpu   rate1   rate2   rate3  ...  nstat  met  stype  name
+ibus jbus ckt                                  ...                         
+151  201  *1   0.0001  1206.0  1106.0  1006.0  ...      1    2      3      
+153  3006 @1   0.0001     0.0     0.0     0.0  ...      1    2      2      
+
+[2 rows x 18 columns], 'transformer':                      cw  cz  cm          mag1  ...      cr3      cx3 cnxa3 node3
+ibus jbus  kbus ckt                            ...                              
+101  151   0    T1    2   2   1       0.17147  ...     None      NaN   NaN   NaN
+102  151   0    T2    2   1   2  453750.00000  ...     None      NaN   NaN   NaN
+152  153   0    T3    2   1   1       0.00021  ...     None      NaN   NaN   NaN
+     3021  0    T4    1   2   2  562500.00000  ...     None      NaN   NaN   NaN
+     3022  0    T5    1   2   1       0.00040  ...     None      NaN   NaN   NaN
+154  9154  0    W1    1   1   1       0.00000  ...     None      NaN   NaN   NaN
+201  211   0    T6    2   1   2  262500.00000  ...     None      NaN   NaN   NaN
+203  202   0    T7    1   2   1       0.00095  ...     None      NaN   NaN   NaN
+204  205   0    T8    1   2   1       0.00113  ...     None      NaN   NaN   NaN
+     9204  0    W2    1   1   1       0.00000  ...     None      NaN   NaN   NaN
+205  206   0    T9    1   2   1       0.00113  ...     None      NaN   NaN   NaN
+     215   208  3     1   1   2   34200.00000  ...  0.00000  0.00000   0.0   0.0
+209  217   218  4     2   3   2      41.89340  ...  0.00024  0.00394   0.0   0.0
+3001 3002  3011 1     1   1   1       0.00120  ...  0.00011  0.00014   0.0   0.0
+3002 93002 0    W3    1   1   1       0.00000  ...     None      NaN   NaN   NaN
+3005 3004  0    10    1   1   2  206250.00000  ...     None      NaN   NaN   NaN
+3008 3018  0    11    2   1   2  196875.00000  ...     None      NaN   NaN   NaN
+     3012  3010 2     2   1   1       0.00021  ...  0.00000  0.00000   0.0   0.0
+
+[18 rows x 110 columns], 'twotermdc':               mdc     rdc    setvl  vschd  vcmod  ...  ifi   iti idi   xcapi  ndi
+name                                              ...                            
+TWO_TERM_DC1    1  7.8543  1490.65  525.0  400.0  ...  152  3021  T4  2.0000  0.0
+TWO_TERM_DC2    1  8.2000  1500.00  525.0  400.0  ...  152  3022  T5  0.0074  0.0
+
+[2 rows x 47 columns], 'tysl':    itmxty  accty    tolty
+0      20    1.0  0.00001, 'vscdc':           mdc   rdc  o1      f1  o2  ...  maxq2  minq2 vsreg2  rmpct2 nreg2
+name                                 ...                                   
+VDCLINE1    1  0.71   1  0.3204   2  ...  150.0 -140.0   3008     100   0.0
+VDCLINE2    1  0.35   1  0.3705   2  ...  225.0 -250.0    205      99   0.0
+
+[2 rows x 42 columns], 'zone':              zoname
+izone              
+1          NORTH_A1
+2      MID_A1_A2_A5
+3      DISCNT_IN_A1
+4       SOUTH_A1_A5
+5            ALL_A3
+6          NORTH_A5
+7          NORTH_A2
+8          SOUTH_A2
+9         ALL_A4_A6}
+model.network.bus:
+         name  baskv  ide  area  zone  ...       va  nvhi  nvlo  evhi  evlo
+ibus                                   ...                                 
+101     NUC-A   21.6    2     1     1  ... -19.0142   1.1   0.9   1.1   0.9
+102     NUC-B   21.6    2     1     1  ... -19.3678   1.1   0.9   1.1   0.9
+151   NUCPLNT  500.0    1     1     1  ... -22.1613   1.1   0.9   1.1   0.9
+152    MID500  500.0    1     1     2  ... -29.7672   1.1   0.9   1.1   0.9
+153    MID230  230.0    1     1     3  ... -31.4386   1.1   0.9   1.1   0.9
+
+[5 rows x 12 columns]
+2024-11-12 13:17:58,977 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:58,978 - model - INFO - Model __init__ loading model from disk...
+2024-11-12 13:17:58,988 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:58,995 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:58,995 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\cache\Model_1.model) finished: 0.017631300 seconds.
+Bus count before filtering: 47
+2024-11-12 13:17:58,996 - model - INFO - Model filter_by_area (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) starting...
+2024-11-12 13:17:59,002 - model - INFO - Model.filter_by_area: finished in 0.006377800 seconds.
+Bus count after filtering: 47
+2024-11-12 13:17:59,003 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:59,003 - model - INFO - Model __init__ loading model from disk...
+2024-11-12 13:17:59,011 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,018 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,019 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\cache\Model_1.model) finished: 0.015839700 seconds.
+2024-11-12 13:17:59,019 - model - INFO - Model filter_by_area (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) starting...
+2024-11-12 13:17:59,030 - model - INFO - Model.filter_by_area: finished in 0.010866300 seconds.
+2024-11-12 13:17:59,031 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:59,031 - model - INFO - Model __init__ loading model from disk...
+
+
+Version:  34.6
+
+caseid: 34
+
+section: BUS DATA bus
+rawx_column_names: 13 ['ibus', 'name', 'baskv', 'ide', 'area', 'zone', 'owner', 'vm', 'va', 'nvhi', 'nvlo', 'evhi', 'evlo']
+data[0]: 13 ['101', 'NUC-A', '21.6000', '2', '1', '1', '1', '1.01000', '-19.0142', '1.10000', '0.90000', '1.10000', '0.90000']
+
+section: LOAD DATA load
+rawx_column_names: 17 ['ibus', 'loadid', 'stat', 'area', 'zone', 'pl', 'ql', 'ip', 'iq', 'yp', 'yq', 'owner', 'scale', 'intrpt', 'dgenp', 'dgenq', 'dgenm']
+data[0]: 17 ['152', '1', '1', '1', '1', '1200.000', '360.000', '868.340', '360.502', '837.794', '-351.338', '1', '1', '0', '0.000', '0.000', '0']
+
+section: FIXED SHUNT DATA fixshunt
+rawx_column_names: 5 ['ibus', 'shntid', 'stat', 'gl', 'bl']
+data[0]: 5 ['151', 'F1', '1', '5.000', '-400.000']
+
+section: GENERATOR DATA generator
+rawx_column_names: 29 ['ibus', 'machid', 'pg', 'qg', 'qt', 'qb', 'vs', 'ireg', 'mbase', 'zr', 'zx', 'rt', 'xt', 'gtap', 'stat', 'rmpct', 'pt', 'pb', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'wmod', 'wpf', 'nreg']
+data[0]: 29 ['101', '1', '750.000', '165.207', '400.000', '-100.000', '1.01000', '101', '900.000', '1.00000E-2', '3.00000E-1', '0.00000E+0', '0.00000E+0', '1.00000', '1', '100.0', '800.000', '50.000', '1', '0.1289', '2', '0.2524', '3', '0.1031', '4', '0.5156', None, None, None]
+
+section: BRANCH DATA acline
+rawx_column_names: 34 ['ibus', 'jbus', 'ckt', 'rpu', 'xpu', 'bpu', 'name', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'gi', 'bi', 'gj', 'bj', 'stat', 'method', 'len', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4']
+data[0]: 34 ['151', '152', '1', '2.60000E-3', '4.60000E-2', '3.50000', 'BRANCH_FROM__151_TO__152___CIRCUIT_ID__1', '1200.00', '1100.00', '1000.00', '1200.40', '1100.50', '1000.60', '1200.70', '1100.80', '1000.90', '1200.10', '1100.11', '1000.12', '0.01000', '-0.25000', '0.01100', '-0.15000', '1', '2', '150.00', '1', '0.2000', '2', '0.3000', '3', '0.4000', '4', '0.1000']
+
+section: SYSTEM SWITCHING DEVICE DATA sysswd
+rawx_column_names: 21 ['ibus', 'jbus', 'ckt', 'xpu', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'stat', 'nstat', 'met', 'stype', 'name']
+data[0]: 21 ['151', '201', '*1', '1.00000E-4', '1206.00', '1106.00', '1006.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '1', '2', '3', '']
+
+section: TRANSFORMER DATA transformer
+rawx_column_names: 114 ['ibus', 'jbus', 'kbus', 'ckt', 'cw', 'cz', 'cm', 'mag1', 'mag2', 'nmet', 'name', 'stat', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'vecgrp', 'zcod', 'r1_2', 'x1_2', 'sbase1_2', 'r2_3', 'x2_3', 'sbase2_3', 'r3_1', 'x3_1', 'sbase3_1', 'vmstar', 'anstar', 'windv1', 'nomv1', 'ang1', 'wdg1rate1', 'wdg1rate2', 'wdg1rate3', 'wdg1rate4', 'wdg1rate5', 'wdg1rate6', 'wdg1rate7', 'wdg1rate8', 'wdg1rate9', 'wdg1rate10', 'wdg1rate11', 'wdg1rate12', 'cod1', 'cont1', 'rma1', 'rmi1', 'vma1', 'vmi1', 'ntp1', 'tab1', 'cr1', 'cx1', 'cnxa1', 'node1', 'windv2', 'nomv2', 'ang2', 'wdg2rate1', 'wdg2rate2', 'wdg2rate3', 'wdg2rate4', 'wdg2rate5', 'wdg2rate6', 'wdg2rate7', 'wdg2rate8', 'wdg2rate9', 'wdg2rate10', 'wdg2rate11', 'wdg2rate12', 'cod2', 'cont2', 'rma2', 'rmi2', 'vma2', 'vmi2', 'ntp2', 'tab2', 'cr2', 'cx2', 'cnxa2', 'node2', 'windv3', 'nomv3', 'ang3', 'wdg3rate1', 'wdg3rate2', 'wdg3rate3', 'wdg3rate4', 'wdg3rate5', 'wdg3rate6', 'wdg3rate7', 'wdg3rate8', 'wdg3rate9', 'wdg3rate10', 'wdg3rate11', 'wdg3rate12', 'cod3', 'cont3', 'rma3', 'rmi3', 'vma3', 'vmi3', 'ntp3', 'tab3', 'cr3', 'cx3', 'cnxa3', 'node3']
+data[0]: 114 ['101', '151', '0', 'T1', '2', '2', '1', '1.71470E-01', '-1.02880E-01', '2', 'EL DORADO NUCLEAR UNIT A GSU TRANSFORMER', '1', '1', '0.3200', '2', '0.3900', '3', '0.1400', '4', '0.1500', 'Dyn1', None, '1.10000E-3', '9.10000E-2', '1200.00', None, None, None, None, None, None, None, None, '21.6000', '21.600', '0.000', '1200.00', '1100.00', '1000.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '101', '22.68000', '20.52000', '1.05000', '0.95000', '25', '0', '0.00021', '0.00051', '0.000', '0', '500.000', '500.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: AREA DATA area
+rawx_column_names: 5 ['iarea', 'isw', 'pdes', 'ptol', 'arname']
+data[0]: 5 ['1', '101', '-2800.000', '10.000', 'CENTRAL']
+
+section: TWO-TERMINAL DC DATA twotermdc
+rawx_column_names: 48 ['name', 'mdc', 'rdc', 'setvl', 'vschd', 'vcmod', 'rcomp', 'delti', 'meter', 'dcvmin', 'cccitmx', 'cccacc', 'ipr', 'nbr', 'anmxr', 'anmnr', 'rcr', 'xcr', 'ebasr', 'trr', 'tapr', 'tmxr', 'tmnr', 'stpr', 'icr', 'ifr', 'itr', 'idr', 'xcapr', 'ndr', 'ipi', 'nbi', 'anmxi', 'anmni', 'rci', 'xci', 'ebasi', 'tri', 'tapi', 'tmxi', 'tmni', 'stpi', 'ici', 'ifi', 'iti', 'idi', 'xcapi', 'ndi']
+data[0]: 48 ['TWO_TERM_DC1', '1', '7.8543', '1490.65', '525.00', '400.00', '3.9420', '0.15560', 'I', '0.00', '20', '1.00000', '301', '2', '13.00', '7.50', '0.0111', '3.8800', '500.0', '0.44000', '1.06275', '1.10000', '0.90000', '0.00525', '0', '0', '0', '1', '2.0034', '0', '3021', '2', '21.00', '18.50', '0.0000', '3.0470', '230.0', '0.95652', '1.07500', '1.10000', '0.80000', '0.00625', '0', '152', '3021', 'T4', '2.0000', '0']
+
+section: VSC DC LINE DATA vscdc
+rawx_column_names: 43 ['name', 'mdc', 'rdc', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'ibus1', 'type1', 'mode1', 'dcset1', 'acset1', 'aloss1', 'bloss1', 'minloss1', 'smax1', 'imax1', 'pwf1', 'maxq1', 'minq1', 'vsreg1', 'rmpct1', 'nreg1', 'ibus2', 'type2', 'mode2', 'dcset2', 'acset2', 'aloss2', 'bloss2', 'minloss2', 'smax2', 'imax2', 'pwf2', 'maxq2', 'minq2', 'vsreg2', 'rmpct2', 'nreg2']
+data[0]: 43 ['VDCLINE1', '1', '0.7100', '1', '0.3204', '2', '0.3883', '3', '0.1942', '4', '0.0971', '3005', '2', '2', '-209.00', '0.95000', '100.000', '0.100', '50.000', '400.00', '1200.00', '0.10000', '100.00', '-110.00', '3005', '100.0', '0', '3008', '1', '1', '100.00', '0.99000', '90.000', '0.150', '40.000', '350.00', '1200.00', '0.15000', '150.00', '-140.00', '3008', '100.0', '0']
+
+section: MULTI-TERMINAL DC DATA ntermdc
+rawx_column_names: 38 ['name', 'ib', 'idc', 'idc', 'nconv', 'nbrdg', 'ib', 'jdc', 'dcckt', 'area', 'ndcbs', 'angmx', 'met', 'ndcln', 'angmn', 'zone', 'rdc', 'dcname', 'mdc', 'rc', 'vconv', 'xc', 'idc2', 'ldc', 'rgrnd', 'vcmod', 'ebas', 'owner', 'vconvn', 'tr', 'tap', 'tpmx', 'tpmn', 'tstp', 'setvl', 'dcpf', 'marg', 'cnvcod']
+data[0]: 38 ['MULTERM_DC_1', '4', '5', '4', '1', '212', '400.00', '0', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: MULTI-SECTION LINE DATA msline
+rawx_column_names: 13 ['ibus', 'jbus', 'mslid', 'met', 'dum1', 'dum2', 'dum3', 'dum4', 'dum5', 'dum6', 'dum7', 'dum8', 'dum9']
+data[0]: 13 ['201', '204', '&1', '2', '207', None, None, None, None, None, None, None, None]
+
+section: ZONE DATA zone
+rawx_column_names: 2 ['izone', 'zoname']
+data[0]: 2 ['1', 'NORTH_A1']
+
+section: INTER-AREA TRANSFER DATA iatransfer
+rawx_column_names: 4 ['arfrom', 'arto', 'trid', 'ptran']
+data[0]: 4 ['1', '2', 'A', '1000.00']
+
+section: OWNER DATA owner
+rawx_column_names: 2 ['iowner', 'owname']
+data[0]: 2 ['1', 'OWNER 1']
+
+section: FACTS DEVICE DATA facts
+rawx_column_names: 22 ['name', 'ibus', 'jbus', 'mode', 'pdes', 'qdes', 'vset', 'shmx', 'trmx', 'vtmn', 'vtmx', 'vsmx', 'imx', 'linx', 'rmpct', 'owner', 'set1', 'set2', 'vsref', 'fcreg', 'mname', 'nreg']
+data[0]: 22 ['FACTS_DVCE_1', '153', '0', '1', '0.000', '0.000', '1.01500', '50.000', '100.000', '0.92630', '1.13400', '1.00000', '0.000', '0.05652', '100.0', '1', '0.00000', '0.00000', '0', '153', '', '0']
+
+section: SWITCHED SHUNT DATA swshunt
+rawx_column_names: 27 ['ibus', 'modsw', 'adjm', 'stat', 'vswhi', 'vswlo', 'swreg', 'rmpct', 'rmidnt', 'binit', 'n1', 'b1', 'n2', 'b2', 'n3', 'b3', 'n4', 'b4', 'n5', 'b5', 'n6', 'b6', 'n7', 'b7', 'n8', 'b8', 'nreg']
+data[0]: 27 ['152', '1', '0', '1', '1.04500', '0.95500', '152', '100.0', '', '-233.00', '1', '-15.00', '2', '-5.00', '3', '-10.00', '4', '-8.00', '5', '-7.00', '6', '-5.00', '7', '-7.00', '8', '-4.00', None]
+
+section: INDUCTION MACHINE DATA indmach
+rawx_column_names: 34 ['ibus', 'imid', 'stat', 'sc', 'dc', 'area', 'zone', 'owner', 'tc', 'bc', 'mbase', 'ratekv', 'pcode', 'pset', 'hconst', 'aconst', 'bconst', 'dconst', 'econst', 'ra', 'xa', 'xm', 'r1', 'x1', 'r2', 'x2', 'x3', 'e1', 'se1', 'e2', 'se2', 'ia1', 'ia2', 'xamult']
+data[0]: 34 ['3010', '1', '1', '1', '2', '5', '4', '5', '1', '1', '1.000', '21.600', '1', '1.0000', '1.000', '1.000', '1.000', '1.000', '1.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+C:\Personal\Projects\psse_model_util\psse_model_util\raw_to_rawx.py:158: UserWarning: SKIPPING 'IMPEDANCE CORRECTION DATA' section.  Parsing of this section is not yet supported.
+  warnings.warn(f"SKIPPING '{section}' section.  Parsing of this section is not yet supported.")
+2024-11-12 13:17:59,073 - model - INFO - Model __init__ elapsed time: 0.042494600 seconds.
+2024-11-12 13:17:59,074 - model - INFO - Model __init__ building pd.DataFrames...
+2024-11-12 13:17:59,076 - model - INFO - Network.__init__ starting...
+2024-11-12 13:17:59,077 - model - INFO - Network.__init__ creating dataframe caseid...
+2024-11-12 13:17:59,079 - model - INFO - Network.__init__ elapsed: 0.005261900 seconds.
+2024-11-12 13:17:59,080 - model - INFO - Network.__init__ creating dataframe rating...
+2024-11-12 13:17:59,081 - model - INFO - Network.__init__ elapsed: 0.007083200 seconds.
+2024-11-12 13:17:59,081 - model - INFO - Network.__init__ creating dataframe general...
+2024-11-12 13:17:59,082 - model - INFO - Network.__init__ elapsed: 0.008474800 seconds.
+2024-11-12 13:17:59,083 - model - INFO - Network.__init__ creating dataframe gauss...
+2024-11-12 13:17:59,084 - model - INFO - Network.__init__ elapsed: 0.010127400 seconds.
+2024-11-12 13:17:59,084 - model - INFO - Network.__init__ creating dataframe newton...
+2024-11-12 13:17:59,086 - model - INFO - Network.__init__ elapsed: 0.012067800 seconds.
+2024-11-12 13:17:59,086 - model - INFO - Network.__init__ creating dataframe adjust...
+2024-11-12 13:17:59,088 - model - INFO - Network.__init__ elapsed: 0.014426800 seconds.
+2024-11-12 13:17:59,089 - model - INFO - Network.__init__ creating dataframe tysl...
+2024-11-12 13:17:59,090 - model - INFO - Network.__init__ elapsed: 0.015905100 seconds.
+2024-11-12 13:17:59,090 - model - INFO - Network.__init__ creating dataframe solver...
+2024-11-12 13:17:59,093 - model - INFO - Network.__init__ elapsed: 0.018853300 seconds.
+2024-11-12 13:17:59,093 - model - INFO - Network.__init__ creating dataframe bus...
+2024-11-12 13:17:59,096 - model - INFO - Network.__init__ elapsed: 0.022571200 seconds.
+2024-11-12 13:17:59,097 - model - INFO - Network.__init__ creating dataframe load...
+2024-11-12 13:17:59,101 - model - INFO - Network.__init__ elapsed: 0.027504400 seconds.
+2024-11-12 13:17:59,102 - model - INFO - Network.__init__ creating dataframe fixshunt...
+2024-11-12 13:17:59,105 - model - INFO - Network.__init__ elapsed: 0.030788500 seconds.
+2024-11-12 13:17:59,105 - model - INFO - Network.__init__ creating dataframe generator...
+2024-11-12 13:17:59,113 - model - INFO - Network.__init__ elapsed: 0.039496300 seconds.
+2024-11-12 13:17:59,114 - model - INFO - Network.__init__ creating dataframe acline...
+2024-11-12 13:17:59,123 - model - INFO - Network.__init__ elapsed: 0.049050400 seconds.
+2024-11-12 13:17:59,123 - model - INFO - Network.__init__ creating dataframe sysswd...
+2024-11-12 13:17:59,129 - model - INFO - Network.__init__ elapsed: 0.054986100 seconds.
+2024-11-12 13:17:59,129 - model - INFO - Network.__init__ creating dataframe transformer...
+2024-11-12 13:17:59,153 - model - INFO - Network.__init__ elapsed: 0.078766500 seconds.
+2024-11-12 13:17:59,153 - model - INFO - Network.__init__ creating dataframe area...
+2024-11-12 13:17:59,155 - model - INFO - Network.__init__ elapsed: 0.081912300 seconds.
+2024-11-12 13:17:59,156 - model - INFO - Network.__init__ creating dataframe twotermdc...
+2024-11-12 13:17:59,165 - model - INFO - Network.__init__ elapsed: 0.091855200 seconds.
+2024-11-12 13:17:59,166 - model - INFO - Network.__init__ creating dataframe vscdc...
+2024-11-12 13:17:59,176 - model - INFO - Network.__init__ elapsed: 0.102519000 seconds.
+2024-11-12 13:17:59,177 - model - INFO - Network.__init__ creating dataframe ntermdc...
+2024-11-12 13:17:59,195 - model - INFO - Network.__init__ elapsed: 0.121927600 seconds.
+2024-11-12 13:17:59,196 - model - INFO - Network.__init__ creating dataframe msline...
+2024-11-12 13:17:59,204 - model - INFO - Network.__init__ elapsed: 0.129341200 seconds.
+2024-11-12 13:17:59,205 - model - INFO - Network.__init__ creating dataframe zone...
+2024-11-12 13:17:59,206 - model - INFO - Network.__init__ elapsed: 0.132115700 seconds.
+2024-11-12 13:17:59,207 - model - INFO - Network.__init__ creating dataframe iatransfer...
+2024-11-12 13:17:59,208 - model - INFO - Network.__init__ elapsed: 0.133610000 seconds.
+2024-11-12 13:17:59,208 - model - INFO - Network.__init__ creating dataframe owner...
+2024-11-12 13:17:59,209 - model - INFO - Network.__init__ elapsed: 0.135048200 seconds.
+2024-11-12 13:17:59,210 - model - INFO - Network.__init__ creating dataframe facts...
+2024-11-12 13:17:59,211 - model - INFO - Network.__init__ elapsed: 0.136946500 seconds.
+2024-11-12 13:17:59,212 - model - INFO - Network.__init__ creating dataframe swshunt...
+2024-11-12 13:17:59,214 - model - INFO - Network.__init__ elapsed: 0.139292900 seconds.
+2024-11-12 13:17:59,214 - model - INFO - Network.__init__ creating dataframe indmach...
+2024-11-12 13:17:59,218 - model - INFO - Network.__init__ elapsed: 0.143492600 seconds.
+2024-11-12 13:17:59,219 - model - INFO - Network.__init__  finished: 0.144611100 seconds.
+2024-11-12 13:17:59,219 - model - INFO - Model __init__ caching to disk...
+Cached object to disk as "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,230 - model - INFO - Saved: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+2024-11-12 13:17:59,231 - model - INFO - Model __init__ elapsed time: 0.199447900 seconds.
+2024-11-12 13:17:59,231 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) finished: 0.199823300 seconds.
+model cache: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+Cached object to disk as "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,243 - model - INFO - Saved: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+2024-11-12 13:17:59,246 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:59,247 - model - INFO - Model __init__ loading model from disk...
+
+
+Version:  34.6
+
+caseid: 34
+
+section: BUS DATA bus
+rawx_column_names: 13 ['ibus', 'name', 'baskv', 'ide', 'area', 'zone', 'owner', 'vm', 'va', 'nvhi', 'nvlo', 'evhi', 'evlo']
+data[0]: 13 ['101', 'NUC-A', '21.6000', '2', '1', '1', '1', '1.01000', '-19.0142', '1.10000', '0.90000', '1.10000', '0.90000']
+
+section: LOAD DATA load
+rawx_column_names: 17 ['ibus', 'loadid', 'stat', 'area', 'zone', 'pl', 'ql', 'ip', 'iq', 'yp', 'yq', 'owner', 'scale', 'intrpt', 'dgenp', 'dgenq', 'dgenm']
+data[0]: 17 ['152', '1', '1', '1', '1', '1200.000', '360.000', '868.340', '360.502', '837.794', '-351.338', '1', '1', '0', '0.000', '0.000', '0']
+
+section: FIXED SHUNT DATA fixshunt
+rawx_column_names: 5 ['ibus', 'shntid', 'stat', 'gl', 'bl']
+data[0]: 5 ['151', 'F1', '1', '5.000', '-400.000']
+
+section: GENERATOR DATA generator
+rawx_column_names: 29 ['ibus', 'machid', 'pg', 'qg', 'qt', 'qb', 'vs', 'ireg', 'mbase', 'zr', 'zx', 'rt', 'xt', 'gtap', 'stat', 'rmpct', 'pt', 'pb', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'wmod', 'wpf', 'nreg']
+data[0]: 29 ['101', '1', '750.000', '165.207', '400.000', '-100.000', '1.01000', '101', '900.000', '1.00000E-2', '3.00000E-1', '0.00000E+0', '0.00000E+0', '1.00000', '1', '100.0', '800.000', '50.000', '1', '0.1289', '2', '0.2524', '3', '0.1031', '4', '0.5156', None, None, None]
+
+section: BRANCH DATA acline
+rawx_column_names: 34 ['ibus', 'jbus', 'ckt', 'rpu', 'xpu', 'bpu', 'name', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'gi', 'bi', 'gj', 'bj', 'stat', 'method', 'len', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4']
+data[0]: 34 ['151', '152', '1', '2.60000E-3', '4.60000E-2', '3.50000', 'BRANCH_FROM__151_TO__152___CIRCUIT_ID__1', '1200.00', '1100.00', '1000.00', '1200.40', '1100.50', '1000.60', '1200.70', '1100.80', '1000.90', '1200.10', '1100.11', '1000.12', '0.01000', '-0.25000', '0.01100', '-0.15000', '1', '2', '150.00', '1', '0.2000', '2', '0.3000', '3', '0.4000', '4', '0.1000']
+
+section: SYSTEM SWITCHING DEVICE DATA sysswd
+rawx_column_names: 21 ['ibus', 'jbus', 'ckt', 'xpu', 'rate1', 'rate2', 'rate3', 'rate4', 'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11', 'rate12', 'stat', 'nstat', 'met', 'stype', 'name']
+data[0]: 21 ['151', '201', '*1', '1.00000E-4', '1206.00', '1106.00', '1006.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '1', '2', '3', '']
+
+section: TRANSFORMER DATA transformer
+rawx_column_names: 114 ['ibus', 'jbus', 'kbus', 'ckt', 'cw', 'cz', 'cm', 'mag1', 'mag2', 'nmet', 'name', 'stat', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'vecgrp', 'zcod', 'r1_2', 'x1_2', 'sbase1_2', 'r2_3', 'x2_3', 'sbase2_3', 'r3_1', 'x3_1', 'sbase3_1', 'vmstar', 'anstar', 'windv1', 'nomv1', 'ang1', 'wdg1rate1', 'wdg1rate2', 'wdg1rate3', 'wdg1rate4', 'wdg1rate5', 'wdg1rate6', 'wdg1rate7', 'wdg1rate8', 'wdg1rate9', 'wdg1rate10', 'wdg1rate11', 'wdg1rate12', 'cod1', 'cont1', 'rma1', 'rmi1', 'vma1', 'vmi1', 'ntp1', 'tab1', 'cr1', 'cx1', 'cnxa1', 'node1', 'windv2', 'nomv2', 'ang2', 'wdg2rate1', 'wdg2rate2', 'wdg2rate3', 'wdg2rate4', 'wdg2rate5', 'wdg2rate6', 'wdg2rate7', 'wdg2rate8', 'wdg2rate9', 'wdg2rate10', 'wdg2rate11', 'wdg2rate12', 'cod2', 'cont2', 'rma2', 'rmi2', 'vma2', 'vmi2', 'ntp2', 'tab2', 'cr2', 'cx2', 'cnxa2', 'node2', 'windv3', 'nomv3', 'ang3', 'wdg3rate1', 'wdg3rate2', 'wdg3rate3', 'wdg3rate4', 'wdg3rate5', 'wdg3rate6', 'wdg3rate7', 'wdg3rate8', 'wdg3rate9', 'wdg3rate10', 'wdg3rate11', 'wdg3rate12', 'cod3', 'cont3', 'rma3', 'rmi3', 'vma3', 'vmi3', 'ntp3', 'tab3', 'cr3', 'cx3', 'cnxa3', 'node3']
+data[0]: 114 ['101', '151', '0', 'T1', '2', '2', '1', '1.71470E-01', '-1.02880E-01', '2', 'EL DORADO NUCLEAR UNIT A GSU TRANSFORMER', '1', '1', '0.3200', '2', '0.3900', '3', '0.1400', '4', '0.1500', 'Dyn1', None, '1.10000E-3', '9.10000E-2', '1200.00', None, None, None, None, None, None, None, None, '21.6000', '21.600', '0.000', '1200.00', '1100.00', '1000.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '1', '101', '22.68000', '20.52000', '1.05000', '0.95000', '25', '0', '0.00021', '0.00051', '0.000', '0', '500.000', '500.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: AREA DATA area
+rawx_column_names: 5 ['iarea', 'isw', 'pdes', 'ptol', 'arname']
+data[0]: 5 ['1', '101', '-2800.000', '10.000', 'CENTRAL']
+
+section: TWO-TERMINAL DC DATA twotermdc
+rawx_column_names: 48 ['name', 'mdc', 'rdc', 'setvl', 'vschd', 'vcmod', 'rcomp', 'delti', 'meter', 'dcvmin', 'cccitmx', 'cccacc', 'ipr', 'nbr', 'anmxr', 'anmnr', 'rcr', 'xcr', 'ebasr', 'trr', 'tapr', 'tmxr', 'tmnr', 'stpr', 'icr', 'ifr', 'itr', 'idr', 'xcapr', 'ndr', 'ipi', 'nbi', 'anmxi', 'anmni', 'rci', 'xci', 'ebasi', 'tri', 'tapi', 'tmxi', 'tmni', 'stpi', 'ici', 'ifi', 'iti', 'idi', 'xcapi', 'ndi']
+data[0]: 48 ['TWO_TERM_DC1', '1', '7.8543', '1490.65', '525.00', '400.00', '3.9420', '0.15560', 'I', '0.00', '20', '1.00000', '301', '2', '13.00', '7.50', '0.0111', '3.8800', '500.0', '0.44000', '1.06275', '1.10000', '0.90000', '0.00525', '0', '0', '0', '1', '2.0034', '0', '3021', '2', '21.00', '18.50', '0.0000', '3.0470', '230.0', '0.95652', '1.07500', '1.10000', '0.80000', '0.00625', '0', '152', '3021', 'T4', '2.0000', '0']
+
+section: VSC DC LINE DATA vscdc
+rawx_column_names: 43 ['name', 'mdc', 'rdc', 'o1', 'f1', 'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'ibus1', 'type1', 'mode1', 'dcset1', 'acset1', 'aloss1', 'bloss1', 'minloss1', 'smax1', 'imax1', 'pwf1', 'maxq1', 'minq1', 'vsreg1', 'rmpct1', 'nreg1', 'ibus2', 'type2', 'mode2', 'dcset2', 'acset2', 'aloss2', 'bloss2', 'minloss2', 'smax2', 'imax2', 'pwf2', 'maxq2', 'minq2', 'vsreg2', 'rmpct2', 'nreg2']
+data[0]: 43 ['VDCLINE1', '1', '0.7100', '1', '0.3204', '2', '0.3883', '3', '0.1942', '4', '0.0971', '3005', '2', '2', '-209.00', '0.95000', '100.000', '0.100', '50.000', '400.00', '1200.00', '0.10000', '100.00', '-110.00', '3005', '100.0', '0', '3008', '1', '1', '100.00', '0.99000', '90.000', '0.150', '40.000', '350.00', '1200.00', '0.15000', '150.00', '-140.00', '3008', '100.0', '0']
+
+section: MULTI-TERMINAL DC DATA ntermdc
+rawx_column_names: 38 ['name', 'ib', 'idc', 'idc', 'nconv', 'nbrdg', 'ib', 'jdc', 'dcckt', 'area', 'ndcbs', 'angmx', 'met', 'ndcln', 'angmn', 'zone', 'rdc', 'dcname', 'mdc', 'rc', 'vconv', 'xc', 'idc2', 'ldc', 'rgrnd', 'vcmod', 'ebas', 'owner', 'vconvn', 'tr', 'tap', 'tpmx', 'tpmn', 'tstp', 'setvl', 'dcpf', 'marg', 'cnvcod']
+data[0]: 38 ['MULTERM_DC_1', '4', '5', '4', '1', '212', '400.00', '0', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+
+section: MULTI-SECTION LINE DATA msline
+rawx_column_names: 13 ['ibus', 'jbus', 'mslid', 'met', 'dum1', 'dum2', 'dum3', 'dum4', 'dum5', 'dum6', 'dum7', 'dum8', 'dum9']
+data[0]: 13 ['201', '204', '&1', '2', '207', None, None, None, None, None, None, None, None]
+
+section: ZONE DATA zone
+rawx_column_names: 2 ['izone', 'zoname']
+data[0]: 2 ['1', 'NORTH_A1']
+
+section: INTER-AREA TRANSFER DATA iatransfer
+rawx_column_names: 4 ['arfrom', 'arto', 'trid', 'ptran']
+data[0]: 4 ['1', '2', 'A', '1000.00']
+
+section: OWNER DATA owner
+rawx_column_names: 2 ['iowner', 'owname']
+data[0]: 2 ['1', 'OWNER 1']
+C:\Personal\Projects\psse_model_util\psse_model_util\raw_to_rawx.py:158: UserWarning: SKIPPING 'IMPEDANCE CORRECTION DATA' section.  Parsing of this section is not yet supported.
+  warnings.warn(f"SKIPPING '{section}' section.  Parsing of this section is not yet supported.")
+
+section: FACTS DEVICE DATA facts
+rawx_column_names: 22 ['name', 'ibus', 'jbus', 'mode', 'pdes', 'qdes', 'vset', 'shmx', 'trmx', 'vtmn', 'vtmx', 'vsmx', 'imx', 'linx', 'rmpct', 'owner', 'set1', 'set2', 'vsref', 'fcreg', 'mname', 'nreg']
+data[0]: 22 ['FACTS_DVCE_1', '153', '0', '1', '0.000', '0.000', '1.01500', '50.000', '100.000', '0.92630', '1.13400', '1.00000', '0.000', '0.05652', '100.0', '1', '0.00000', '0.00000', '0', '153', '', '0']
+
+section: SWITCHED SHUNT DATA swshunt
+rawx_column_names: 27 ['ibus', 'modsw', 'adjm', 'stat', 'vswhi', 'vswlo', 'swreg', 'rmpct', 'rmidnt', 'binit', 'n1', 'b1', 'n2', 'b2', 'n3', 'b3', 'n4', 'b4', 'n5', 'b5', 'n6', 'b6', 'n7', 'b7', 'n8', 'b8', 'nreg']
+data[0]: 27 ['152', '1', '0', '1', '1.04500', '0.95500', '152', '100.0', '', '-233.00', '1', '-15.00', '2', '-5.00', '3', '-10.00', '4', '-8.00', '5', '-7.00', '6', '-5.00', '7', '-7.00', '8', '-4.00', None]
+
+section: INDUCTION MACHINE DATA indmach
+rawx_column_names: 34 ['ibus', 'imid', 'stat', 'sc', 'dc', 'area', 'zone', 'owner', 'tc', 'bc', 'mbase', 'ratekv', 'pcode', 'pset', 'hconst', 'aconst', 'bconst', 'dconst', 'econst', 'ra', 'xa', 'xm', 'r1', 'x1', 'r2', 'x2', 'x3', 'e1', 'se1', 'e2', 'se2', 'ia1', 'ia2', 'xamult']
+data[0]: 34 ['3010', '1', '1', '1', '2', '5', '4', '5', '1', '1', '1.000', '21.600', '1', '1.0000', '1.000', '1.000', '1.000', '1.000', '1.000', None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
+2024-11-12 13:17:59,311 - model - INFO - Model __init__ elapsed time: 0.065404900 seconds.
+2024-11-12 13:17:59,311 - model - INFO - Model __init__ building pd.DataFrames...
+2024-11-12 13:17:59,314 - model - INFO - Network.__init__ starting...
+2024-11-12 13:17:59,315 - model - INFO - Network.__init__ creating dataframe caseid...
+2024-11-12 13:17:59,317 - model - INFO - Network.__init__ elapsed: 0.005777500 seconds.
+2024-11-12 13:17:59,318 - model - INFO - Network.__init__ creating dataframe rating...
+2024-11-12 13:17:59,319 - model - INFO - Network.__init__ elapsed: 0.007299000 seconds.
+2024-11-12 13:17:59,320 - model - INFO - Network.__init__ creating dataframe general...
+2024-11-12 13:17:59,321 - model - INFO - Network.__init__ elapsed: 0.009195100 seconds.
+2024-11-12 13:17:59,321 - model - INFO - Network.__init__ creating dataframe gauss...
+2024-11-12 13:17:59,324 - model - INFO - Network.__init__ elapsed: 0.012194800 seconds.
+2024-11-12 13:17:59,324 - model - INFO - Network.__init__ creating dataframe newton...
+2024-11-12 13:17:59,327 - model - INFO - Network.__init__ elapsed: 0.015503600 seconds.
+2024-11-12 13:17:59,328 - model - INFO - Network.__init__ creating dataframe adjust...
+2024-11-12 13:17:59,331 - model - INFO - Network.__init__ elapsed: 0.018735700 seconds.
+2024-11-12 13:17:59,331 - model - INFO - Network.__init__ creating dataframe tysl...
+2024-11-12 13:17:59,333 - model - INFO - Network.__init__ elapsed: 0.020895300 seconds.
+2024-11-12 13:17:59,334 - model - INFO - Network.__init__ creating dataframe solver...
+2024-11-12 13:17:59,336 - model - INFO - Network.__init__ elapsed: 0.024932500 seconds.
+2024-11-12 13:17:59,337 - model - INFO - Network.__init__ creating dataframe bus...
+2024-11-12 13:17:59,343 - model - INFO - Network.__init__ elapsed: 0.031276800 seconds.
+2024-11-12 13:17:59,344 - model - INFO - Network.__init__ creating dataframe load...
+2024-11-12 13:17:59,349 - model - INFO - Network.__init__ elapsed: 0.037046500 seconds.
+2024-11-12 13:17:59,349 - model - INFO - Network.__init__ creating dataframe fixshunt...
+2024-11-12 13:17:59,352 - model - INFO - Network.__init__ elapsed: 0.040248200 seconds.
+2024-11-12 13:17:59,352 - model - INFO - Network.__init__ creating dataframe generator...
+2024-11-12 13:17:59,360 - model - INFO - Network.__init__ elapsed: 0.048285900 seconds.
+2024-11-12 13:17:59,360 - model - INFO - Network.__init__ creating dataframe acline...
+2024-11-12 13:17:59,371 - model - INFO - Network.__init__ elapsed: 0.059190200 seconds.
+2024-11-12 13:17:59,372 - model - INFO - Network.__init__ creating dataframe sysswd...
+2024-11-12 13:17:59,380 - model - INFO - Network.__init__ elapsed: 0.067418700 seconds.
+2024-11-12 13:17:59,380 - model - INFO - Network.__init__ creating dataframe transformer...
+2024-11-12 13:17:59,411 - model - INFO - Network.__init__ elapsed: 0.098599200 seconds.
+2024-11-12 13:17:59,412 - model - INFO - Network.__init__ creating dataframe area...
+2024-11-12 13:17:59,414 - model - INFO - Network.__init__ elapsed: 0.102085800 seconds.
+2024-11-12 13:17:59,416 - model - INFO - Network.__init__ creating dataframe twotermdc...
+2024-11-12 13:17:59,428 - model - INFO - Network.__init__ elapsed: 0.116584500 seconds.
+2024-11-12 13:17:59,429 - model - INFO - Network.__init__ creating dataframe vscdc...
+2024-11-12 13:17:59,443 - model - INFO - Network.__init__ elapsed: 0.130934800 seconds.
+2024-11-12 13:17:59,443 - model - INFO - Network.__init__ creating dataframe ntermdc...
+2024-11-12 13:17:59,468 - model - INFO - Network.__init__ elapsed: 0.156541800 seconds.
+2024-11-12 13:17:59,469 - model - INFO - Network.__init__ creating dataframe msline...
+2024-11-12 13:17:59,475 - model - INFO - Network.__init__ elapsed: 0.163521100 seconds.
+2024-11-12 13:17:59,476 - model - INFO - Network.__init__ creating dataframe zone...
+2024-11-12 13:17:59,477 - model - INFO - Network.__init__ elapsed: 0.165570800 seconds.
+2024-11-12 13:17:59,478 - model - INFO - Network.__init__ creating dataframe iatransfer...
+2024-11-12 13:17:59,478 - model - INFO - Network.__init__ elapsed: 0.166452700 seconds.
+2024-11-12 13:17:59,478 - model - INFO - Network.__init__ creating dataframe owner...
+2024-11-12 13:17:59,479 - model - INFO - Network.__init__ elapsed: 0.167297300 seconds.
+2024-11-12 13:17:59,479 - model - INFO - Network.__init__ creating dataframe facts...
+2024-11-12 13:17:59,480 - model - INFO - Network.__init__ elapsed: 0.168550300 seconds.
+2024-11-12 13:17:59,480 - model - INFO - Network.__init__ creating dataframe swshunt...
+2024-11-12 13:17:59,481 - model - INFO - Network.__init__ elapsed: 0.169708500 seconds.
+2024-11-12 13:17:59,482 - model - INFO - Network.__init__ creating dataframe indmach...
+2024-11-12 13:17:59,483 - model - INFO - Network.__init__ elapsed: 0.171565300 seconds.
+2024-11-12 13:17:59,484 - model - INFO - Network.__init__  finished: 0.172178700 seconds.
+2024-11-12 13:17:59,484 - model - INFO - Model __init__ caching to disk...
+Cached object to disk as "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,492 - model - INFO - Saved: C:\Personal\Projects\psse_model_util\cache\Model_1.model
+2024-11-12 13:17:59,493 - model - INFO - Model __init__ elapsed time: 0.246898300 seconds.
+2024-11-12 13:17:59,493 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) finished: 0.247307100 seconds.
+2024-11-12 13:17:59,493 - model - INFO - Model filter_by_area (C:\Personal\Projects\psse_model_util\tests\data\Model_1.raw) starting...
+2024-11-12 13:17:59,499 - model - INFO - Model.filter_by_area: finished in 0.006040200 seconds.
+CSV export folder (default): C:\Personal\Projects\psse_model_util\data\Model_1
+2024-11-12 13:17:59,500 - model - INFO - Exporting model (C:\Personal\Projects\psse_model_util\cache\Model_1.model) ...
+2024-11-12 13:17:59,501 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\general.csv...
+2024-11-12 13:17:59,505 - model - INFO - Elapsed export time: 0.005061300 seconds.
+2024-11-12 13:17:59,505 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_acline.csv...
+2024-11-12 13:17:59,512 - model - INFO - Elapsed export time: 0.012267000 seconds...
+2024-11-12 13:17:59,512 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_adjust.csv...
+2024-11-12 13:17:59,516 - model - INFO - Elapsed export time: 0.016307800 seconds...
+2024-11-12 13:17:59,517 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_area.csv...
+2024-11-12 13:17:59,521 - model - INFO - Elapsed export time: 0.021418900 seconds...
+2024-11-12 13:17:59,522 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_bus.csv...
+2024-11-12 13:17:59,528 - model - INFO - Elapsed export time: 0.027961700 seconds...
+2024-11-12 13:17:59,529 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_caseid.csv...
+2024-11-12 13:17:59,535 - model - INFO - Elapsed export time: 0.035136600 seconds...
+2024-11-12 13:17:59,536 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_facts.csv...
+2024-11-12 13:17:59,543 - model - INFO - Elapsed export time: 0.044312100 seconds...
+2024-11-12 13:17:59,545 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_fixshunt.csv...
+2024-11-12 13:17:59,550 - model - INFO - Elapsed export time: 0.050261400 seconds...
+2024-11-12 13:17:59,550 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_gauss.csv...
+2024-11-12 13:17:59,556 - model - INFO - Elapsed export time: 0.055560200 seconds...
+2024-11-12 13:17:59,556 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_general.csv...
+2024-11-12 13:17:59,560 - model - INFO - Elapsed export time: 0.059295300 seconds...
+2024-11-12 13:17:59,560 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_generator.csv...
+2024-11-12 13:17:59,565 - model - INFO - Elapsed export time: 0.065263300 seconds...
+2024-11-12 13:17:59,566 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_iatransfer.csv...
+2024-11-12 13:17:59,571 - model - INFO - Elapsed export time: 0.070937000 seconds...
+2024-11-12 13:17:59,572 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_indmach.csv...
+2024-11-12 13:17:59,578 - model - INFO - Elapsed export time: 0.077659100 seconds...
+2024-11-12 13:17:59,579 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_load.csv...
+2024-11-12 13:17:59,585 - model - INFO - Elapsed export time: 0.085223900 seconds...
+2024-11-12 13:17:59,586 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_msline.csv...
+2024-11-12 13:17:59,592 - model - INFO - Elapsed export time: 0.092431500 seconds...
+2024-11-12 13:17:59,593 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_newton.csv...
+2024-11-12 13:17:59,598 - model - INFO - Elapsed export time: 0.098219200 seconds...
+2024-11-12 13:17:59,599 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_ntermdc.csv...
+2024-11-12 13:17:59,606 - model - INFO - Elapsed export time: 0.105830300 seconds...
+2024-11-12 13:17:59,607 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_owner.csv...
+2024-11-12 13:17:59,611 - model - INFO - Elapsed export time: 0.111122300 seconds...
+2024-11-12 13:17:59,611 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_rating.csv...
+2024-11-12 13:17:59,616 - model - INFO - Elapsed export time: 0.115984400 seconds...
+2024-11-12 13:17:59,617 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_solver.csv...
+2024-11-12 13:17:59,622 - model - INFO - Elapsed export time: 0.121549300 seconds...
+2024-11-12 13:17:59,622 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_swshunt.csv...
+2024-11-12 13:17:59,626 - model - INFO - Elapsed export time: 0.126679600 seconds...
+2024-11-12 13:17:59,627 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_sysswd.csv...
+2024-11-12 13:17:59,633 - model - INFO - Elapsed export time: 0.132989200 seconds...
+2024-11-12 13:17:59,634 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_transformer.csv...
+2024-11-12 13:17:59,643 - model - INFO - Elapsed export time: 0.142995500 seconds...
+2024-11-12 13:17:59,644 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_twotermdc.csv...
+2024-11-12 13:17:59,648 - model - INFO - Elapsed export time: 0.148486300 seconds...
+2024-11-12 13:17:59,649 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_tysl.csv...
+2024-11-12 13:17:59,654 - model - INFO - Elapsed export time: 0.153716600 seconds...
+2024-11-12 13:17:59,655 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_vscdc.csv...
+2024-11-12 13:17:59,663 - model - INFO - Elapsed export time: 0.162500600 seconds...
+2024-11-12 13:17:59,663 - model - INFO - Exporting C:\Personal\Projects\psse_model_util\Temp\my_model_export\network_zone.csv...
+2024-11-12 13:17:59,668 - model - INFO - Elapsed export time: 0.168102400 seconds...
+2024-11-12 13:17:59,669 - model - INFO - Finished exporting to CSV files: C:\Personal\Projects\psse_model_util\Temp\my_model_export
+CSV files exported to: C:\Personal\Projects\psse_model_util\Temp\my_model_export
+2024-11-12 13:17:59,671 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:59,672 - model - INFO - Model __init__ loading model from disk...
+2024-11-12 13:17:59,683 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,695 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,696 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\cache\Model_1.model) finished: 0.025066200 seconds.
+2024-11-12 13:17:59,696 - model - INFO - Adding bus information to acline starting...
+2024-11-12 13:17:59,704 - model - INFO - Finished adding bus information to acline: 0.007518900 seconds.
+acline_w_bus.columns: Index(['rpu', 'xpu', 'bpu', 'name', 'rate1', 'rate2', 'rate3', 'rate4',
+       'rate5', 'rate6', 'rate7', 'rate8', 'rate9', 'rate10', 'rate11',
+       'rate12', 'gi', 'bi', 'gj', 'bj', 'stat', 'method', 'len', 'o1', 'f1',
+       'o2', 'f2', 'o3', 'f3', 'o4', 'f4', 'ibus_name', 'ibus_baskv',
+       'ibus_ide', 'ibus_area', 'ibus_zone', 'ibus_owner', 'ibus_vm',
+       'ibus_va', 'ibus_nvhi', 'ibus_nvlo', 'ibus_evhi', 'ibus_evlo',
+       'jbus_name', 'jbus_baskv', 'jbus_ide', 'jbus_area', 'jbus_zone',
+       'jbus_owner', 'jbus_vm', 'jbus_va', 'jbus_nvhi', 'jbus_nvlo',
+       'jbus_evhi', 'jbus_evlo'],
+      dtype='object')
+2024-11-12 13:17:59,706 - model - INFO - Model __init__ starting.
+2024-11-12 13:17:59,706 - model - INFO - Model __init__ loading model from disk...
+2024-11-12 13:17:59,716 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,725 - model - INFO - Data loaded from cache: "C:\Personal\Projects\psse_model_util\cache\Model_1.model".
+2024-11-12 13:17:59,726 - model - INFO - Model __init__ (C:\Personal\Projects\psse_model_util\cache\Model_1.model) finished: 0.020393000 seconds.
+Paths from ('bus', 151) to ('bus', 153)
+[('bus', 151), ('bus', 152), ('bus', 202), ('transformer', 203, 202), ('bus', 203), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 152), ('bus', 202), ('transformer', 203, 202), ('bus', 203), ('bus', 205), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 152), ('bus', 3004), ('transformer', 3005, 3004), ('bus', 3005), ('bus', 3006), ('bus', 153)]
+[('bus', 151), ('bus', 152), ('bus', 3004), ('transformer', 3005, 3004), ('bus', 3005), ('bus', 3008), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 152), ('transformer', 152, 153), ('bus', 153)]
+[('bus', 151), ('bus', 201), ('bus', 202), ('bus', 152), ('transformer', 152, 153), ('bus', 153)]
+[('bus', 151), ('bus', 201), ('bus', 202), ('transformer', 203, 202), ('bus', 203), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 201), ('bus', 202), ('transformer', 203, 202), ('bus', 203), ('bus', 205), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 201), ('bus', 207), ('bus', 204), ('transformer', 204, 205), ('bus', 205), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 201), ('bus', 204), ('transformer', 204, 205), ('bus', 205), ('bus', 154), ('bus', 153)]
+[('bus', 151), ('bus', 201), ('bus', 204), ('transformer', 204, 205), ('bus', 205), ('bus', 203), ('bus', 154), ('bus', 153)]
+
+Process finished with exit code 0

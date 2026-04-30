@@ -43,7 +43,7 @@ Thumbs.db
 
 # Project-specific
 cache/
-data/
+/data/
 log/
 Temp/
 *.log

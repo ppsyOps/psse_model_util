@@ -1,17 +1,17 @@
 import re
 from datetime import datetime as dtdt
-import pytz
 from pathlib import Path
-from typing import List, Union, Callable, Tuple, Any
+from typing import Any, Callable, List, Tuple, Union
+
+import arrow
+import numpy as np
 import openpyxl
+import pandas as pd
+import pytz
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
 
 from psse_model_util.dataformat.classes import ModelDF
-
-import numpy as np
-import pandas as pd
-import arrow
 
 
 def convert_df_column_dtypes(
@@ -74,7 +74,7 @@ def convert_df_column_dtypes(
                     # For datetime, it uses pd.to_datetime(col), which is the
                     # most appropriate method for datetime conversion.
                     return pd.to_datetime(column)
-                elif dtype == int:
+                elif dtype is int or (isinstance(dtype, type) and issubclass(dtype, int)):
                     # Try to convert to int, but only if it doesn't result in data loss
                     float_series = column.astype(float)
                     if (float_series == float_series.round()).all():
@@ -186,7 +186,7 @@ def make_naive(datetime_value: arrow.Arrow | dtdt,
     :return: naive datetime.datetime value, i.e., datetime_value stripped of
              tz_info.
     """
-    if datetime_value.tzinfo == None:
+    if datetime_value.tzinfo is None:
         return datetime_value
     elif isinstance(datetime_value, arrow.Arrow):
         datetime_value = datetime_value.datetime
@@ -236,7 +236,7 @@ def df_column_validator(df_column: pd.Series,
             if 'datetime' in str(col_dtype) and 'datetime' in str(df_column.dtype):
                 # df_column is a datetime as expected.
                 pass
-            elif col_dtype == int and df_column.dtype == np.int64:
+            elif (col_dtype is int or (isinstance(col_dtype, type) and issubclass(col_dtype, int))) and df_column.dtype == np.int64:
                 # Special case for int vs int64
                 pass
             else:
@@ -254,8 +254,8 @@ def df_column_validator(df_column: pd.Series,
         elif isinstance(pattern, re.Pattern):
             compiled = pattern
         else:
-            raise TypeError(f'pattern must be str or re.Pattern (i.e., a '
-                            f'compiled regex pattern).')
+            raise TypeError('pattern must be str or re.Pattern (i.e., a '
+                            'compiled regex pattern).')
 
         if pattern_criteria == 'all':
             b = series.apply(lambda x: bool(re.search(pattern=compiled,
@@ -422,8 +422,9 @@ def move_columns_far_right(df: pd.DataFrame, columns_to_move: list | tuple):
 if __name__ == '__main__':
     # --------------  Export Large Dataframe to Excel--------------------------
 
-    import pandas as pd
     from pathlib import Path
+
+    import pandas as pd
 
     # Create a sample DataFrame
     df = pd.DataFrame({'A': range(1000000), 'B': range(1000000, 2000000)})

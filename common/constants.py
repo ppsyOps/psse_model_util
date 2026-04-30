@@ -1,8 +1,5 @@
 from collections import namedtuple
 
-import pandas as pd
-from pathlib import Path
-
 RangeFilterType = namedtuple('RangeFilterType', ['min', 'max'])
 
 # Maximum number of segments allowed in alternate paths when comparing models
@@ -55,7 +52,7 @@ NETWORK_DF_COMPARISON_QUERIES = {
            f'or zone_delta > 0 or vm_delta > 0 or owner_delta > 0 '
            f'or area_delta > 0)',
     'generator': f'pg_model2 > {GEN_MW_FILTER[0]}',
-    'load': f'pl_model1 > 10',
+    'load': 'pl_model1 > 10',
     'acline': f'(ibus_baskv_model1 >= {DEFAULT_KV_FILTER[0]} '
               f'or jbus_baskv_model1 >= {DEFAULT_KV_FILTER[0]} '
               f'or ibus_baskv_model2 >= {DEFAULT_KV_FILTER[0]} '
