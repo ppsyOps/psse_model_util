@@ -53,7 +53,7 @@
 | ------- | -------------------------------- | ------------------------------------- | ------------------------ |
 | **2.1** | **CI/CD Pipeline Setup**         | **#ci-linting (1497211799030726828)** | ✅ **Completed**          |
 | 2.2     | RAWX export bug                  | TBD                                   | 🐛 Logged / Low Priority |
-| 2.3     | Improve comparison output        | TBD                                   | **🔜 Next**              |
+| **2.3** | **Improve comparison output**    | **#2-3-comparison-output (1499205715875598347)** | ✅ **Completed**          |
 | 2.4     | **Model anonymizer**             | TBD                                   | ⬜ Queued                 |
 | 2.5     | Test suite expansion             | TBD                                   | ⬜ Queued                 |
 | 2.6     | **Bus Data Enrichment Strategy** | TBD                                   | ⬜ Queued                 |
