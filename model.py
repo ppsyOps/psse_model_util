@@ -2037,42 +2037,6 @@ class Model:
         )
         return model
 
-    @copy_doc(Network.filter_section)
-    def filter_section(self,
-                        section: str,
-                        where_clause: str,
-                        inplace: bool = False,
-                        graph_effect: str = 'clear') -> Union['Model', pd.DataFrame]:
-        # This method delegates to Network.filter_section.
-        # The inherited docstring describes expected behavior.
-
-        model = self if inplace else self.copy(deep=True)
-        model.network.filter_section(
-            section=section,
-            where_clause=where_clause,
-            inplace=True,
-            graph_effect=graph_effect
-        )
-        return model if inplace else model
-
-    @copy_doc(Network.filter_by_kv)
-    def filter_by_kv(self,
-                    low_value: float = 0.0,
-                    high_value: float = float('inf'),
-                    inplace: bool = False,
-                    graph_effect: str = 'clear') -> 'Model':
-        # This method delegates to Network.filter_by_kv.
-        # The inherited docstring describes expected behavior.
-
-        model = self if inplace else self.copy(deep=True)
-        model.network.filter_by_kv(
-            low_value=low_value,
-            high_value=high_value,
-            inplace=True,
-            graph_effect=graph_effect
-        )
-        return model
-
     def copy(self, deep: bool = True):
         """
         Create a copy of the Model instance.
