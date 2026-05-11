@@ -24,7 +24,7 @@ Python library for reading, editing, validating, and comparing PSS/E power syste
 
 ### Prerequisites
 
-- Python 3.11 (3.12–3.13 supported; 3.14.1 excluded)
+- Python 3.11+ (tested through 3.14.4)
 - [PDM](https://pdm-project.org/) for dependency management
 - [Hatch](https://hatch.pypa.io/) for builds and versioning
 
@@ -72,14 +72,12 @@ generators = model.network.generator    # pd.DataFrame
 ### Filter a model
 
 ```python
-# Filter by area
-filtered = model.filter_by_area(areas=[101, 102, 103])
+# Filter by area (Model-level — delegates to network)
+filtered = model.filter_by_area(areas={101: "AREA1", 102: "AREA2"})
 
-# Filter by voltage level (kV)
-ehv = model.filter_by_kv(low_value=345)
-
-# Filter a specific section by query
-model.filter_section("bus", "baskv >= 230", inplace=True)
+# Filter by voltage level or section query (Network-level)
+ehv = model.network.filter_by_kv(low_value=345)
+model.network.filter_section("bus", "baskv >= 230", inplace=True)
 ```
 
 ### Build and query the network graph
@@ -115,7 +113,7 @@ comp.compare_graph()          # Topology: added/removed edges, path changes
 comp.to_csv(df_comparison_to_csv=True, graph_comparison_to_csv=True)
 ```
 
-### Export a model
+### Export and serialise a model
 
 ```python
 # Export all network sections to CSV
@@ -126,7 +124,21 @@ model.to_pickle()
 
 # Reload from cache
 model2 = Model("path/to/model.raw")  # auto-loads from cache if available
+
+# Serialise to a JSON string or file
+json_str = model.to_json()
+model.to_json(file_path="model_export.json")
+
+# Load from a rawx dict (avoids the json_data mutation issue in to_json round-trips)
+from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
+rawx_dict = raw_file_to_rawx_dict("path/to/model.raw")
+model2 = Model(file_path_or_json=rawx_dict)
 ```
+
+> **Note:** `Model(file_path_or_json=json_str)` works for loading but a full
+> `to_json()` → `Model(json_str)` round-trip is lossy due to a known internal
+> mutation (see Known Issues). Use `raw_file_to_rawx_dict` as shown above
+> when you need a lossless in-memory copy.
 
 ---
 
@@ -141,6 +153,7 @@ psse_model_util/
 ├── inch.py                    # WIP: IDEV/INCH export (Phase 3.2)
 ├── __about__.py               # Version: 2026.4.3 (calver YYYY.M.micro)
 ├── __init__.py
+├── CLAUDE.md                  # Architecture guide for Claude Code
 ├── common/
 │   ├── constants.py           # INCLUDE_AREAS, filter constants, query defaults
 │   ├── dataframe_util.py      # convert_df_column_dtypes()
@@ -154,7 +167,18 @@ psse_model_util/
 │   ├── rawx_json_template.py  # RAWX section schema (fields, data_types, id_cols, bus_cols)
 │   └── rawx_raw_map.csv       # RAW ↔ RAWX field mapping (v34 + v35 columns)
 └── tests/
-    ├── test_placeholder.py    # Placeholder — test suite (Phase 1.4)
+    ├── conftest.py            # Shared fixtures and sys.path setup
+    ├── test_classes.py        # dataformat/classes.py domain types
+    ├── test_compare.py        # ModelComparison
+    ├── test_dataframe_util.py # common/dataframe_util helpers
+    ├── test_dirs.py           # common/dirs platform paths
+    ├── test_file_util.py      # common/file_util pickle helpers
+    ├── test_model.py          # Model + Network (primary integration tests)
+    ├── test_model2.py         # Supplemental Model method tests
+    ├── test_raw_to_rawx.py    # RAW parser + substation section
+    ├── test_rawx.py           # RAWX-format model loading
+    ├── test_phase_*.py        # Feature-phase regression tests
+    ├── legacy_tests/          # Pre-refactor scripts (not collected by pytest)
     └── data/                  # Test fixtures (do not delete)
         ├── Model_1.raw        # Synthetic v34 — baseline for ModelComparison tests
         ├── Model_2.raw        # Synthetic v34 — intentionally modified from Model_1
@@ -176,15 +200,25 @@ psse_model_util/
 # Lint
 pdm run ruff check .
 
-# Test
+# Run all tests
 pdm run pytest
 
-# Test with coverage
-pdm run pytest --cov=psse_model_util
+# Run a single test file
+pdm run pytest tests/test_model.py
+
+# Run a specific test by name
+pdm run pytest tests/test_model.py -k "test_filter_by_area"
+
+# Test with coverage report
+pdm run pytest --cov=psse_model_util --cov-report=term-missing
+# Current: 343 tests, 75% coverage (CI gate: 40%)
 
 # Version (hatch-managed calver)
 hatch version
 ```
+
+> **Claude Code users:** `CLAUDE.md` at the repo root contains architecture
+> notes, data-flow diagrams, and the rationale behind key design decisions.
 
 ---
 
@@ -200,12 +234,11 @@ Uses calver: `YYYY.M.micro` — managed by Hatch via `__about__.py`.
 
 ## Known Issues / Roadmap
 
-| Issue | Phase |
-|-------|-------|
-| RAWX export bug — exported `.rawx` doesn't load in PSS/E | 2.1 |
-| CSV export missing columns (index dropped with `index=False`) | 1.5 |
-| INCH/IDEV export scaffolded but not functional | 3.2 |
-| Anonymized BES model for large-scale UAT | 2.3 |
+| Issue | Phase | Status |
+|-------|-------|--------|
+| RAWX export bug — exported `.rawx` doesn't reload in PSS/E | 2.2 | Open (low priority) |
+| `to_json()` → `Model(json_str)` round-trip is lossy (`json_data` mutation in `_create_dataframe`) | — | Open |
+| INCH/IDEV export scaffolded but not functional | 3.2 | Open |
 
 ---
 
