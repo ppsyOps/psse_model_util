@@ -86,7 +86,9 @@ def _split_bus_token(token: str) -> tuple[str, float]:
     >>> _split_bus_token("'05TANNER    345.00'")
     ('05TANNER', 345.0)
     """
-    stripped = token.strip()
+    # Strip only surrounding quotes — do NOT .strip() the whole token, because
+    # the 6-char kV field can legitimately have a trailing space (e.g. '21.60 ').
+    stripped = token
     if stripped.startswith("'") and stripped.endswith("'"):
         stripped = stripped[1:-1]
     if len(stripped) != _BUS_TOKEN_LEN:
@@ -387,10 +389,36 @@ def resolve_elements(
                     seed_buses=frozenset({from_ibus, to_ibus}),
                     raw_tokens=elem.raw_tokens,
                 ))
-            # Generator resolution: Task 8
-            else:
-                # Placeholder — generator branch handled in Task 8.
-                pass
+            elif elem.element_type == "generator":
+                bus_token, machine_id = elem.raw_tokens
+                gen_ibus = _resolve_bus_token(bus_token)
+                if gen_ibus is None:
+                    unresolved_rows.append({
+                        "flowgate_id": elem.flowgate_id,
+                        "role": elem.role,
+                        "element_type": elem.element_type,
+                        "raw_tokens": repr(elem.raw_tokens),
+                        "reason": "bus_not_found",
+                    })
+                    continue
+                gen_df = model.network.generator
+                # generator index is MultiIndex (ibus, machid). machid is a string.
+                if (gen_ibus, str(machine_id).strip()) not in gen_df.index:
+                    unresolved_rows.append({
+                        "flowgate_id": elem.flowgate_id,
+                        "role": elem.role,
+                        "element_type": elem.element_type,
+                        "raw_tokens": repr(elem.raw_tokens),
+                        "reason": "generator_not_found",
+                    })
+                    continue
+                seeds.append(ResolvedSeed(
+                    flowgate_id=elem.flowgate_id,
+                    role=elem.role,
+                    element_type="generator",
+                    seed_buses=frozenset({gen_ibus}),
+                    raw_tokens=elem.raw_tokens,
+                ))
 
     unresolved_df = pd.DataFrame(unresolved_rows, columns=_UNRESOLVED_COLUMNS)
     return seeds, unresolved_df
