@@ -570,6 +570,40 @@ def _collect_branches_for_fg(
     return rows
 
 
+def _collect_generators_for_fg(
+    model: Model,
+    neighborhood: set[int],
+    fg_id: int,
+    role: str,
+    gen_min_mw: float,
+    bus_attrs: pd.DataFrame,
+) -> list[dict]:
+    """Collect generators with ibus in `neighborhood` and pt >= gen_min_mw.
+
+    bus_attrs is the bus DataFrame reset_index with ibus as a column,
+    pre-projected to [ibus, name, baskv, area].
+    """
+    gen = model.network.generator.reset_index()
+    hit = gen[(gen["ibus"].isin(neighborhood)) & (gen["pt"] >= gen_min_mw)]
+    if hit.empty:
+        return []
+    hit = hit.merge(
+        bus_attrs.rename(columns={
+            "name": "bus_name", "baskv": "volt", "area": "area",
+        })[["ibus", "bus_name", "volt", "area"]],
+        on="ibus", how="left",
+    )
+    rows: list[dict] = []
+    for _, r in hit.iterrows():
+        rows.append({
+            "flowgate_id": fg_id, "role": role,
+            "bus_name": r["bus_name"], "volt": float(r["volt"]),
+            "area": int(r["area"]),
+            "ckt_id": str(r["machid"]).strip(),
+        })
+    return rows
+
+
 _BRANCH_COLS = [
     "flowgate_id", "role", "equipment_type",
     "from_name", "from_volt", "from_area",
@@ -620,6 +654,11 @@ def collect_key_facilities(
         branch_rows.extend(
             _collect_branches_for_fg(
                 model, neighborhood, fg_id, role, kv_min, kv_max, bus_attrs
+            )
+        )
+        gen_rows.extend(
+            _collect_generators_for_fg(
+                model, neighborhood, fg_id, role, gen_min_mw, bus_attrs
             )
         )
 

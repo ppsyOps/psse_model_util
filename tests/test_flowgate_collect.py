@@ -113,3 +113,40 @@ def test_collect_branches_kv_filter_loose(model_1, synthetic_seeds):
     if not df.empty:
         passes = ((df["from_volt"] >= 700.0) | (df["to_volt"] >= 700.0)).all()
         assert passes
+
+
+def test_collect_generators_mw_filter_default(model_1, synthetic_seeds):
+    """Every generator in the output must have come from a (ibus, machid) whose
+    source row has pt >= DEFAULT_GEN_MIN_MW."""
+    from psse_model_util.flowgate import DEFAULT_GEN_MIN_MW, collect_key_facilities
+
+    out = collect_key_facilities(model_1, synthetic_seeds)
+    gens = out["generators"]
+    if gens.empty:
+        pytest.skip("No generators in PJM neighborhood; nothing to verify")
+
+    # Build a (bus_name, volt, machid) -> pt lookup from the source
+    bus_attrs = model_1.network.bus.reset_index()[["ibus", "name", "baskv"]]
+    gen_src = model_1.network.generator.reset_index().merge(
+        bus_attrs, on="ibus", how="left"
+    )
+    gen_src["name"] = gen_src["name"].astype(str).str.strip()
+    gen_src["machid"] = gen_src["machid"].astype(str).str.strip()
+    pt_lookup = {
+        (row["name"], float(row["baskv"]), row["machid"]): float(row["pt"])
+        for _, row in gen_src.iterrows()
+    }
+
+    for _, row in gens.iterrows():
+        key = (str(row["bus_name"]).strip(), float(row["volt"]), str(row["ckt_id"]).strip())
+        assert key in pt_lookup, f"output gen {key} not found in source"
+        assert pt_lookup[key] >= DEFAULT_GEN_MIN_MW
+
+
+def test_collect_generators_threshold_override(model_1, synthetic_seeds):
+    from psse_model_util.flowgate import collect_key_facilities
+
+    out_default = collect_key_facilities(model_1, synthetic_seeds)
+    out_high = collect_key_facilities(model_1, synthetic_seeds, gen_min_mw=10000.0)
+    assert len(out_high["generators"]) <= len(out_default["generators"])
+    assert len(out_high["generators"]) == 0  # no real gen reaches 10 GW
