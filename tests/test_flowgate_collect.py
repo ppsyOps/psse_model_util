@@ -227,3 +227,25 @@ def test_equipment_in_two_flowgates_produces_two_rows(model_1):
     # We don't require N>1 in the synthetic fixture; we just verify the schema
     # is consistent (no exception above).
     assert counts.min() >= 1
+
+
+def test_end_to_end_synthetic_to_dataframes(model_1):
+    from psse_model_util.flowgate import (
+        collect_key_facilities,
+        filter_by_sc,
+        parse_mon_file,
+        resolve_elements,
+    )
+
+    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
+    pjm = filter_by_sc(fgs, sc="PJM")
+    assert [fg.flowgate_id for fg in pjm] == [1001, 1002, 1003]
+
+    seeds, unresolved = resolve_elements(pjm, model_1)
+    assert unresolved.empty, f"unexpected unresolved rows:\n{unresolved}"
+
+    out = collect_key_facilities(model_1, seeds)
+    # Sanity: branches non-empty (synthetic PJM seeds are 345 kV)
+    assert len(out["branches"]) > 0
+    # All 4 keys present
+    assert set(out.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
