@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 import networkx as nx  # noqa: F401  -- used in later tasks
-import pandas as pd  # noqa: F401
+import pandas as pd
 
 from psse_model_util.model import Model  # noqa: F401
 
@@ -305,3 +305,92 @@ def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flow
 def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]:
     """Keep only flowgates whose Security Coordinator matches `sc` (case-sensitive)."""
     return [fg for fg in fgs if fg.sc == sc]
+
+
+_UNRESOLVED_COLUMNS = ["flowgate_id", "role", "element_type", "raw_tokens", "reason"]
+
+
+def _build_bus_lookup(model: Model) -> dict[tuple[str, float], int]:
+    """Build {(name_stripped, round(baskv, KV_KEY_DECIMALS)): ibus}."""
+    bus_df = model.network.bus
+    return {
+        (str(name).strip(), round(float(baskv), KV_KEY_DECIMALS)): int(ibus)
+        for ibus, name, baskv in zip(
+            bus_df.index, bus_df["name"], bus_df["baskv"]
+        )
+    }
+
+
+def _branch_exists(model: Model, ibus: int, jbus: int, ckt: str) -> bool:
+    """Check if (ibus, jbus, ckt) — in any order — exists in acline or 2W transformer."""
+    ckt_norm = str(ckt).strip()
+
+    ac = model.network.acline
+    ac_idx = ac.index
+    # acline index is MultiIndex (ibus, jbus, ckt). Check both orderings.
+    if (ibus, jbus, ckt_norm) in ac_idx or (jbus, ibus, ckt_norm) in ac_idx:
+        return True
+
+    xf = model.network.transformer
+    # transformer index is (ibus, jbus, kbus, ckt). 2W rows have kbus == 0.
+    for ib, jb in [(ibus, jbus), (jbus, ibus)]:
+        if (ib, jb, 0, ckt_norm) in xf.index:
+            return True
+    return False
+
+
+def resolve_elements(
+    fgs: list[Flowgate], model: Model
+) -> tuple[list[ResolvedSeed], pd.DataFrame]:
+    """Resolve flowgate elements to model bus numbers.
+
+    Returns (resolved_seeds, unresolved_df). Unresolved elements are emitted
+    to the second return value rather than raising, so processing of the
+    remaining flowgates continues.
+    """
+    lookup = _build_bus_lookup(model)
+    seeds: list[ResolvedSeed] = []
+    unresolved_rows: list[dict] = []
+
+    def _resolve_bus_token(token: str) -> int | None:
+        name, kv = _split_bus_token(token)
+        return lookup.get((name, round(kv, KV_KEY_DECIMALS)))
+
+    for fg in fgs:
+        for elem in list(fg.monitor) + list(fg.contingency):
+            if elem.element_type == "branch":
+                from_token, to_token, ckt = elem.raw_tokens
+                from_ibus = _resolve_bus_token(from_token)
+                to_ibus = _resolve_bus_token(to_token)
+                if from_ibus is None or to_ibus is None:
+                    unresolved_rows.append({
+                        "flowgate_id": elem.flowgate_id,
+                        "role": elem.role,
+                        "element_type": elem.element_type,
+                        "raw_tokens": repr(elem.raw_tokens),
+                        "reason": "bus_not_found",
+                    })
+                    continue
+                if not _branch_exists(model, from_ibus, to_ibus, ckt):
+                    unresolved_rows.append({
+                        "flowgate_id": elem.flowgate_id,
+                        "role": elem.role,
+                        "element_type": elem.element_type,
+                        "raw_tokens": repr(elem.raw_tokens),
+                        "reason": "branch_not_found",
+                    })
+                    continue
+                seeds.append(ResolvedSeed(
+                    flowgate_id=elem.flowgate_id,
+                    role=elem.role,
+                    element_type="branch",
+                    seed_buses=frozenset({from_ibus, to_ibus}),
+                    raw_tokens=elem.raw_tokens,
+                ))
+            # Generator resolution: Task 8
+            else:
+                # Placeholder — generator branch handled in Task 8.
+                pass
+
+    unresolved_df = pd.DataFrame(unresolved_rows, columns=_UNRESOLVED_COLUMNS)
+    return seeds, unresolved_df
