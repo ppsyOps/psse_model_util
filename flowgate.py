@@ -480,3 +480,59 @@ def neighborhood_buses(
         sub = nx.ego_graph(g, seed, radius=hops, undirected=True)
         result.update(int(n) for n in sub.nodes)
     return result
+
+
+_BRANCH_COLS = [
+    "flowgate_id", "role", "equipment_type",
+    "from_name", "from_volt", "from_area",
+    "to_name", "to_volt", "to_area",
+    "ckt_id",
+]
+_GEN_COLS = ["flowgate_id", "role", "bus_name", "volt", "area", "ckt_id"]
+_XF3_COLS = [
+    "flowgate_id", "role", "transformer_name",
+    "w1_bus_name", "w1_volt",
+    "w2_bus_name", "w2_volt",
+    "w3_bus_name", "w3_volt",
+    "ckt_id",
+]
+
+
+def collect_key_facilities(
+    model: Model,
+    seeds: list[ResolvedSeed],
+    *,
+    hops: int = DEFAULT_HOPS,
+    kv_min: float = DEFAULT_KV_MIN,
+    kv_max: float = DEFAULT_KV_MAX,
+    gen_min_mw: float = DEFAULT_GEN_MIN_MW,
+) -> dict[str, pd.DataFrame]:
+    """For each seed, expand to its `hops`-bus neighborhood and collect filtered
+    branches, generators, and 3W transformers as DataFrames.
+
+    Row granularity: one row per (flowgate_id, role, equipment). Equipment
+    reached by multiple flowgates appears in multiple rows.
+    """
+    # Per-FG neighborhoods (keyed by (flowgate_id, role) so monitor and
+    # contingency seeds are tracked separately).
+    branch_rows: list[dict] = []
+    gen_rows: list[dict] = []
+    xf3_rows: list[dict] = []
+
+    # Group seeds by (flowgate_id, role) and union their seed buses
+    fg_role_seeds: dict[tuple[int, str], set[int]] = {}
+    for s in seeds:
+        key = (s.flowgate_id, s.role)
+        fg_role_seeds.setdefault(key, set()).update(s.seed_buses)
+
+    # Collection per (fg_id, role) is filled in Tasks 13-15.
+    # Placeholder to satisfy the skeleton test:
+    for (fg_id, role), n_seeds in fg_role_seeds.items():  # noqa: B007
+        pass  # populated in Tasks 13-15
+
+    return {
+        "branches": pd.DataFrame(branch_rows, columns=_BRANCH_COLS),
+        "generators": pd.DataFrame(gen_rows, columns=_GEN_COLS),
+        "transformers_3w": pd.DataFrame(xf3_rows, columns=_XF3_COLS),
+        "unresolved": pd.DataFrame(columns=_UNRESOLVED_COLUMNS),
+    }
