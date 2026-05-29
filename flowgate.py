@@ -128,6 +128,29 @@ def _parse_branch_line(line: str, flowgate_id: int, role: str) -> FlowgateElemen
     )
 
 
+def _parse_remove_machine_line(line: str, flowgate_id: int) -> FlowgateElement:
+    """Parse 'REMOVE MACHINE <machine_id> FROM BUS '<token>''.
+
+    machine_id is the whitespace-separated token between MACHINE and FROM,
+    preserved as a string (PSS/E ids can be alphanumeric, e.g. 'H1').
+    """
+    m = re.search(
+        r"REMOVE\s+MACHINE\s+(\S+)\s+FROM\s+BUS\s+'([^']{18})'",
+        line,
+        re.IGNORECASE,
+    )
+    if not m:
+        raise ValueError(f"malformed REMOVE MACHINE line: {line!r}")
+    machine_id = m.group(1).strip().strip("'")
+    bus_token = m.group(2)
+    return FlowgateElement(
+        flowgate_id=flowgate_id,
+        role="contingency",
+        element_type="generator",
+        raw_tokens=(bus_token, machine_id),
+    )
+
+
 def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flowgate]:
     """Parse a PSS/E .mon flowgate-definitions file into a list of Flowgate objects.
 
@@ -246,7 +269,12 @@ def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flow
                 )
                 continue
 
-            # REMOVE MACHINE line — implemented in Task 4
+            # REMOVE MACHINE line (in CONTINGENCY block)
+            if stripped.upper().startswith("REMOVE MACHINE ") and state == "IN_CONTINGENCY":
+                current_contingency.append(
+                    _parse_remove_machine_line(line, current_fg_id)
+                )
+                continue
 
             # CA/TP lines — ignored
             if stripped.upper().startswith(("CA ", "TP ")):

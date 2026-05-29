@@ -160,3 +160,43 @@ def test_parse_malformed_monitor_flowgate_header_raises(tmp_path):
     p.write_text(MALFORMED_HEADER_MON)
     with pytest.raises(ValueError, match="malformed MONITOR FLOWGATE"):
         parse_mon_file(p)
+
+
+REMOVE_MACHINE_MON = """\
+MONITOR FLOWGATE 59031  'Clifty Creek-Carrollton 138 (flo) Ghent Unit 3'
+         BRANCH FROM BUS '06CLIFTY    138.00' TO BUS '4CARROLLTON 138.00' CKT 1
+ CONTINGENCY 59031
+    REMOVE MACHINE 3 FROM BUS '1GHENT 3    22.000'
+ END
+    CA OVEC LGEE
+    SC LGEE
+    TP PJM LGEE
+END
+"""
+
+
+def test_parse_remove_machine(tmp_path):
+    from psse_model_util.flowgate import parse_mon_file
+
+    p = tmp_path / "rm.mon"
+    p.write_text(REMOVE_MACHINE_MON)
+    fgs = parse_mon_file(p)
+
+    assert len(fgs) == 1
+    con = fgs[0].contingency[0]
+    assert con.role == "contingency"
+    assert con.element_type == "generator"
+    # raw_tokens: (bus_token, machine_id)
+    assert con.raw_tokens[0] == "1GHENT 3    22.000"
+    assert con.raw_tokens[1] == "3"
+
+
+def test_parse_remove_machine_alphanumeric_id(tmp_path):
+    """PSS/E machine ids can be alphanumeric (e.g. 'H1')."""
+    from psse_model_util.flowgate import parse_mon_file
+
+    mon = REMOVE_MACHINE_MON.replace("REMOVE MACHINE 3 ", "REMOVE MACHINE H1 ")
+    p = tmp_path / "rm2.mon"
+    p.write_text(mon)
+    fgs = parse_mon_file(p)
+    assert fgs[0].contingency[0].raw_tokens[1] == "H1"
