@@ -482,6 +482,94 @@ def neighborhood_buses(
     return result
 
 
+def _collect_branches_for_fg(
+    model: Model,
+    neighborhood: set[int],
+    fg_id: int,
+    role: str,
+    kv_min: float,
+    kv_max: float,
+    bus_attrs: pd.DataFrame,
+) -> list[dict]:
+    """Collect AC lines and 2W transformers with at least one endpoint in
+    `neighborhood` and at least one end within [kv_min, kv_max].
+
+    bus_attrs is the bus DataFrame reset_index with ibus as a column,
+    pre-projected to [ibus, name, baskv, area].
+    """
+    rows: list[dict] = []
+
+    # AC lines
+    ac = model.network.acline.reset_index()
+    ac_hit = ac[ac["ibus"].isin(neighborhood) | ac["jbus"].isin(neighborhood)]
+    if not ac_hit.empty:
+        ac_hit = ac_hit.merge(
+            bus_attrs.rename(columns={
+                "name": "from_name",
+                "baskv": "from_volt",
+                "area": "from_area",
+            })[["ibus", "from_name", "from_volt", "from_area"]],
+            on="ibus", how="left",
+        ).merge(
+            bus_attrs.rename(columns={
+                "ibus": "jbus",
+                "name": "to_name",
+                "baskv": "to_volt",
+                "area": "to_area",
+            })[["jbus", "to_name", "to_volt", "to_area"]],
+            on="jbus", how="left",
+        )
+        ac_hit = ac_hit[
+            ((ac_hit["from_volt"] >= kv_min) & (ac_hit["from_volt"] <= kv_max))
+            | ((ac_hit["to_volt"] >= kv_min) & (ac_hit["to_volt"] <= kv_max))
+        ]
+        for _, r in ac_hit.iterrows():
+            rows.append({
+                "flowgate_id": fg_id, "role": role, "equipment_type": "line",
+                "from_name": r["from_name"], "from_volt": r["from_volt"],
+                "from_area": int(r["from_area"]),
+                "to_name": r["to_name"], "to_volt": r["to_volt"],
+                "to_area": int(r["to_area"]),
+                "ckt_id": str(r["ckt"]).strip(),
+            })
+
+    # 2W transformers (kbus == 0)
+    xf = model.network.transformer.reset_index()
+    xf2 = xf[(xf["kbus"] == 0) & (xf["ibus"].isin(neighborhood) | xf["jbus"].isin(neighborhood))]
+    if not xf2.empty:
+        xf2 = xf2.merge(
+            bus_attrs.rename(columns={
+                "name": "from_name",
+                "baskv": "from_volt",
+                "area": "from_area",
+            })[["ibus", "from_name", "from_volt", "from_area"]],
+            on="ibus", how="left",
+        ).merge(
+            bus_attrs.rename(columns={
+                "ibus": "jbus",
+                "name": "to_name",
+                "baskv": "to_volt",
+                "area": "to_area",
+            })[["jbus", "to_name", "to_volt", "to_area"]],
+            on="jbus", how="left",
+        )
+        xf2 = xf2[
+            ((xf2["from_volt"] >= kv_min) & (xf2["from_volt"] <= kv_max))
+            | ((xf2["to_volt"] >= kv_min) & (xf2["to_volt"] <= kv_max))
+        ]
+        for _, r in xf2.iterrows():
+            rows.append({
+                "flowgate_id": fg_id, "role": role, "equipment_type": "transformer_2w",
+                "from_name": r["from_name"], "from_volt": r["from_volt"],
+                "from_area": int(r["from_area"]),
+                "to_name": r["to_name"], "to_volt": r["to_volt"],
+                "to_area": int(r["to_area"]),
+                "ckt_id": str(r["ckt"]).strip(),
+            })
+
+    return rows
+
+
 _BRANCH_COLS = [
     "flowgate_id", "role", "equipment_type",
     "from_name", "from_volt", "from_area",
@@ -525,10 +613,15 @@ def collect_key_facilities(
         key = (s.flowgate_id, s.role)
         fg_role_seeds.setdefault(key, set()).update(s.seed_buses)
 
-    # Collection per (fg_id, role) is filled in Tasks 13-15.
-    # Placeholder to satisfy the skeleton test:
-    for (fg_id, role), n_seeds in fg_role_seeds.items():  # noqa: B007
-        pass  # populated in Tasks 13-15
+    bus_attrs = model.network.bus.reset_index()[["ibus", "name", "baskv", "area"]]
+
+    for (fg_id, role), seed_set in fg_role_seeds.items():
+        neighborhood = neighborhood_buses(model, seed_set, hops=hops)
+        branch_rows.extend(
+            _collect_branches_for_fg(
+                model, neighborhood, fg_id, role, kv_min, kv_max, bus_attrs
+            )
+        )
 
     return {
         "branches": pd.DataFrame(branch_rows, columns=_BRANCH_COLS),
