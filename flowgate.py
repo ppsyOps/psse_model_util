@@ -300,3 +300,8 @@ def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flow
         raise ValueError(f"unbalanced flowgate block (ended in state {state})")
 
     return flowgates
+
+
+def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]:
+    """Keep only flowgates whose Security Coordinator matches `sc` (case-sensitive)."""
+    return [fg for fg in fgs if fg.sc == sc]

@@ -238,3 +238,65 @@ END
     p.write_text(bad)
     with pytest.raises(ValueError, match="malformed REMOVE MACHINE"):
         parse_mon_file(p)
+
+
+MULTI_FG_MON = """\
+MONITOR FLOWGATE 100  'desc A'
+         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT 1
+ CONTINGENCY 100
+    OPEN BRANCH FROM BUS '05MARYSVL_RS765.00' TO BUS '05SORENSN_RM765.00' CKT 1
+ END
+    SC PJM
+END
+
+MONITOR FLOWGATE 200  'desc B'
+         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT 2
+ CONTINGENCY 200
+    OPEN BRANCH FROM BUS 'BURNHAM  ;0R345.00' TO BUS 'CALUMET  ; R345.00' CKT 1
+    OPEN BRANCH FROM BUS 'CALUMET  ; R345.00' TO BUS 'CALUMET  ;4I345.00' CKT 1
+ END
+    SC OTHER
+END
+"""
+
+
+def test_parse_multiple_flowgates(tmp_path):
+    from psse_model_util.flowgate import parse_mon_file
+
+    p = tmp_path / "multi.mon"
+    p.write_text(MULTI_FG_MON)
+    fgs = parse_mon_file(p)
+    assert [fg.flowgate_id for fg in fgs] == [100, 200]
+    assert [fg.sc for fg in fgs] == ["PJM", "OTHER"]
+
+
+def test_parse_multi_element_contingency(tmp_path):
+    """A CONTINGENCY block can contain multiple OPEN BRANCH lines."""
+    from psse_model_util.flowgate import parse_mon_file
+
+    p = tmp_path / "multi.mon"
+    p.write_text(MULTI_FG_MON)
+    fgs = parse_mon_file(p)
+    assert len(fgs[1].contingency) == 2
+    assert fgs[1].contingency[0].raw_tokens[2] == "1"
+    assert fgs[1].contingency[1].raw_tokens[0] == "CALUMET  ; R345.00"
+
+
+def test_filter_by_sc(tmp_path):
+    from psse_model_util.flowgate import filter_by_sc, parse_mon_file
+
+    p = tmp_path / "multi.mon"
+    p.write_text(MULTI_FG_MON)
+    fgs = parse_mon_file(p)
+
+    pjm_only = filter_by_sc(fgs, sc="PJM")
+    assert [fg.flowgate_id for fg in pjm_only] == [100]
+
+
+def test_filter_by_sc_default_is_pjm(tmp_path):
+    from psse_model_util.flowgate import filter_by_sc, parse_mon_file
+
+    p = tmp_path / "multi.mon"
+    p.write_text(MULTI_FG_MON)
+    fgs = parse_mon_file(p)
+    assert [fg.flowgate_id for fg in filter_by_sc(fgs)] == [100]
