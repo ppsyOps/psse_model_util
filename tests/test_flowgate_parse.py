@@ -300,3 +300,14 @@ def test_filter_by_sc_default_is_pjm(tmp_path):
     p.write_text(MULTI_FG_MON)
     fgs = parse_mon_file(p)
     assert [fg.flowgate_id for fg in filter_by_sc(fgs)] == [100]
+
+
+def test_synthetic_fixture_parses():
+    from psse_model_util.flowgate import parse_mon_file
+
+    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
+    assert [fg.flowgate_id for fg in fgs] == [1001, 1002, 1003, 9001]
+    # FG 1003 contingency should be a generator (REMOVE MACHINE)
+    assert fgs[2].contingency[0].element_type == "generator"
+    # FG 9001 should have SC OTHER
+    assert fgs[3].sc == "OTHER"
