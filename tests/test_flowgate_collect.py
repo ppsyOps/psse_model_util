@@ -202,9 +202,12 @@ def test_branches_have_at_least_one_monitor_and_contingency_row(model_1, synthet
     assert "contingency" in roles
 
 
-def test_equipment_in_two_flowgates_produces_two_rows(model_1):
-    """Construct a 2-FG synthetic fixture where the same branch is the monitor in
-    both FGs; verify it appears twice in the output."""
+def test_equipment_in_two_flowgates_produces_two_rows(model_1, tmp_path):
+    """Spec contract: equipment reached by N flowgates produces N rows.
+
+    Construct an inline .mon with TWO flowgates that monitor the SAME branch;
+    confirm that branch appears as a row under each flowgate_id.
+    """
     from psse_model_util.flowgate import (
         collect_key_facilities,
         filter_by_sc,
@@ -212,21 +215,55 @@ def test_equipment_in_two_flowgates_produces_two_rows(model_1):
         resolve_elements,
     )
 
-    # Reuse the fixture FG 1001 / 1002 by re-parsing
-    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_pjm.mon"), sc="PJM")
-    seeds, _ = resolve_elements(fgs, model_1)
+    # Borrow FG 1001's monitor BRANCH line from the synthetic fixture so the
+    # bus tokens resolve cleanly against Model_1.raw.
+    fixture_text = (DATA_DIR / "synthetic_pjm.mon").read_text()
+    import re
+    # Extract the first BRANCH FROM BUS '...' TO BUS '...' CKT <id> line.
+    m = re.search(
+        r"BRANCH FROM BUS '([^']{18})' TO BUS '([^']{18})' CKT (\S+)",
+        fixture_text,
+    )
+    assert m, "could not locate a BRANCH line in synthetic_pjm.mon"
+    from_token, to_token, ckt = m.group(1), m.group(2), m.group(3)
+
+    shared_branch_mon = (
+        "BUSNAMES\n"
+        "\n"
+        f"MONITOR FLOWGATE 7001  'shared branch FG A'\n"
+        f"         BRANCH FROM BUS '{from_token}' TO BUS '{to_token}' CKT {ckt}\n"
+        " CONTINGENCY 7001\n"
+        f"    OPEN BRANCH FROM BUS '{from_token}' TO BUS '{to_token}' CKT {ckt}\n"
+        " END\n"
+        "    SC PJM\n"
+        "END\n"
+        "\n"
+        f"MONITOR FLOWGATE 7002  'shared branch FG B'\n"
+        f"         BRANCH FROM BUS '{from_token}' TO BUS '{to_token}' CKT {ckt}\n"
+        " CONTINGENCY 7002\n"
+        f"    OPEN BRANCH FROM BUS '{from_token}' TO BUS '{to_token}' CKT {ckt}\n"
+        " END\n"
+        "    SC PJM\n"
+        "END\n"
+    )
+
+    p = tmp_path / "shared.mon"
+    p.write_text(shared_branch_mon)
+    fgs = filter_by_sc(parse_mon_file(p), sc="PJM")
+    seeds, unresolved = resolve_elements(fgs, model_1)
+    assert unresolved.empty, f"unexpected unresolved:\n{unresolved}"
+
     out = collect_key_facilities(model_1, seeds)
-    # Pick any branch row and count how many flowgate_ids it appears under
     df = out["branches"]
-    if df.empty:
-        pytest.skip("no branch rows")
-    counts = df.groupby(["from_name", "from_volt", "to_name", "to_volt", "ckt_id"])[
-        "flowgate_id"
-    ].nunique()
-    # Spec contract: equipment reached by N flowgates produces N rows (per role).
-    # We don't require N>1 in the synthetic fixture; we just verify the schema
-    # is consistent (no exception above).
-    assert counts.min() >= 1
+    assert not df.empty
+
+    # The shared branch must appear under both flowgate_ids (7001 and 7002).
+    counts_per_branch = df.groupby(
+        ["from_name", "from_volt", "to_name", "to_volt", "ckt_id"]
+    )["flowgate_id"].nunique()
+    assert counts_per_branch.max() >= 2, (
+        f"expected at least one branch to appear under 2 flowgate_ids; got\n{counts_per_branch}"
+    )
 
 
 def test_end_to_end_synthetic_to_dataframes(model_1):
