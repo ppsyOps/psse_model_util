@@ -37,9 +37,11 @@ END
 
 Key fields:
 - `MONITOR FLOWGATE <id> '<description>'` — opens a flowgate; `<id>` is an integer.
-- `BRANCH FROM BUS '<name+kv>' TO BUS '<name+kv>' CKT <id>` — a monitored branch.
+- `BRANCH FROM BUS '<name+kv>' TO BUS '<name+kv>' CKT <id>` — a monitored AC line or 2-winding transformer. The `.mon` format does not distinguish line vs 2W transformer; resolution checks both `acline` and 2W rows of `transformer`.
 - `CONTINGENCY <id>` — opens the contingency block.
-- `OPEN BRANCH …`, `OPEN GEN …`, `OPEN LINE …` — contingency actions.
+- `OPEN BRANCH FROM BUS '<name+kv>' TO BUS '<name+kv>' CKT <id>` — branch (or 2W xfmr) outage.
+- `REMOVE MACHINE <machine_id> FROM BUS '<name+kv>'` — generator outage. Example: `REMOVE MACHINE 3 FROM BUS '1GHENT 3    22.000'`.
+- A single `CONTINGENCY` block may contain multiple `OPEN BRANCH` / `REMOVE MACHINE` lines (cascading or multi-element outages). Each line becomes its own seed; their neighborhoods are unioned within the FG.
 - `SC <name>` — Security Coordinator (the file is filtered by this).
 - `END` — closes the contingency block or the flowgate.
 
@@ -252,9 +254,11 @@ Model(.raw) ──►  resolve_elements  ──► list[ResolvedSeed]  +  unreso
 
 ### 5.1 Parser
 
-Small line-by-line state machine. States: `TOP`, `IN_MONITOR`, `IN_CONTINGENCY`. Transitions on keywords `MONITOR FLOWGATE`, `BRANCH`, `CONTINGENCY`, `OPEN`, `SC`, `CA`, `TP`, `END`.
+Small line-by-line state machine. States: `TOP`, `IN_MONITOR`, `IN_CONTINGENCY`. Transitions on keywords `MONITOR FLOWGATE`, `BRANCH`, `CONTINGENCY`, `OPEN BRANCH`, `REMOVE MACHINE`, `SC`, `CA`, `TP`, `END`.
 
 Bus-token splitter: a token like `'05TANNER    345.00'` is unquoted, then split as `name = token[:12].strip()`, `kv = float(token[12:].strip())`. The original token is preserved in `raw_tokens` for the unresolved report.
+
+`REMOVE MACHINE` line shape: `REMOVE MACHINE <machine_id> FROM BUS '<bus_token>'`. The parser extracts `machine_id` as the whitespace-separated token between `MACHINE` and `FROM`, treating it as a string (matches PSS/E machine-id convention, which can be alphanumeric like `'1 '`, `'H1'`, etc.).
 
 `END` semantics: the first `END` after `CONTINGENCY` closes the contingency block; the next `END` closes the flowgate. The `SC`/`CA`/`TP` lines sit between those two `END`s.
 
@@ -272,8 +276,8 @@ lookup = {
 
 For each `.mon` seed:
 - Resolve from/to bus tokens via `lookup.get((name, round(kv, KV_KEY_DECIMALS)))`.
-- For a branch seed, additionally confirm `(ibus, jbus, ckt)` exists in `acline` (any order) or in 2W rows of `transformer`. On miss: `unresolved` with `reason="branch_not_found"`.
-- For a generator seed (see §9 — only `OPEN BRANCH` is implemented in v1; generator-seed parsing is deferred until a real `.mon` sample with `OPEN GEN` is in hand), confirm `(ibus, id)` exists in `generator`. On miss: `reason="generator_not_found"`.
+- For a branch seed (`BRANCH` monitor or `OPEN BRANCH` contingency), additionally confirm `(ibus, jbus, ckt)` exists in `acline` (any order) or in 2W rows of `transformer`. On miss: `unresolved` with `reason="branch_not_found"`.
+- For a generator seed (`REMOVE MACHINE <id> FROM BUS '<name+kv>'`), resolve the bus token, then confirm `(ibus, machine_id)` exists in `generator`. On miss: `reason="generator_not_found"`.
 
 Element seed buses recorded in `ResolvedSeed.seed_buses`:
 - Branch: `{from_ibus, to_ibus}`.
@@ -331,7 +335,7 @@ Per-FG and per-role processing produces one row per `(flowgate_id, role, equipme
 | `.mon` syntax error (unbalanced `MONITOR`/`END`, malformed BRANCH line) | Raise `ValueError` with line number. **Fail loud.** | `parse_mon_file` |
 | `.raw` file missing or fails to load | Let `Model.__init__` raise — no swallowing. | CLI |
 | `--out-dir` doesn't exist | Create it via `Path.mkdir(parents=True, exist_ok=True)`. | CLI |
-| Unknown contingency action (not `OPEN BRANCH`/`OPEN GEN`/`OPEN LINE`) | Log warning, skip action, continue. Matches `RESILIENT=True`. | `parse_mon_file` |
+| Unknown contingency action (not `OPEN BRANCH` or `REMOVE MACHINE`) | Log warning, skip action, continue. Matches `RESILIENT=True`. | `parse_mon_file` |
 
 CLI end-of-run summary:
 
@@ -358,8 +362,9 @@ Procedure:
 1. Load `tests/data/Model_1.raw`.
 2. From `model.network.acline`, pick ~3 branches whose from-bus area ∈ `MODEL_1_PJM_AREAS` and whose base kV ≥ 160 (so the kV filter doesn't drop everything).
 3. For each pick, pair it with a contingency branch in the same area (different ckt where possible).
-4. Add one flowgate whose seeds are in areas **outside** `{1, 2, 3}` and tag it `SC OTHER` — used by `test_filter_by_sc` to verify the SC filter drops it.
-5. Write `tests/data/synthetic_pjm.mon` in the exact `.mon` format from the production sample.
+4. Add one extra flowgate whose contingency uses `REMOVE MACHINE <id> FROM BUS '<token>'` against a generator in `MODEL_1_PJM_AREAS` — used by the generator-contingency test.
+5. Add one flowgate whose seeds are in areas **outside** `{1, 2, 3}` and tag it `SC OTHER` — used by `test_filter_by_sc` to verify the SC filter drops it.
+6. Write `tests/data/synthetic_pjm.mon` in the exact `.mon` format from the production sample.
 
 ## 8. Testing Strategy
 
@@ -371,13 +376,15 @@ Active tests in `tests/test_flowgate.py` (on the pytest path):
 4. **`test_filter_by_sc`** — the `SC OTHER` flowgate is dropped when `sc="PJM"`.
 5. **`test_resolve_elements_happy_path`** — all synthetic FGs resolve against `Model_1.raw`; `unresolved_df` is empty.
 6. **`test_resolve_elements_unresolved`** — hand-crafted `.mon` with a bogus bus name; bogus element lands in `unresolved_df` with a reason; the rest still resolve.
-7. **`test_neighborhood_buses_hop_count`** — small known subgraph from `Model_1.raw`; `hops=1` returns seed + direct neighbors, `hops=2` extends one more layer, `hops=4` matches a hand-counted expected set.
-8. **`test_collect_branches_kv_filter`** — low-voltage branch (< 160 kV) on a neighborhood bus is excluded; high-voltage one is kept; branch with one end ≥ 160 and the other < 160 is kept (loose rule).
-9. **`test_collect_generators_mw_filter`** — gen with `PT=10` excluded; `PT=15` and `PT=200` included.
-10. **`test_collect_transformers_3w`** — 3W transformer with any winding bus in neighborhood is included; all three `(w*_bus_name, w*_volt)` populated.
-11. **`test_collect_rows_one_per_fg_equipment_pair`** — equipment reached by 2 FGs appears in 2 rows.
-12. **`test_collect_role_column`** — `role` column carries `"monitor"` / `"contingency"` correctly.
-13. **`test_cli_writes_csvs`** — `subprocess.run` the CLI script against `Model_1.raw` + `synthetic_pjm.mon`; assert four CSVs land in tmp out-dir with the right columns.
+7. **`test_parse_remove_machine`** — inline `.mon` with `REMOVE MACHINE 3 FROM BUS '1GHENT 3    22.000'`; assert parsed as a generator element with `machine_id == "3"` and the correct bus token.
+8. **`test_resolve_remove_machine_against_model`** — synthetic FG with a `REMOVE MACHINE` contingency resolves to a real generator in `Model_1.raw` (areas {1,2,3}); generator's bus is added to the seed set.
+9. **`test_neighborhood_buses_hop_count`** — small known subgraph from `Model_1.raw`; `hops=1` returns seed + direct neighbors, `hops=2` extends one more layer, `hops=4` matches a hand-counted expected set.
+10. **`test_collect_branches_kv_filter`** — low-voltage branch (< 160 kV) on a neighborhood bus is excluded; high-voltage one is kept; branch with one end ≥ 160 and the other < 160 is kept (loose rule).
+11. **`test_collect_generators_mw_filter`** — gen with `PT=10` excluded; `PT=15` and `PT=200` included.
+12. **`test_collect_transformers_3w`** — 3W transformer with any winding bus in neighborhood is included; all three `(w*_bus_name, w*_volt)` populated.
+13. **`test_collect_rows_one_per_fg_equipment_pair`** — equipment reached by 2 FGs appears in 2 rows.
+14. **`test_collect_role_column`** — `role` column carries `"monitor"` / `"contingency"` correctly.
+15. **`test_cli_writes_csvs`** — `subprocess.run` the CLI script against `Model_1.raw` + `synthetic_pjm.mon`; assert four CSVs land in tmp out-dir with the right columns.
 
 **Coverage target:** ≥ 80% on `psse_model_util/flowgate.py` (well above the repo's 40% gate).
 
@@ -388,9 +395,8 @@ Active tests in `tests/test_flowgate.py` (on the pytest path):
 
 ## 9. Out of Scope
 
-- **3W transformers as monitored or contingency elements.** The sample `.mon` only shows `BRANCH` monitors and `OPEN BRANCH` contingencies. If 3W monitors/contingencies appear in real files later, extend `FlowgateElement.element_type` and `resolve_elements`.
-- **Generator contingencies (`OPEN GEN`) in v1.** The provided sample doesn't include this syntax, so the exact token layout is unverified. The data model and `generator_not_found` reason are in place; the parser will raise `ValueError` on an `OPEN GEN` line until a real sample is supplied and the parser branch is implemented.
-- **Combined contingency actions** (e.g., open multiple branches in one statement). Each `OPEN …` line becomes its own seed; multi-line atomic contingencies are not modeled.
+- **3W transformers as explicitly-typed monitored or contingency elements.** The `.mon` format uses `BRANCH` for both AC lines and 2W transformers — those resolve naturally against the union of `acline` and 2W `transformer` rows. 3W transformers do not appear as a distinct seed syntax in the provided samples; if they ever do (e.g. a `BRANCH FROM BUS … TO BUS … TER BUS … CKT …` or similar), extend `FlowgateElement.element_type` and `resolve_elements`. 3W transformers still appear in the **output** (`transformers_3w` DataFrame) when they're inside a neighborhood.
+- **Atomicity of multi-line contingencies.** A `CONTINGENCY` block with several `OPEN BRANCH` or `REMOVE MACHINE` lines models a cascading or multi-element outage. Each line becomes its own seed and their neighborhoods are unioned within the FG, which is correct for key-facility extraction. Downstream analysis that cares about the simultaneity of the outage would need a different output schema.
 - **Re-emitting a cleaned `.mon` file.** Output is CSV only.
 - **Owner-based filtering of neighborhood equipment.** Only the SC field on the flowgate is used.
 
