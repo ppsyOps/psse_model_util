@@ -269,15 +269,17 @@ Build one lookup at the start of `resolve_elements`:
 ```python
 bus_df = model.network.bus
 lookup = {
-    (str(name).strip(), round(float(basekv), KV_KEY_DECIMALS)): ibus
-    for ibus, name, basekv in zip(bus_df.index, bus_df["name"], bus_df["basekv"])
+    (str(name).strip(), round(float(baskv), KV_KEY_DECIMALS)): ibus
+    for ibus, name, baskv in zip(bus_df.index, bus_df["name"], bus_df["baskv"])
 }
 ```
 
+(`baskv` is the column name in the Network DataFrame — PSS/E's RAWX field.)
+
 For each `.mon` seed:
 - Resolve from/to bus tokens via `lookup.get((name, round(kv, KV_KEY_DECIMALS)))`.
-- For a branch seed (`BRANCH` monitor or `OPEN BRANCH` contingency), additionally confirm `(ibus, jbus, ckt)` exists in `acline` (any order) or in 2W rows of `transformer`. On miss: `unresolved` with `reason="branch_not_found"`.
-- For a generator seed (`REMOVE MACHINE <id> FROM BUS '<name+kv>'`), resolve the bus token, then confirm `(ibus, machine_id)` exists in `generator`. On miss: `reason="generator_not_found"`.
+- For a branch seed (`BRANCH` monitor or `OPEN BRANCH` contingency), additionally confirm `(ibus, jbus, ckt)` exists in `acline` (any order) or in `transformer` rows where `kbus == 0` (2W). On miss: `unresolved` with `reason="branch_not_found"`.
+- For a generator seed (`REMOVE MACHINE <id> FROM BUS '<name+kv>'`), resolve the bus token, then confirm `(ibus, machid)` exists in `generator` (the index column is `machid`). On miss: `reason="generator_not_found"`.
 
 Element seed buses recorded in `ResolvedSeed.seed_buses`:
 - Branch: `{from_ibus, to_ibus}`.
@@ -295,12 +297,13 @@ G.add_nodes_from(model.network.bus.index)            # bus ibus values
 ac = model.network.acline
 G.add_edges_from(zip(ac["ibus"], ac["jbus"]))
 
-# 2W transformers: same shape
-xf2 = model.network.transformer.query("nwind == 2")  # or however 2W is tagged
+# Transformer 2W vs 3W is distinguished by kbus: 0 == 2W, nonzero == 3W.
+xf = model.network.transformer.reset_index()
+xf2 = xf[xf["kbus"] == 0]
 G.add_edges_from(zip(xf2["ibus"], xf2["jbus"]))
 
 # 3W transformers: each contributes a triangle among (ibus, jbus, kbus)
-xf3 = model.network.transformer.query("nwind == 3")
+xf3 = xf[xf["kbus"] != 0]
 for i, j, k in zip(xf3["ibus"], xf3["jbus"], xf3["kbus"]):
     G.add_edges_from([(i, j), (j, k), (i, k)])
 ```
@@ -313,9 +316,9 @@ Union across all seed buses inside a single FG to get that FG's neighborhood set
 
 Given an FG's neighborhood `N` (a set of `ibus` values):
 
-- **Branches DataFrame** = rows of `acline` ∪ 2W `transformer` where `ibus ∈ N OR jbus ∈ N`, then keep rows where `kv_min ≤ from_kv ≤ kv_max OR kv_min ≤ to_kv ≤ kv_max`. Attach `equipment_type` accordingly. Left-join `bus` table to populate `*_name`, `*_volt`, `*_area`.
-- **Generators DataFrame** = rows of `generator` where `ibus ∈ N AND pt ≥ gen_min_mw`. Left-join `bus`.
-- **3W transformers DataFrame** = 3W rows of `transformer` where `ibus ∈ N OR jbus ∈ N OR kbus ∈ N`, then keep rows where any of the three winding base kVs fall in `[kv_min, kv_max]`. Left-join `bus` three times for w1/w2/w3 attrs. `transformer_name` from the 3W row's name column.
+- **Branches DataFrame** = rows of `acline` ∪ `transformer[kbus == 0]` where `ibus ∈ N OR jbus ∈ N`, then keep rows where `kv_min ≤ ibus.baskv ≤ kv_max OR kv_min ≤ jbus.baskv ≤ kv_max`. Attach `equipment_type` (`"line"` or `"transformer_2w"`). Left-join `bus` table to populate `from_name`/`from_volt`/`from_area` and `to_name`/`to_volt`/`to_area`.
+- **Generators DataFrame** = rows of `generator` where `ibus ∈ N AND pt ≥ gen_min_mw`. Left-join `bus`. `ckt_id` column ← `machid`.
+- **3W transformers DataFrame** = `transformer[kbus != 0]` rows where `ibus ∈ N OR jbus ∈ N OR kbus ∈ N`, then keep rows where any of the three winding bus base kVs fall in `[kv_min, kv_max]` (loose). Left-join `bus` three times for w1/w2/w3 attrs (using each winding bus's `baskv`, not the transformer's `nomv*`, since `nomv*` is often 0 meaning "use bus baskv"). `transformer_name` from the row's `name` column.
 
 Per-FG and per-role processing produces one row per `(flowgate_id, role, equipment)`. Concatenate across FGs and roles to build the final DataFrames.
 
