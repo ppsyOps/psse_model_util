@@ -70,3 +70,28 @@ class ResolvedSeed:
     element_type: Literal["branch", "generator"]
     seed_buses: frozenset[int]
     raw_tokens: tuple[str, ...]
+
+
+# ---------- parsing primitives ----------
+_BUS_TOKEN_LEN = 18  # 12-char name + 6-char kV
+
+
+def _split_bus_token(token: str) -> tuple[str, float]:
+    """Split a PSS/E .mon bus token into (name, base_kv).
+
+    The token is 18 chars wide: 12-char left/right-padded name + 6-char
+    kV string. Surrounding single quotes are stripped if present.
+
+    >>> _split_bus_token("'05TANNER    345.00'")
+    ('05TANNER', 345.0)
+    """
+    stripped = token.strip()
+    if stripped.startswith("'") and stripped.endswith("'"):
+        stripped = stripped[1:-1]
+    if len(stripped) != _BUS_TOKEN_LEN:
+        raise ValueError(
+            f"bus token must be {_BUS_TOKEN_LEN} chars (got {len(stripped)}): {token!r}"
+        )
+    name = stripped[:12].strip()
+    kv = float(stripped[12:].strip())
+    return name, kv
