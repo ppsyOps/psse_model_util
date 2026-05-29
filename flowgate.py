@@ -351,6 +351,14 @@ def resolve_elements(
     remaining flowgates continues.
     """
     lookup = _build_bus_lookup(model)
+    # Build a set of (ibus, machid_stripped) for robust generator lookup.
+    # Real PSS/E generator indices often have machid with trailing whitespace
+    # (e.g. '1 ' for single-digit ids), but .mon files always use the stripped
+    # form — pre-stripping the index side makes the comparison symmetric.
+    gen_keys = {
+        (int(ibus), str(machid).strip())
+        for ibus, machid in model.network.generator.index
+    }
     seeds: list[ResolvedSeed] = []
     unresolved_rows: list[dict] = []
 
@@ -401,9 +409,9 @@ def resolve_elements(
                         "reason": "bus_not_found",
                     })
                     continue
-                gen_df = model.network.generator
-                # generator index is MultiIndex (ibus, machid). machid is a string.
-                if (gen_ibus, str(machine_id).strip()) not in gen_df.index:
+                # Use the pre-normalized gen_keys set so whitespace differences
+                # between the .mon file and the model index don't cause false misses.
+                if (gen_ibus, str(machine_id).strip()) not in gen_keys:
                     unresolved_rows.append({
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,

@@ -311,3 +311,18 @@ def test_synthetic_fixture_parses():
     assert fgs[2].contingency[0].element_type == "generator"
     # FG 9001 should have SC OTHER
     assert fgs[3].sc == "OTHER"
+
+
+def test_split_bus_token_kv_with_trailing_space():
+    """Regression: kV field padded with trailing space (e.g. '21.60 ' from f-string
+    `f"{21.6:<6.2f}"`) must not be stripped — the token is exactly 18 chars by
+    construction, and the inner-field `.strip()` handles the kV padding cleanly."""
+    from psse_model_util.flowgate import _split_bus_token
+
+    name, kv = _split_bus_token("'NUC-A       21.60 '")
+    assert name == "NUC-A"
+    assert kv == 21.60
+
+    name, kv = _split_bus_token("'BUSNAME      13.8 '")
+    assert name == "BUSNAME"
+    assert kv == 13.8
