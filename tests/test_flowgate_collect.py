@@ -150,3 +150,35 @@ def test_collect_generators_threshold_override(model_1, synthetic_seeds):
     out_high = collect_key_facilities(model_1, synthetic_seeds, gen_min_mw=10000.0)
     assert len(out_high["generators"]) <= len(out_default["generators"])
     assert len(out_high["generators"]) == 0  # no real gen reaches 10 GW
+
+
+def test_collect_3w_transformers_shape(model_1, synthetic_seeds):
+    from psse_model_util.flowgate import collect_key_facilities
+
+    out = collect_key_facilities(model_1, synthetic_seeds)
+    xf3 = out["transformers_3w"]
+    # Skip if Model_1 has none
+    if xf3.empty:
+        pytest.skip("Model_1 has no 3W transformers in the PJM neighborhoods")
+    for _, row in xf3.iterrows():
+        assert row["w1_bus_name"]
+        assert row["w2_bus_name"]
+        assert row["w3_bus_name"]
+        assert row["w1_volt"] > 0
+        assert row["w2_volt"] > 0
+        assert row["w3_volt"] > 0
+
+
+def test_collect_3w_transformers_kv_filter(model_1, synthetic_seeds):
+    from psse_model_util.flowgate import DEFAULT_KV_MAX, DEFAULT_KV_MIN, collect_key_facilities
+
+    out = collect_key_facilities(model_1, synthetic_seeds)
+    xf3 = out["transformers_3w"]
+    if xf3.empty:
+        pytest.skip("no 3W xfmrs to filter")
+    in_range = (
+        xf3["w1_volt"].between(DEFAULT_KV_MIN, DEFAULT_KV_MAX)
+        | xf3["w2_volt"].between(DEFAULT_KV_MIN, DEFAULT_KV_MAX)
+        | xf3["w3_volt"].between(DEFAULT_KV_MIN, DEFAULT_KV_MAX)
+    )
+    assert in_range.all()

@@ -604,6 +604,65 @@ def _collect_generators_for_fg(
     return rows
 
 
+def _collect_3w_for_fg(
+    model: Model,
+    neighborhood: set[int],
+    fg_id: int,
+    role: str,
+    kv_min: float,
+    kv_max: float,
+    bus_attrs: pd.DataFrame,
+) -> list[dict]:
+    """Collect 3W transformers with at least one winding bus in `neighborhood`
+    and at least one winding within [kv_min, kv_max]. Winding kV comes from
+    each winding bus's baskv (not the transformer's nomv* which may be 0).
+    """
+    xf = model.network.transformer.reset_index()
+    xf3 = xf[
+        (xf["kbus"] != 0)
+        & (
+            xf["ibus"].isin(neighborhood)
+            | xf["jbus"].isin(neighborhood)
+            | xf["kbus"].isin(neighborhood)
+        )
+    ]
+    if xf3.empty:
+        return []
+    # Join bus attrs three times for w1/w2/w3
+    xf3 = xf3.merge(
+        bus_attrs.rename(columns={
+            "name": "w1_bus_name", "baskv": "w1_volt",
+        })[["ibus", "w1_bus_name", "w1_volt"]],
+        on="ibus", how="left",
+    ).merge(
+        bus_attrs.rename(columns={
+            "ibus": "jbus", "name": "w2_bus_name", "baskv": "w2_volt",
+        })[["jbus", "w2_bus_name", "w2_volt"]],
+        on="jbus", how="left",
+    ).merge(
+        bus_attrs.rename(columns={
+            "ibus": "kbus", "name": "w3_bus_name", "baskv": "w3_volt",
+        })[["kbus", "w3_bus_name", "w3_volt"]],
+        on="kbus", how="left",
+    )
+    xf3 = xf3[
+        xf3["w1_volt"].between(kv_min, kv_max)
+        | xf3["w2_volt"].between(kv_min, kv_max)
+        | xf3["w3_volt"].between(kv_min, kv_max)
+    ]
+    rows: list[dict] = []
+    for _, r in xf3.iterrows():
+        rows.append({
+            "flowgate_id": fg_id, "role": role,
+            "transformer_name": str(r["name"]).strip(),
+            "w1_bus_name": r["w1_bus_name"], "w1_volt": float(r["w1_volt"]),
+            "w2_bus_name": r["w2_bus_name"], "w2_volt": float(r["w2_volt"]),
+            "w3_bus_name": r["w3_bus_name"], "w3_volt": float(r["w3_volt"]),
+            "ckt_id": str(r["ckt"]).strip(),
+        })
+    return rows
+
+
 _BRANCH_COLS = [
     "flowgate_id", "role", "equipment_type",
     "from_name", "from_volt", "from_area",
@@ -659,6 +718,11 @@ def collect_key_facilities(
         gen_rows.extend(
             _collect_generators_for_fg(
                 model, neighborhood, fg_id, role, gen_min_mw, bus_attrs
+            )
+        )
+        xf3_rows.extend(
+            _collect_3w_for_fg(
+                model, neighborhood, fg_id, role, kv_min, kv_max, bus_attrs
             )
         )
 
