@@ -200,3 +200,41 @@ def test_parse_remove_machine_alphanumeric_id(tmp_path):
     p.write_text(mon)
     fgs = parse_mon_file(p)
     assert fgs[0].contingency[0].raw_tokens[1] == "H1"
+
+
+def test_parse_remove_machine_outside_contingency_raises(tmp_path):
+    """A REMOVE MACHINE line in the wrong state must raise, not silently warn."""
+    from psse_model_util.flowgate import parse_mon_file
+
+    bad = """\
+MONITOR FLOWGATE 1234  'malformed FG'
+         REMOVE MACHINE 1 FROM BUS '06CLIFTY    138.00'
+         BRANCH FROM BUS '06CLIFTY    138.00' TO BUS '4CARROLLTON 138.00' CKT 1
+ CONTINGENCY 1234
+ END
+    SC PJM
+END
+"""
+    p = tmp_path / "bad.mon"
+    p.write_text(bad)
+    with pytest.raises(ValueError, match="REMOVE MACHINE outside CONTINGENCY"):
+        parse_mon_file(p)
+
+
+def test_parse_malformed_remove_machine_line_raises(tmp_path):
+    """A REMOVE MACHINE line missing the FROM BUS token must raise."""
+    from psse_model_util.flowgate import parse_mon_file
+
+    bad = """\
+MONITOR FLOWGATE 1234  'malformed FG'
+         BRANCH FROM BUS '06CLIFTY    138.00' TO BUS '4CARROLLTON 138.00' CKT 1
+ CONTINGENCY 1234
+    REMOVE MACHINE 1 GARBAGE NOT A BUS
+ END
+    SC PJM
+END
+"""
+    p = tmp_path / "bad2.mon"
+    p.write_text(bad)
+    with pytest.raises(ValueError, match="malformed REMOVE MACHINE"):
+        parse_mon_file(p)

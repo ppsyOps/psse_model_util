@@ -106,6 +106,10 @@ _FLOWGATE_HEADER_RE = re.compile(
 _CONTINGENCY_HEADER_RE = re.compile(r"^\s*CONTINGENCY\s+(\d+)", re.IGNORECASE)
 _SC_LINE_RE = re.compile(r"^\s*SC\s+(\S+)", re.IGNORECASE)
 _END_RE = re.compile(r"^\s*END\s*$", re.IGNORECASE)
+_CKT_RE = re.compile(r"CKT\s+(\S+)", re.IGNORECASE)
+_REMOVE_MACHINE_RE = re.compile(
+    r"REMOVE\s+MACHINE\s+(\S+)\s+FROM\s+BUS\s+'([^']{18})'", re.IGNORECASE
+)
 
 
 def _parse_branch_line(line: str, flowgate_id: int, role: str) -> FlowgateElement:
@@ -116,7 +120,7 @@ def _parse_branch_line(line: str, flowgate_id: int, role: str) -> FlowgateElemen
             f"branch line must have exactly 2 quoted bus tokens, got {len(tokens)}: {line!r}"
         )
     # CKT id comes after "CKT" keyword
-    m = re.search(r"CKT\s+(\S+)", line, re.IGNORECASE)
+    m = _CKT_RE.search(line)
     if not m:
         raise ValueError(f"branch line missing CKT id: {line!r}")
     ckt = m.group(1).strip().strip("'")
@@ -134,14 +138,10 @@ def _parse_remove_machine_line(line: str, flowgate_id: int) -> FlowgateElement:
     machine_id is the whitespace-separated token between MACHINE and FROM,
     preserved as a string (PSS/E ids can be alphanumeric, e.g. 'H1').
     """
-    m = re.search(
-        r"REMOVE\s+MACHINE\s+(\S+)\s+FROM\s+BUS\s+'([^']{18})'",
-        line,
-        re.IGNORECASE,
-    )
+    m = _REMOVE_MACHINE_RE.search(line)
     if not m:
         raise ValueError(f"malformed REMOVE MACHINE line: {line!r}")
-    machine_id = m.group(1).strip().strip("'")
+    machine_id = m.group(1).strip("'")
     bus_token = m.group(2)
     return FlowgateElement(
         flowgate_id=flowgate_id,
@@ -159,7 +159,7 @@ def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flow
         BRANCH FROM BUS '<token>' TO BUS '<token>' CKT <id>     -- monitored branch
       CONTINGENCY <id>
         OPEN BRANCH FROM BUS '...' TO BUS '...' CKT <id>        -- branch outage
-        REMOVE MACHINE <id> FROM BUS '<token>'                  -- generator outage  (Task 4)
+        REMOVE MACHINE <id> FROM BUS '<token>'                  -- generator outage
       END                                                        -- closes contingency
         SC <name>                                                -- Security Coordinator
         CA <args>                                                -- ignored
@@ -269,8 +269,13 @@ def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flow
                 )
                 continue
 
-            # REMOVE MACHINE line (in CONTINGENCY block)
-            if stripped.upper().startswith("REMOVE MACHINE ") and state == "IN_CONTINGENCY":
+            # REMOVE MACHINE line (must appear inside a CONTINGENCY block)
+            if stripped.upper().startswith("REMOVE MACHINE "):
+                if state != "IN_CONTINGENCY":
+                    raise ValueError(
+                        f"line {lineno}: REMOVE MACHINE outside CONTINGENCY block "
+                        f"(state={state}): {line!r}"
+                    )
                 current_contingency.append(
                     _parse_remove_machine_line(line, current_fg_id)
                 )
