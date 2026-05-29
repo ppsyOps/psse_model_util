@@ -459,3 +459,24 @@ def _build_bus_only_graph(model: Model) -> nx.Graph:
         g.add_edges_from([(i, j), (j, k), (i, k)])
 
     return g
+
+
+def neighborhood_buses(
+    model: Model,
+    seed_buses: set[int],
+    hops: int = DEFAULT_HOPS,
+) -> set[int]:
+    """Return the set of buses within `hops` edges of any bus in `seed_buses`
+    on the bus-only graph (AC lines + transformer windings).
+
+    Includes the seed buses themselves. Uses nx.ego_graph with radius=hops.
+    """
+    g = _build_bus_only_graph(model)
+    result: set[int] = set()
+    for seed in seed_buses:
+        if seed not in g:
+            logger.warning("seed bus %s not in bus-only graph; skipping", seed)
+            continue
+        sub = nx.ego_graph(g, seed, radius=hops, undirected=True)
+        result.update(int(n) for n in sub.nodes)
+    return result

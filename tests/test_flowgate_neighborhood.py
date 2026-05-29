@@ -45,3 +45,44 @@ def test_bus_only_graph_3w_triangle(model_1):
     assert g.has_edge(i, j)
     assert g.has_edge(j, k)
     assert g.has_edge(i, k)
+
+
+def test_neighborhood_hops_0_returns_seed_only(model_1):
+    from psse_model_util.flowgate import neighborhood_buses
+
+    seed = int(model_1.network.acline.reset_index().iloc[0]["ibus"])
+    result = neighborhood_buses(model_1, {seed}, hops=0)
+    assert result == {seed}
+
+
+def test_neighborhood_hops_1_includes_neighbors(model_1):
+    from psse_model_util.flowgate import _build_bus_only_graph, neighborhood_buses
+
+    g = _build_bus_only_graph(model_1)
+    seed = int(model_1.network.acline.reset_index().iloc[0]["ibus"])
+    result = neighborhood_buses(model_1, {seed}, hops=1)
+    expected = {seed} | set(g.neighbors(seed))
+    assert result == expected
+
+
+def test_neighborhood_multiple_seeds_unions(model_1):
+    from psse_model_util.flowgate import neighborhood_buses
+
+    ac = model_1.network.acline.reset_index()
+    seed_a = int(ac.iloc[0]["ibus"])
+    seed_b = int(ac.iloc[10]["ibus"]) if len(ac) > 10 else int(ac.iloc[-1]["ibus"])
+    result = neighborhood_buses(model_1, {seed_a, seed_b}, hops=1)
+    single_a = neighborhood_buses(model_1, {seed_a}, hops=1)
+    single_b = neighborhood_buses(model_1, {seed_b}, hops=1)
+    assert result == single_a | single_b
+
+
+def test_neighborhood_grows_monotonically(model_1):
+    from psse_model_util.flowgate import neighborhood_buses
+
+    seed = int(model_1.network.acline.reset_index().iloc[0]["ibus"])
+    n0 = neighborhood_buses(model_1, {seed}, hops=0)
+    n1 = neighborhood_buses(model_1, {seed}, hops=1)
+    n2 = neighborhood_buses(model_1, {seed}, hops=2)
+    n4 = neighborhood_buses(model_1, {seed}, hops=4)
+    assert n0 <= n1 <= n2 <= n4
