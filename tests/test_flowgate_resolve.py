@@ -90,3 +90,41 @@ def test_resolve_unknown_machine_reports_unresolved(model_1, tmp_path):
         row["reason"] == "generator_not_found"
         for _, row in unresolved.iterrows()
     )
+
+
+BOGUS_MON = """\
+MONITOR FLOWGATE 5000  'bogus bus test'
+         BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 1
+ CONTINGENCY 5000
+    OPEN BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 1
+ END
+    SC PJM
+END
+"""
+
+
+def test_resolve_unknown_bus_reports_bus_not_found(model_1, tmp_path):
+    from psse_model_util.flowgate import parse_mon_file, resolve_elements
+
+    p = tmp_path / "bogus.mon"
+    p.write_text(BOGUS_MON)
+    fgs = parse_mon_file(p)
+
+    seeds, unresolved = resolve_elements(fgs, model_1)
+    assert seeds == []
+    assert len(unresolved) == 2  # one monitor, one contingency
+    assert (unresolved["reason"] == "bus_not_found").all()
+
+
+def test_resolve_kv_precision_three_decimals(model_1):
+    """Ensure round(kv, 3) is used so 22.000 matches a bus with baskv 22.0."""
+    from psse_model_util.flowgate import KV_KEY_DECIMALS, _build_bus_lookup, _split_bus_token
+
+    lookup = _build_bus_lookup(model_1)
+    # Pick any bus and round-trip it through the token format
+    bus = model_1.network.bus.iloc[0]
+    name = str(bus["name"]).strip()
+    baskv = float(bus["baskv"])
+    token = f"{name:<12}"[:12] + f"{baskv:<6.2f}"[:6]
+    parsed_name, parsed_kv = _split_bus_token(token)
+    assert (parsed_name, round(parsed_kv, KV_KEY_DECIMALS)) in lookup
