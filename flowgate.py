@@ -15,7 +15,7 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
-import networkx as nx  # noqa: F401  -- used in later tasks
+import networkx as nx
 import pandas as pd
 
 from psse_model_util.model import Model  # noqa: F401
@@ -430,3 +430,32 @@ def resolve_elements(
 
     unresolved_df = pd.DataFrame(unresolved_rows, columns=_UNRESOLVED_COLUMNS)
     return seeds, unresolved_df
+
+
+def _build_bus_only_graph(model: Model) -> nx.Graph:
+    """Build a graph whose nodes are bus ibus values and edges are
+    AC lines plus transformer windings.
+
+    2W transformers (kbus == 0) contribute one edge (ibus, jbus).
+    3W transformers contribute a triangle among (ibus, jbus, kbus) -- this
+    correctly models that any pair of windings is one electrical hop apart.
+    """
+    g = nx.Graph()
+    g.add_nodes_from(int(b) for b in model.network.bus.index)
+
+    ac = model.network.acline.reset_index()
+    g.add_edges_from(zip(ac["ibus"].astype(int), ac["jbus"].astype(int)))
+
+    xf = model.network.transformer.reset_index()
+    xf2 = xf[xf["kbus"] == 0]
+    g.add_edges_from(zip(xf2["ibus"].astype(int), xf2["jbus"].astype(int)))
+
+    xf3 = xf[xf["kbus"] != 0]
+    for i, j, k in zip(
+        xf3["ibus"].astype(int),
+        xf3["jbus"].astype(int),
+        xf3["kbus"].astype(int),
+    ):
+        g.add_edges_from([(i, j), (j, k), (i, k)])
+
+    return g
