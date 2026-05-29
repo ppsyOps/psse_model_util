@@ -42,11 +42,14 @@ XF3_COLS = [
 ]
 
 
-def test_collect_returns_four_dataframes(model_1, synthetic_seeds):
+def test_collect_returns_three_dataframes(model_1, synthetic_seeds):
+    """collect_key_facilities returns 3 DataFrames (branches, generators,
+    transformers_3w). The 'unresolved' DataFrame comes from resolve_elements
+    and is composed into the final dict by callers."""
     from psse_model_util.flowgate import collect_key_facilities
 
     out = collect_key_facilities(model_1, synthetic_seeds)
-    assert set(out.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
+    assert set(out.keys()) == {"branches", "generators", "transformers_3w"}
     for v in out.values():
         assert isinstance(v, pd.DataFrame)
 
@@ -284,5 +287,8 @@ def test_end_to_end_synthetic_to_dataframes(model_1):
     out = collect_key_facilities(model_1, seeds)
     # Sanity: branches non-empty (synthetic PJM seeds are 345 kV)
     assert len(out["branches"]) > 0
-    # All 4 keys present
-    assert set(out.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
+    # The collect function returns 3 keys; unresolved is composed in by callers.
+    assert set(out.keys()) == {"branches", "generators", "transformers_3w"}
+    # Verify the documented composition pattern works.
+    full = {**out, "unresolved": unresolved}
+    assert set(full.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}

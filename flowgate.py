@@ -465,13 +465,18 @@ def neighborhood_buses(
     model: Model,
     seed_buses: set[int],
     hops: int = DEFAULT_HOPS,
+    graph: nx.Graph | None = None,
 ) -> set[int]:
     """Return the set of buses within `hops` edges of any bus in `seed_buses`
     on the bus-only graph (AC lines + transformer windings).
 
     Includes the seed buses themselves. Uses nx.ego_graph with radius=hops.
+
+    If `graph` is supplied, it is used directly (avoids rebuilding for
+    multi-FG callers like `collect_key_facilities`). Otherwise a fresh
+    bus-only graph is built from `model`.
     """
-    g = _build_bus_only_graph(model)
+    g = graph if graph is not None else _build_bus_only_graph(model)
     result: set[int] = set()
     for seed in seed_buses:
         if seed not in g:
@@ -693,6 +698,17 @@ def collect_key_facilities(
 
     Row granularity: one row per (flowgate_id, role, equipment). Equipment
     reached by multiple flowgates appears in multiple rows.
+
+    The returned dict contains 3 keys: 'branches', 'generators',
+    'transformers_3w'. Resolution failures live in the second return value
+    of `resolve_elements`; callers compose the final 4-key dict themselves
+    if they need an 'unresolved' entry. Example:
+
+        seeds, unresolved = resolve_elements(fgs, model)
+        result = {
+            **collect_key_facilities(model, seeds),
+            "unresolved": unresolved,
+        }
     """
     # Per-FG neighborhoods (keyed by (flowgate_id, role) so monitor and
     # contingency seeds are tracked separately).
@@ -707,9 +723,12 @@ def collect_key_facilities(
         fg_role_seeds.setdefault(key, set()).update(s.seed_buses)
 
     bus_attrs = model.network.bus.reset_index()[["ibus", "name", "baskv", "area"]]
+    # Build the bus-only graph once and reuse across all (fg, role) iterations.
+    # Per spec §5.3 — avoids rebuilding the graph N times for N flowgates.
+    g = _build_bus_only_graph(model)
 
     for (fg_id, role), seed_set in fg_role_seeds.items():
-        neighborhood = neighborhood_buses(model, seed_set, hops=hops)
+        neighborhood = neighborhood_buses(model, seed_set, hops=hops, graph=g)
         branch_rows.extend(
             _collect_branches_for_fg(
                 model, neighborhood, fg_id, role, kv_min, kv_max, bus_attrs
@@ -730,5 +749,4 @@ def collect_key_facilities(
         "branches": pd.DataFrame(branch_rows, columns=_BRANCH_COLS),
         "generators": pd.DataFrame(gen_rows, columns=_GEN_COLS),
         "transformers_3w": pd.DataFrame(xf3_rows, columns=_XF3_COLS),
-        "unresolved": pd.DataFrame(columns=_UNRESOLVED_COLUMNS),
     }
