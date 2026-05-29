@@ -138,3 +138,25 @@ def test_parse_contingency_element_tokens(tmp_path):
     assert con.raw_tokens[0] == "05MARYSVL_RS765.00"
     assert con.raw_tokens[1] == "05SORENSN_RM765.00"
     assert con.raw_tokens[2] == "1"
+
+
+MALFORMED_HEADER_MON = """\
+MONITOR FLOWGATE 1234 unquoted description
+         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT 1
+ CONTINGENCY 1234
+    OPEN BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT 2
+ END
+    SC PJM
+END
+"""
+
+
+def test_parse_malformed_monitor_flowgate_header_raises(tmp_path):
+    """A MONITOR FLOWGATE line that doesn't match the strict regex must raise,
+    not silently fall through to the unknown-line warning."""
+    from psse_model_util.flowgate import parse_mon_file
+
+    p = tmp_path / "bad.mon"
+    p.write_text(MALFORMED_HEADER_MON)
+    with pytest.raises(ValueError, match="malformed MONITOR FLOWGATE"):
+        parse_mon_file(p)

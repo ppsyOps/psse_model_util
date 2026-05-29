@@ -54,7 +54,7 @@ class FlowgateElement:
 class Flowgate:
     flowgate_id: int
     description: str
-    sc: str  # Security Coordinator (e.g. "PJM")
+    sc: str  # Security Coordinator (e.g. "PJM"). Empty string means no SC declared.
     monitor: list[FlowgateElement]
     contingency: list[FlowgateElement]
 
@@ -183,6 +183,13 @@ def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flow
                 current_contingency = []
                 state = "IN_MONITOR"
                 continue
+
+            # Detect a malformed MONITOR FLOWGATE line that the strict regex missed.
+            if stripped.upper().startswith("MONITOR FLOWGATE"):
+                raise ValueError(
+                    f"line {lineno}: malformed MONITOR FLOWGATE header "
+                    f"(expected: MONITOR FLOWGATE <id> '<description>'): {line!r}"
+                )
 
             # CONTINGENCY header
             m = _CONTINGENCY_HEADER_RE.match(line)
