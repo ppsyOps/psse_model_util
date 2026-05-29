@@ -46,7 +46,7 @@ class FlowgateElement:
     flowgate_id: int
     role: Literal["monitor", "contingency"]
     element_type: Literal["branch", "generator"]
-    raw_tokens: tuple
+    raw_tokens: tuple[str, ...]
 
 
 @dataclass(frozen=True)
@@ -69,4 +69,4 @@ class ResolvedSeed:
     role: Literal["monitor", "contingency"]
     element_type: Literal["branch", "generator"]
     seed_buses: frozenset[int]
-    raw_tokens: tuple
+    raw_tokens: tuple[str, ...]
