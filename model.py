@@ -1223,6 +1223,276 @@ class Network(AbstractSection):
 
         return self._graph
 
+    def find_tie_lines(
+        self,
+        native_areas: dict | list | set | None = None,
+        kv_min: float | None = None,
+        kv_max: float | None = None,
+    ) -> pd.DataFrame:
+        """Return AC lines where exactly one terminal bus is in native_areas.
+
+        Lines where both terminals are native (internal) and lines where neither
+        terminal is native (external-to-external) are excluded.
+
+        Args:
+            native_areas: Areas considered "native". Defaults to INCLUDE_AREAS.
+                Accepts dict {area_num: name}, list, or set of area numbers.
+            kv_min: If set, both terminal buses must have baskv >= kv_min.
+            kv_max: If set, both terminal buses must have baskv <= kv_max.
+
+        Returns:
+            Enriched acline DataFrame with ibus_area, ibus_baskv, ibus_name,
+            jbus_area, jbus_baskv, jbus_name columns appended.
+        """
+        if native_areas is None:
+            native_areas = INCLUDE_AREAS
+        area_set = set(native_areas.keys()) if isinstance(native_areas, dict) else set(native_areas)
+
+        df = self.section_with_bus('acline')
+
+        ibus_native = df['ibus_area'].isin(area_set)
+        jbus_native = df['jbus_area'].isin(area_set)
+        df = df[ibus_native ^ jbus_native]
+
+        if kv_min is not None:
+            df = df[(df['ibus_baskv'] >= kv_min) & (df['jbus_baskv'] >= kv_min)]
+        if kv_max is not None:
+            df = df[(df['ibus_baskv'] <= kv_max) & (df['jbus_baskv'] <= kv_max)]
+
+        return df
+
+    def _buses_within_n_hops(
+        self,
+        seed_buses: set | list,
+        n: int,
+    ) -> set[int]:
+        """Return bus numbers reachable within N bus-to-bus hops from seed_buses.
+
+        One hop = traversal from one bus to an adjacent bus through any
+        connecting equipment. All connecting equipment (AC lines, transformers)
+        counts as one bus hop. The synthetic node of a 3-winding transformer is
+        treated as a pass-through (not a hop). Seed buses are included in the
+        result (0 hops from themselves). Seed buses absent from the graph are
+        silently skipped.
+
+        Args:
+            seed_buses: Iterable of ibus integers to start from.
+            n: Number of bus hops to traverse.
+
+        Returns:
+            Set of ibus integers within N bus hops of any seed bus.
+        """
+        if n == 0:
+            g = self.graph()
+            return {ibus for ibus in seed_buses if ('bus', ibus) in g}
+
+        g = self.graph()
+        frontier = {('bus', ibus) for ibus in seed_buses if ('bus', ibus) in g}
+        visited = set(frontier)
+
+        for _ in range(n):
+            next_frontier: set = set()
+            for node in frontier:
+                for neighbor in g.neighbors(node):
+                    if neighbor[0] == 'bus':
+                        # Direct bus-to-bus edge (AC line)
+                        if neighbor not in visited:
+                            next_frontier.add(neighbor)
+                    else:
+                        # Pass-through node (transformer) — look through it to find connected buses.
+                        # Look one level further for bus nodes
+                        for far in g.neighbors(neighbor):
+                            if far[0] == 'bus' and far not in visited:
+                                next_frontier.add(far)
+            visited |= next_frontier
+            frontier = next_frontier
+            if not frontier:
+                break
+
+        return {node[1] for node in visited}
+
+    def neighborhood(
+        self,
+        seed_buses: int | set | list,
+        n: int,
+        output: str = 'network',
+    ) -> 'Network | dict[str, pd.DataFrame] | pd.DataFrame':
+        """Return all buses within N bus-hops of seed_buses plus connected equipment.
+
+        Calls _buses_within_n_hops to determine the bus set, then filters every
+        network section to rows whose bus_cols intersect that set. The result
+        includes all equipment (generators, loads, shunts, etc.) connected to
+        the neighborhood buses.
+
+        Args:
+            seed_buses: Single ibus int or iterable of ibus integers.
+            n: Number of bus hops to traverse.
+            output: Return format.
+                'network' (default) — filtered Network copy.
+                'dict' — dict[str, DataFrame] keyed by section name.
+                'dataframe' — flat DataFrame with 'section' column prepended;
+                    intended for Excel/CSV export, not programmatic use.
+
+        Returns:
+            Filtered network data in the requested format.
+
+        Raises:
+            ValueError: If output is not 'network', 'dict', or 'dataframe'.
+        """
+        if output not in ('network', 'dict', 'dataframe'):
+            raise ValueError(f"output must be 'network', 'dict', or 'dataframe'; got {output!r}")
+
+        if isinstance(seed_buses, int):
+            seed_buses = {seed_buses}
+
+        bus_set = self._buses_within_n_hops(seed_buses, n)
+        result = self.copy()
+
+        for attr_name, df in result.__dict__.items():
+            if not isinstance(df, pd.DataFrame):
+                continue
+            meta = df._metadata
+            if 'bus_cols' not in meta:
+                continue
+
+            bus_cols = meta['bus_cols']
+            index_bus_cols = [c for c in bus_cols if c in df.index.names]
+            column_bus_cols = [c for c in bus_cols if c in df.columns]
+
+            if index_bus_cols:
+                mask = df.index.get_level_values(index_bus_cols[0]).isin(bus_set)
+                for col in index_bus_cols[1:]:
+                    mask |= df.index.get_level_values(col).isin(bus_set)
+            elif column_bus_cols:
+                mask = np.any(np.isin(df[column_bus_cols].values, list(bus_set)), axis=1)
+            else:
+                continue
+
+            filtered = df[mask]
+            filtered._metadata = meta
+            setattr(result, attr_name, filtered)
+
+        result._graph = nx.Graph()
+
+        if output == 'network':
+            return result
+        elif output == 'dict':
+            return result.model_dfs()
+        else:  # 'dataframe'
+            return result._to_flat_dataframe()
+
+    def tie_line_neighborhood(
+        self,
+        n: int,
+        native_areas: dict | list | set | None = None,
+        side: str = 'both',
+        kv_min: float | None = None,
+        kv_max: float | None = None,
+        output: str = 'network',
+    ) -> 'Network | dict[str, pd.DataFrame] | pd.DataFrame':
+        """Neighborhood around all tie-line terminals, optionally scoped by side.
+
+        Convenience wrapper: finds tie lines via find_tie_lines(), seeds
+        neighborhood() from their terminal buses, then optionally filters the
+        result to buses on one side of the area boundary.
+
+        Args:
+            n: Number of bus hops to traverse from tie-line terminals.
+            native_areas: Areas considered "native". Defaults to INCLUDE_AREAS.
+            side: Which side of the boundary to return.
+                'both' (default) — no area filter.
+                'internal' — keep only buses in native_areas.
+                'external' — keep only buses NOT in native_areas.
+            kv_min: Passed to find_tie_lines(); filters by terminal bus kV.
+            kv_max: Passed to find_tie_lines(); filters by terminal bus kV.
+            output: 'network' (default), 'dict', or 'dataframe'.
+
+        Returns:
+            Filtered network data in the requested format. Returns an empty
+            result (empty-section Network / empty dict / empty DataFrame) when
+            no tie lines match the filter criteria.
+        """
+        if native_areas is None:
+            native_areas = INCLUDE_AREAS
+        area_set = set(native_areas.keys()) if isinstance(native_areas, dict) else set(native_areas)
+
+        if side not in ('internal', 'external', 'both'):
+            warnings.warn(f"Unknown side={side!r}; treating as 'both' and returning full neighborhood.")
+
+        ties = self.find_tie_lines(native_areas=native_areas, kv_min=kv_min, kv_max=kv_max)
+
+        if ties.empty:
+            empty = self.copy()
+            for attr_name, df in empty.__dict__.items():
+                if isinstance(df, pd.DataFrame) and 'bus_cols' in getattr(df, '_metadata', {}):
+                    empty_df = df.iloc[0:0].copy()
+                    empty_df._metadata = df._metadata
+                    setattr(empty, attr_name, empty_df)
+            if output == 'network':
+                return empty
+            elif output == 'dict':
+                return empty.model_dfs()
+            else:
+                return pd.DataFrame()
+
+        seed_buses: set[int] = set()
+        for level in ties.index.names:
+            if level in ('ibus', 'jbus'):
+                seed_buses |= set(ties.index.get_level_values(level))
+
+        result = self.neighborhood(seed_buses, n, output='network')
+
+        if side == 'internal':
+            result = result.filter_by_area(list(area_set))
+        elif side == 'external':
+            external_areas = set(result.bus['area'].unique()) - area_set
+            if external_areas:
+                result = result.filter_by_area(list(external_areas))
+
+        if output == 'network':
+            return result
+        elif output == 'dict':
+            return result.model_dfs()
+        else:  # 'dataframe'
+            return result._to_flat_dataframe()
+
+    def _to_flat_dataframe(self) -> pd.DataFrame:
+        """Flatten all sections into a single DataFrame with a leading 'section' column.
+
+        Each section's DataFrame is reset to plain columns, given a leading
+        'section' column that names the PSS/E section, and concatenated.
+        Duplicate column names within a section (e.g. ntermdc) are resolved by
+        appending an integer suffix so that pd.concat can align column indexes.
+        """
+        frames = []
+        for section, df in self.model_dfs().items():
+            # Drop index levels whose names clash with existing columns to avoid
+            # duplicate-column errors when reset_index promotes them into columns.
+            drop_levels = [name for name in df.index.names
+                           if name is not None and name in df.columns]
+            if drop_levels:
+                df = df.reset_index(level=drop_levels, drop=True)
+            df = df.reset_index()
+            if 'section' in df.columns:
+                df = df.rename(columns={'section': '_section'})
+            df.insert(0, 'section', section)
+            # Some sections (e.g. ntermdc) carry pre-existing duplicate column
+            # names.  Deduplicate them by appending an integer suffix so that
+            # pd.concat can align column indexes across sections.
+            if df.columns.duplicated().any():
+                seen: dict[str, int] = {}
+                new_cols = []
+                for col in df.columns:
+                    if col in seen:
+                        seen[col] += 1
+                        new_cols.append(f"{col}_{seen[col]}")
+                    else:
+                        seen[col] = 0
+                        new_cols.append(col)
+                df.columns = new_cols
+            frames.append(df)
+        return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
+
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
         """
