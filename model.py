@@ -1223,6 +1223,44 @@ class Network(AbstractSection):
 
         return self._graph
 
+    def find_tie_lines(
+        self,
+        native_areas: dict | list | set | None = None,
+        kv_min: float | None = None,
+        kv_max: float | None = None,
+    ) -> pd.DataFrame:
+        """Return AC lines where exactly one terminal bus is in native_areas.
+
+        Lines where both terminals are native (internal) and lines where neither
+        terminal is native (external-to-external) are excluded.
+
+        Args:
+            native_areas: Areas considered "native". Defaults to INCLUDE_AREAS.
+                Accepts dict {area_num: name}, list, or set of area numbers.
+            kv_min: If set, both terminal buses must have baskv >= kv_min.
+            kv_max: If set, both terminal buses must have baskv <= kv_max.
+
+        Returns:
+            Enriched acline DataFrame with ibus_area, ibus_baskv, ibus_name,
+            jbus_area, jbus_baskv, jbus_name columns appended.
+        """
+        if native_areas is None:
+            native_areas = INCLUDE_AREAS
+        area_set = set(native_areas.keys()) if isinstance(native_areas, dict) else set(native_areas)
+
+        df = self.section_with_bus('acline')
+
+        ibus_native = df['ibus_area'].isin(area_set)
+        jbus_native = df['jbus_area'].isin(area_set)
+        df = df[ibus_native ^ jbus_native]
+
+        if kv_min is not None:
+            df = df[(df['ibus_baskv'] >= kv_min) & (df['jbus_baskv'] >= kv_min)]
+        if kv_max is not None:
+            df = df[(df['ibus_baskv'] <= kv_max) & (df['jbus_baskv'] <= kv_max)]
+
+        return df
+
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
         """
