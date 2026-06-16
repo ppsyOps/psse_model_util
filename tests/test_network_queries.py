@@ -72,3 +72,49 @@ def test_find_tie_lines_empty_when_no_match(net):
     # area 99 doesn't exist in the model
     result = net.find_tie_lines(native_areas={99: "GHOST"})
     assert result.empty
+
+
+# ---------------------------------------------------------------------------
+# _buses_within_n_hops
+# ---------------------------------------------------------------------------
+
+def test_buses_within_n_hops_zero(net):
+    # n=0 returns exactly the seed set
+    result = net._buses_within_n_hops({152}, 0)
+    assert result == {152}
+
+
+def test_buses_within_n_hops_one_direct(net):
+    # Bus 152 has direct bus edges to 151, 202, 3004
+    # and reaches 153, 3021, 3022 through transformer synthetic nodes
+    result = net._buses_within_n_hops({152}, 1)
+    assert result == {152, 151, 202, 3004, 153, 3021, 3022}
+
+
+def test_buses_within_n_hops_includes_seed(net):
+    result = net._buses_within_n_hops({152, 154}, 0)
+    assert 152 in result
+    assert 154 in result
+
+
+def test_buses_within_n_hops_missing_bus_silently_skipped(net):
+    # Bus 99999 does not exist — should not raise
+    result = net._buses_within_n_hops({99999}, 1)
+    assert isinstance(result, set)
+    assert 99999 not in result
+
+
+def test_buses_within_n_hops_two_hops_superset_of_one(net):
+    one_hop = net._buses_within_n_hops({152}, 1)
+    two_hop = net._buses_within_n_hops({152}, 2)
+    assert one_hop.issubset(two_hop)
+    assert len(two_hop) >= len(one_hop)
+
+
+def test_buses_within_n_hops_through_transformer_synthetic_node(net):
+    # Bus 101 has NO direct bus edges — only connects through a transformer
+    # synthetic node ('transformer', 101, 151) to bus 151.
+    # At n=1, bus 151 should be reachable from bus 101.
+    result = net._buses_within_n_hops({101}, 1)
+    assert 101 in result   # seed always included
+    assert 151 in result   # reached through transformer pass-through

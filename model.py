@@ -1261,6 +1261,54 @@ class Network(AbstractSection):
 
         return df
 
+    def _buses_within_n_hops(
+        self,
+        seed_buses: set | list,
+        n: int,
+    ) -> set[int]:
+        """Return bus numbers reachable within N bus-to-bus hops from seed_buses.
+
+        One hop = traversal from one bus to an adjacent bus through any
+        connecting equipment. AC lines and 2-winding transformers each count as
+        one hop. The synthetic node of a 3-winding transformer is treated as a
+        pass-through (not a hop). Seed buses are included in the result (0 hops
+        from themselves). Seed buses absent from the graph are silently skipped.
+
+        Args:
+            seed_buses: Iterable of ibus integers to start from.
+            n: Number of bus hops to traverse.
+
+        Returns:
+            Set of ibus integers within N bus hops of any seed bus.
+        """
+        if n == 0:
+            return set(seed_buses)
+
+        g = self.graph()
+        frontier = {('bus', ibus) for ibus in seed_buses if ('bus', ibus) in g}
+        visited = set(frontier)
+
+        for _ in range(n):
+            next_frontier: set = set()
+            for node in frontier:
+                for neighbor in g.neighbors(node):
+                    if neighbor[0] == 'bus':
+                        # Direct bus-to-bus edge (AC line)
+                        if neighbor not in visited:
+                            next_frontier.add(neighbor)
+                    else:
+                        # Pass-through node (transformer synthetic node, equipment)
+                        # Look one level further for bus nodes
+                        for far in g.neighbors(neighbor):
+                            if far[0] == 'bus' and far not in visited:
+                                next_frontier.add(far)
+            visited |= next_frontier
+            frontier = next_frontier
+            if not frontier:
+                break
+
+        return {ibus for (_, ibus) in visited}
+
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
         """
