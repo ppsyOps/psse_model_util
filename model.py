@@ -1269,10 +1269,11 @@ class Network(AbstractSection):
         """Return bus numbers reachable within N bus-to-bus hops from seed_buses.
 
         One hop = traversal from one bus to an adjacent bus through any
-        connecting equipment. AC lines and 2-winding transformers each count as
-        one hop. The synthetic node of a 3-winding transformer is treated as a
-        pass-through (not a hop). Seed buses are included in the result (0 hops
-        from themselves). Seed buses absent from the graph are silently skipped.
+        connecting equipment. All connecting equipment (AC lines, transformers)
+        counts as one bus hop. The synthetic node of a 3-winding transformer is
+        treated as a pass-through (not a hop). Seed buses are included in the
+        result (0 hops from themselves). Seed buses absent from the graph are
+        silently skipped.
 
         Args:
             seed_buses: Iterable of ibus integers to start from.
@@ -1282,7 +1283,8 @@ class Network(AbstractSection):
             Set of ibus integers within N bus hops of any seed bus.
         """
         if n == 0:
-            return set(seed_buses)
+            g = self.graph()
+            return {ibus for ibus in seed_buses if ('bus', ibus) in g}
 
         g = self.graph()
         frontier = {('bus', ibus) for ibus in seed_buses if ('bus', ibus) in g}
@@ -1297,7 +1299,7 @@ class Network(AbstractSection):
                         if neighbor not in visited:
                             next_frontier.add(neighbor)
                     else:
-                        # Pass-through node (transformer synthetic node, equipment)
+                        # Pass-through node (transformer) — look through it to find connected buses.
                         # Look one level further for bus nodes
                         for far in g.neighbors(neighbor):
                             if far[0] == 'bus' and far not in visited:

@@ -102,6 +102,9 @@ def test_buses_within_n_hops_missing_bus_silently_skipped(net):
     result = net._buses_within_n_hops({99999}, 1)
     assert isinstance(result, set)
     assert 99999 not in result
+    # n=0 must also filter out buses absent from the graph
+    result_n0 = net._buses_within_n_hops({99999}, 0)
+    assert result_n0 == set()
 
 
 def test_buses_within_n_hops_two_hops_superset_of_one(net):
