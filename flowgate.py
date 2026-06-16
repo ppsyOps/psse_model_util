@@ -487,6 +487,17 @@ def neighborhood_buses(
     return result
 
 
+def _int_or_none(value) -> int | None:
+    """Coerce a pandas cell to int, or return None when the cell is NaN.
+
+    Left-joins against an area-filtered bus table can yield NaN areas when
+    the joined bus was dropped from the filtered set; this helper keeps
+    those rows in the output with an empty area column rather than
+    crashing on int(NaN).
+    """
+    return int(value) if pd.notna(value) else None
+
+
 def _collect_branches_for_fg(
     model: Model,
     neighborhood: set[int],
@@ -532,9 +543,9 @@ def _collect_branches_for_fg(
             rows.append({
                 "flowgate_id": fg_id, "role": role, "equipment_type": "line",
                 "from_name": r["from_name"], "from_volt": r["from_volt"],
-                "from_area": int(r["from_area"]),
+                "from_area": _int_or_none(r["from_area"]),
                 "to_name": r["to_name"], "to_volt": r["to_volt"],
-                "to_area": int(r["to_area"]),
+                "to_area": _int_or_none(r["to_area"]),
                 "ckt_id": str(r["ckt"]).strip(),
             })
 
@@ -566,9 +577,9 @@ def _collect_branches_for_fg(
             rows.append({
                 "flowgate_id": fg_id, "role": role, "equipment_type": "transformer_2w",
                 "from_name": r["from_name"], "from_volt": r["from_volt"],
-                "from_area": int(r["from_area"]),
+                "from_area": _int_or_none(r["from_area"]),
                 "to_name": r["to_name"], "to_volt": r["to_volt"],
-                "to_area": int(r["to_area"]),
+                "to_area": _int_or_none(r["to_area"]),
                 "ckt_id": str(r["ckt"]).strip(),
             })
 
@@ -603,7 +614,7 @@ def _collect_generators_for_fg(
         rows.append({
             "flowgate_id": fg_id, "role": role,
             "bus_name": r["bus_name"], "volt": float(r["volt"]),
-            "area": int(r["area"]),
+            "area": _int_or_none(r["area"]),
             "ckt_id": str(r["machid"]).strip(),
         })
     return rows
