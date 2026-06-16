@@ -181,3 +181,64 @@ def test_neighborhood_does_not_mutate_original(net):
     original_bus_count = len(net.bus)
     net.neighborhood(152, n=1)
     assert len(net.bus) == original_bus_count
+
+
+# ---------------------------------------------------------------------------
+# tie_line_neighborhood
+# ---------------------------------------------------------------------------
+
+def test_tie_line_neighborhood_returns_network(net):
+    result = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS)
+    assert isinstance(result, Network)
+
+
+def test_tie_line_neighborhood_both_has_internal_and_external(net):
+    result = net.tie_line_neighborhood(n=0, native_areas=NATIVE_AREAS, side='both')
+    areas_in_result = set(result.bus['area'].unique())
+    native_set = set(NATIVE_AREAS.keys())
+    # n=0: only tie-line terminal buses. Some are native, some external.
+    assert areas_in_result & native_set        # at least one native area present
+    assert areas_in_result - native_set        # at least one external area present
+
+
+def test_tie_line_neighborhood_internal_only_native_areas(net):
+    result = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS, side='internal')
+    native_set = set(NATIVE_AREAS.keys())
+    assert result.bus['area'].isin(native_set).all()
+
+
+def test_tie_line_neighborhood_external_no_native_areas(net):
+    result = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS, side='external')
+    native_set = set(NATIVE_AREAS.keys())
+    assert not result.bus['area'].isin(native_set).any()
+
+
+def test_tie_line_neighborhood_internal_subset_of_both(net):
+    both = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS, side='both')
+    internal = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS, side='internal')
+    assert set(internal.bus.index).issubset(set(both.bus.index))
+
+
+def test_tie_line_neighborhood_kv_filter_reduces_result(net):
+    all_ties = net.tie_line_neighborhood(n=0, native_areas=NATIVE_AREAS)
+    ehv_ties = net.tie_line_neighborhood(n=0, native_areas=NATIVE_AREAS, kv_min=345)
+    assert len(ehv_ties.bus) <= len(all_ties.bus)
+
+
+def test_tie_line_neighborhood_empty_when_no_tie_lines(net):
+    # Area 99 has no buses — no tie lines found — returns empty-section Network
+    result = net.tie_line_neighborhood(n=1, native_areas={99: "GHOST"})
+    assert isinstance(result, Network)
+    assert result.bus.empty
+
+
+def test_tie_line_neighborhood_output_dict(net):
+    result = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS, output='dict')
+    assert isinstance(result, dict)
+    assert 'bus' in result
+
+
+def test_tie_line_neighborhood_output_dataframe(net):
+    result = net.tie_line_neighborhood(n=1, native_areas=NATIVE_AREAS, output='dataframe')
+    assert isinstance(result, pd.DataFrame)
+    assert 'section' in result.columns

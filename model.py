@@ -1408,6 +1408,100 @@ class Network(AbstractSection):
                 frames.append(df)
             return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
 
+    def tie_line_neighborhood(
+        self,
+        n: int,
+        native_areas: dict | list | set | None = None,
+        side: str = 'both',
+        kv_min: float | None = None,
+        kv_max: float | None = None,
+        output: str = 'network',
+    ) -> 'Network | dict[str, pd.DataFrame] | pd.DataFrame':
+        """Neighborhood around all tie-line terminals, optionally scoped by side.
+
+        Convenience wrapper: finds tie lines via find_tie_lines(), seeds
+        neighborhood() from their terminal buses, then optionally filters the
+        result to buses on one side of the area boundary.
+
+        Args:
+            n: Number of bus hops to traverse from tie-line terminals.
+            native_areas: Areas considered "native". Defaults to INCLUDE_AREAS.
+            side: Which side of the boundary to return.
+                'both' (default) — no area filter.
+                'internal' — keep only buses in native_areas.
+                'external' — keep only buses NOT in native_areas.
+            kv_min: Passed to find_tie_lines(); filters by terminal bus kV.
+            kv_max: Passed to find_tie_lines(); filters by terminal bus kV.
+            output: 'network' (default), 'dict', or 'dataframe'.
+
+        Returns:
+            Filtered network data in the requested format. Returns an empty
+            result (empty-section Network / empty dict / empty DataFrame) when
+            no tie lines match the filter criteria.
+        """
+        if native_areas is None:
+            native_areas = INCLUDE_AREAS
+        area_set = set(native_areas.keys()) if isinstance(native_areas, dict) else set(native_areas)
+
+        ties = self.find_tie_lines(native_areas=native_areas, kv_min=kv_min, kv_max=kv_max)
+
+        if ties.empty:
+            empty = self.copy()
+            for attr_name, df in empty.__dict__.items():
+                if isinstance(df, pd.DataFrame) and 'bus_cols' in getattr(df, '_metadata', {}):
+                    empty_df = df.iloc[0:0].copy()
+                    empty_df._metadata = df._metadata
+                    setattr(empty, attr_name, empty_df)
+            if output == 'network':
+                return empty
+            elif output == 'dict':
+                return empty.model_dfs()
+            else:
+                return pd.DataFrame()
+
+        seed_buses: set[int] = set()
+        for level in ties.index.names:
+            if level in ('ibus', 'jbus'):
+                seed_buses |= set(ties.index.get_level_values(level))
+
+        result = self.neighborhood(seed_buses, n, output='network')
+
+        if side == 'internal':
+            result = result.filter_by_area(list(area_set))
+        elif side == 'external':
+            external_areas = set(result.bus['area'].unique()) - area_set
+            if external_areas:
+                result = result.filter_by_area(list(external_areas))
+
+        if output == 'network':
+            return result
+        elif output == 'dict':
+            return result.model_dfs()
+        else:  # 'dataframe'
+            frames = []
+            for section, df in result.model_dfs().items():
+                drop_levels = [name for name in df.index.names
+                               if name is not None and name in df.columns]
+                if drop_levels:
+                    df = df.reset_index(level=drop_levels, drop=True)
+                df = df.reset_index()
+                if 'section' in df.columns:
+                    df = df.rename(columns={'section': '_section'})
+                if df.columns.duplicated().any():
+                    seen: dict[str, int] = {}
+                    new_cols = []
+                    for col in df.columns:
+                        if col in seen:
+                            seen[col] += 1
+                            new_cols.append(f"{col}_{seen[col]}")
+                        else:
+                            seen[col] = 0
+                            new_cols.append(col)
+                    df.columns = new_cols
+                df.insert(0, 'section', section)
+                frames.append(df)
+            return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
+
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
         """
