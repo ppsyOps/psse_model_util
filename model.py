@@ -1309,7 +1309,7 @@ class Network(AbstractSection):
             if not frontier:
                 break
 
-        return {ibus for (_, ibus) in visited}
+        return {node[1] for node in visited}
 
     def neighborhood(
         self,
@@ -1379,34 +1379,7 @@ class Network(AbstractSection):
         elif output == 'dict':
             return result.model_dfs()
         else:  # 'dataframe'
-            frames = []
-            for section, df in result.model_dfs().items():
-                # Drop index levels whose names clash with existing columns to avoid
-                # duplicate-column errors when reset_index promotes them into columns.
-                drop_levels = [name for name in df.index.names
-                               if name is not None and name in df.columns]
-                if drop_levels:
-                    df = df.reset_index(level=drop_levels, drop=True)
-                df = df.reset_index()
-                if 'section' in df.columns:
-                    df = df.rename(columns={'section': '_section'})
-                df.insert(0, 'section', section)
-                # Some sections (e.g. ntermdc) carry pre-existing duplicate column
-                # names.  Deduplicate them by appending an integer suffix so that
-                # pd.concat can align column indexes across sections.
-                if df.columns.duplicated().any():
-                    seen: dict[str, int] = {}
-                    new_cols = []
-                    for col in df.columns:
-                        if col in seen:
-                            seen[col] += 1
-                            new_cols.append(f"{col}_{seen[col]}")
-                        else:
-                            seen[col] = 0
-                            new_cols.append(col)
-                    df.columns = new_cols
-                frames.append(df)
-            return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
+            return result._to_flat_dataframe()
 
     def tie_line_neighborhood(
         self,
@@ -1481,29 +1454,44 @@ class Network(AbstractSection):
         elif output == 'dict':
             return result.model_dfs()
         else:  # 'dataframe'
-            frames = []
-            for section, df in result.model_dfs().items():
-                drop_levels = [name for name in df.index.names
-                               if name is not None and name in df.columns]
-                if drop_levels:
-                    df = df.reset_index(level=drop_levels, drop=True)
-                df = df.reset_index()
-                if 'section' in df.columns:
-                    df = df.rename(columns={'section': '_section'})
-                if df.columns.duplicated().any():
-                    seen: dict[str, int] = {}
-                    new_cols = []
-                    for col in df.columns:
-                        if col in seen:
-                            seen[col] += 1
-                            new_cols.append(f"{col}_{seen[col]}")
-                        else:
-                            seen[col] = 0
-                            new_cols.append(col)
-                    df.columns = new_cols
-                df.insert(0, 'section', section)
-                frames.append(df)
-            return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
+            return result._to_flat_dataframe()
+
+    def _to_flat_dataframe(self) -> pd.DataFrame:
+        """Flatten all sections into a single DataFrame with a leading 'section' column.
+
+        Each section's DataFrame is reset to plain columns, given a leading
+        'section' column that names the PSS/E section, and concatenated.
+        Duplicate column names within a section (e.g. ntermdc) are resolved by
+        appending an integer suffix so that pd.concat can align column indexes.
+        """
+        frames = []
+        for section, df in self.model_dfs().items():
+            # Drop index levels whose names clash with existing columns to avoid
+            # duplicate-column errors when reset_index promotes them into columns.
+            drop_levels = [name for name in df.index.names
+                           if name is not None and name in df.columns]
+            if drop_levels:
+                df = df.reset_index(level=drop_levels, drop=True)
+            df = df.reset_index()
+            if 'section' in df.columns:
+                df = df.rename(columns={'section': '_section'})
+            df.insert(0, 'section', section)
+            # Some sections (e.g. ntermdc) carry pre-existing duplicate column
+            # names.  Deduplicate them by appending an integer suffix so that
+            # pd.concat can align column indexes across sections.
+            if df.columns.duplicated().any():
+                seen: dict[str, int] = {}
+                new_cols = []
+                for col in df.columns:
+                    if col in seen:
+                        seen[col] += 1
+                        new_cols.append(f"{col}_{seen[col]}")
+                    else:
+                        seen[col] = 0
+                        new_cols.append(col)
+                df.columns = new_cols
+            frames.append(df)
+        return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
 
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
