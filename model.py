@@ -1311,6 +1311,103 @@ class Network(AbstractSection):
 
         return {ibus for (_, ibus) in visited}
 
+    def neighborhood(
+        self,
+        seed_buses: int | set | list,
+        n: int,
+        output: str = 'network',
+    ) -> 'Network | dict[str, pd.DataFrame] | pd.DataFrame':
+        """Return all buses within N bus-hops of seed_buses plus connected equipment.
+
+        Calls _buses_within_n_hops to determine the bus set, then filters every
+        network section to rows whose bus_cols intersect that set. The result
+        includes all equipment (generators, loads, shunts, etc.) connected to
+        the neighborhood buses.
+
+        Args:
+            seed_buses: Single ibus int or iterable of ibus integers.
+            n: Number of bus hops to traverse.
+            output: Return format.
+                'network' (default) — filtered Network copy.
+                'dict' — dict[str, DataFrame] keyed by section name.
+                'dataframe' — flat DataFrame with 'section' column prepended;
+                    intended for Excel/CSV export, not programmatic use.
+
+        Returns:
+            Filtered network data in the requested format.
+
+        Raises:
+            ValueError: If output is not 'network', 'dict', or 'dataframe'.
+        """
+        if output not in ('network', 'dict', 'dataframe'):
+            raise ValueError(f"output must be 'network', 'dict', or 'dataframe'; got {output!r}")
+
+        if isinstance(seed_buses, int):
+            seed_buses = {seed_buses}
+
+        bus_set = self._buses_within_n_hops(seed_buses, n)
+        result = self.copy()
+
+        for attr_name, df in result.__dict__.items():
+            if not isinstance(df, pd.DataFrame):
+                continue
+            meta = df._metadata
+            if 'bus_cols' not in meta:
+                continue
+
+            bus_cols = meta['bus_cols']
+            index_bus_cols = [c for c in bus_cols if c in df.index.names]
+            column_bus_cols = [c for c in bus_cols if c in df.columns]
+
+            if index_bus_cols:
+                mask = df.index.get_level_values(index_bus_cols[0]).isin(bus_set)
+                for col in index_bus_cols[1:]:
+                    mask |= df.index.get_level_values(col).isin(bus_set)
+            elif column_bus_cols:
+                mask = np.any(np.isin(df[column_bus_cols].values, list(bus_set)), axis=1)
+            else:
+                continue
+
+            filtered = df[mask]
+            filtered._metadata = meta
+            setattr(result, attr_name, filtered)
+
+        result._graph = nx.Graph()
+
+        if output == 'network':
+            return result
+        elif output == 'dict':
+            return result.model_dfs()
+        else:  # 'dataframe'
+            frames = []
+            for section, df in result.model_dfs().items():
+                # Drop index levels whose names clash with existing columns to avoid
+                # duplicate-column errors when reset_index promotes them into columns.
+                drop_levels = [name for name in df.index.names
+                               if name is not None and name in df.columns]
+                if drop_levels:
+                    df = df.reset_index(level=drop_levels, drop=True)
+                df = df.reset_index()
+                if 'section' in df.columns:
+                    df = df.rename(columns={'section': '_section'})
+                df.insert(0, 'section', section)
+                # Some sections (e.g. ntermdc) carry pre-existing duplicate column
+                # names.  Deduplicate them by appending an integer suffix so that
+                # pd.concat can align column indexes across sections.
+                if df.columns.duplicated().any():
+                    seen: dict[str, int] = {}
+                    new_cols = []
+                    for col in df.columns:
+                        if col in seen:
+                            seen[col] += 1
+                            new_cols.append(f"{col}_{seen[col]}")
+                        else:
+                            seen[col] = 0
+                            new_cols.append(col)
+                    df.columns = new_cols
+                frames.append(df)
+            return pd.concat(frames, ignore_index=True, sort=False) if frames else pd.DataFrame()
+
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
         """

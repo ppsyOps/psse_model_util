@@ -121,3 +121,63 @@ def test_buses_within_n_hops_through_transformer_synthetic_node(net):
     result = net._buses_within_n_hops({101}, 1)
     assert 101 in result   # seed always included
     assert 151 in result   # reached through transformer pass-through
+
+
+# ---------------------------------------------------------------------------
+# neighborhood
+# ---------------------------------------------------------------------------
+
+def test_neighborhood_returns_network_by_default(net):
+    result = net.neighborhood(152, n=1)
+    assert isinstance(result, Network)
+
+
+def test_neighborhood_accepts_single_int(net):
+    # Passing a bare int should be accepted (converted to {int} internally)
+    result = net.neighborhood(152, n=1)
+    assert isinstance(result, Network)
+    assert 152 in result.bus.index
+
+
+def test_neighborhood_bus_set_correct(net):
+    result = net.neighborhood(152, n=1)
+    expected = {152, 151, 202, 3004, 153, 3021, 3022}
+    assert set(result.bus.index) == expected
+
+
+def test_neighborhood_n0_returns_seed_only(net):
+    result = net.neighborhood(152, n=0)
+    assert set(result.bus.index) == {152}
+
+
+def test_neighborhood_includes_connected_equipment(net):
+    # Bus 152 has a load and/or fixshunt — they should appear in the neighborhood
+    result = net.neighborhood(152, n=0)
+    assert not result.load.empty or not result.fixshunt.empty
+
+
+def test_neighborhood_output_dict(net):
+    result = net.neighborhood(152, n=1, output='dict')
+    assert isinstance(result, dict)
+    assert 'bus' in result
+    assert 'acline' in result
+    assert isinstance(result['bus'], pd.DataFrame)
+    assert set(result['bus'].index) == {152, 151, 202, 3004, 153, 3021, 3022}
+
+
+def test_neighborhood_output_dataframe(net):
+    result = net.neighborhood(152, n=1, output='dataframe')
+    assert isinstance(result, pd.DataFrame)
+    assert 'section' in result.columns
+    assert 'bus' in result['section'].values
+
+
+def test_neighborhood_invalid_output_raises(net):
+    with pytest.raises(ValueError, match="output"):
+        net.neighborhood(152, n=1, output='excel')
+
+
+def test_neighborhood_does_not_mutate_original(net):
+    original_bus_count = len(net.bus)
+    net.neighborhood(152, n=1)
+    assert len(net.bus) == original_bus_count
