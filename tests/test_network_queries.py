@@ -222,7 +222,7 @@ def test_tie_line_neighborhood_internal_subset_of_both(net):
 def test_tie_line_neighborhood_kv_filter_reduces_result(net):
     all_ties = net.tie_line_neighborhood(n=0, native_areas=NATIVE_AREAS)
     ehv_ties = net.tie_line_neighborhood(n=0, native_areas=NATIVE_AREAS, kv_min=345)
-    assert len(ehv_ties.bus) <= len(all_ties.bus)
+    assert len(ehv_ties.bus) < len(all_ties.bus)
 
 
 def test_tie_line_neighborhood_empty_when_no_tie_lines(net):

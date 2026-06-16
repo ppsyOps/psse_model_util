@@ -1443,6 +1443,9 @@ class Network(AbstractSection):
             native_areas = INCLUDE_AREAS
         area_set = set(native_areas.keys()) if isinstance(native_areas, dict) else set(native_areas)
 
+        if side not in ('internal', 'external', 'both'):
+            warnings.warn(f"Unknown side={side!r}; treating as 'both' and returning full neighborhood.")
+
         ties = self.find_tie_lines(native_areas=native_areas, kv_min=kv_min, kv_max=kv_max)
 
         if ties.empty:
