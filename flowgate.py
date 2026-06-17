@@ -18,7 +18,7 @@ from typing import Literal
 import networkx as nx
 import pandas as pd
 
-from psse_model_util.model import Model  # noqa: F401
+from psse_model_util.model import Model
 
 logger = logging.getLogger(__name__)
 
