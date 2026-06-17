@@ -199,10 +199,15 @@ Lives in sibling repo `C:\Users\Chris\PycharmProjects\key_facilities\`:
 key_facilities/
 ├── key_facilities.py       # CLI orchestrator
 ├── pyproject.toml          # depends on psse-model-util (editable in dev)
-├── README.md
-└── tests/
-    └── test_cli_smoke.py
+└── README.md
 ```
+
+The CLI smoke test lives in **this** repo at `tests/test_flowgate_cli.py`,
+not inside the sibling repo. It invokes `key_facilities.py` as a
+subprocess against the synthetic `.mon` fixture and skips cleanly when
+the sibling clone isn't present. Adding an in-repo smoke test inside
+`key_facilities` is tracked separately as
+[ppsyOps/key_facilities#1](https://github.com/ppsyOps/key_facilities/issues/1).
 
 CLI invocation:
 
