@@ -36,8 +36,21 @@ KV_KEY_DECIMALS: int = 3         # rounding precision for bus-lookup key
 class FlowgateElement:
     """One element parsed from a .mon flowgate block.
 
-    raw_tokens preserves the original text fragments (bus tokens, ckt id,
-    machine id) so the unresolved report can echo them back verbatim.
+    raw_tokens preserves the original text fragments so the unresolved
+    report can echo them back verbatim. Shape depends on element_type:
+
+      - element_type == "branch":    (from_bus_token, to_bus_token, ckt_id)
+        from_bus_token / to_bus_token are 18-char PSS/E tokens (12-char
+        padded name + 6-char kV); ckt_id is the circuit id as parsed
+        from the `CKT <id>` keyword.
+
+      - element_type == "generator": (bus_token, machine_id)
+        bus_token is the 18-char PSS/E token for the machine's host bus;
+        machine_id is the PSS/E machine id as a string (may be
+        alphanumeric, e.g. "H1").
+
+    Consumers of `resolve_elements`'s unresolved DataFrame that need to
+    interpret the `raw_tokens` column must branch on `element_type`.
     """
     flowgate_id: int
     role: Literal["monitor", "contingency"]
