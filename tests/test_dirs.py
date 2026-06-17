@@ -8,6 +8,7 @@ removed from dirs.py since the legacy port; those tests are dropped here.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -30,6 +31,11 @@ from psse_model_util.common.dirs import (
     user_state_dir,
 )
 
+WINDOWS_ONLY = pytest.mark.skipif(
+    sys.platform != "win32",
+    reason="Windows-only: tests msvcrt-style file locking. On Linux unlinking "
+    "an open file removes the directory entry immediately.",
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -133,6 +139,7 @@ def test_clear_cache(mock_cache_dirs):
 # Cache clear with open files (Windows: open files are skipped, not errored)
 # ---------------------------------------------------------------------------
 
+@WINDOWS_ONLY
 def test_clear_user_cache_with_open_file(mock_cache_dirs):
     mock_user_cache, _ = mock_cache_dirs
     file_path = mock_user_cache / "open_file.txt"
@@ -148,6 +155,7 @@ def test_clear_user_cache_with_open_file(mock_cache_dirs):
     assert not file_path.exists()
 
 
+@WINDOWS_ONLY
 def test_clear_site_cache_with_open_file(mock_cache_dirs):
     _, mock_site_cache = mock_cache_dirs
     file_path = mock_site_cache / "open_file.txt"
@@ -163,6 +171,7 @@ def test_clear_site_cache_with_open_file(mock_cache_dirs):
     assert not file_path.exists()
 
 
+@WINDOWS_ONLY
 def test_clear_cache_handles_open_files(mock_cache_dirs):
     mock_user_cache, mock_site_cache = mock_cache_dirs
     user_file = mock_user_cache / "user_locked.txt"

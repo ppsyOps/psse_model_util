@@ -29,7 +29,6 @@ Section ends with a line starting "0 / END OF SUBSTATION".
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 

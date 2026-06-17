@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import io
 import pickle
-from pathlib import Path
 
 import pandas as pd
 import pytest
@@ -20,7 +19,6 @@ from psse_model_util.common.file_util import (
     uneven_lists_to_df,
     write_bytesio_to_disk,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fixtures
