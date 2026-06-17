@@ -33,7 +33,7 @@ jobs:
       # Redirect platformdirs' site_data_dir away from the default
       # `/usr/local/share` (root-only on the GHA runner) into a writable
       # user-space path so Model.__init__'s pickle cache can be written.
-      XDG_DATA_DIRS: ${{ runner.temp }}/psse-site-data
+      XDG_DATA_DIRS: /tmp/psse-site-data
     steps:
       - uses: actions/checkout@v4
 
