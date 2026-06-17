@@ -13,7 +13,6 @@ import pytest
 
 from psse_model_util.dataformat.classes import DictToClassConverter, dict_to_dataclass, infer_type
 
-
 # ---------------------------------------------------------------------------
 # DictToClassConverter
 # ---------------------------------------------------------------------------
