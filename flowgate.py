@@ -32,6 +32,10 @@ KV_KEY_DECIMALS: int = 3         # rounding precision for bus-lookup key
 
 
 # ---------- dataclasses ----------
+_VALID_ROLES = ("monitor", "contingency")
+_VALID_ELEMENT_TYPES = ("branch", "generator")
+
+
 @dataclass(frozen=True)
 class FlowgateElement:
     """One element parsed from a .mon flowgate block.
@@ -57,6 +61,17 @@ class FlowgateElement:
     element_type: Literal["branch", "generator"]
     raw_tokens: tuple[str, ...]
 
+    def __post_init__(self) -> None:
+        if self.role not in _VALID_ROLES:
+            raise ValueError(
+                f"FlowgateElement.role must be one of {_VALID_ROLES!r}, got {self.role!r}"
+            )
+        if self.element_type not in _VALID_ELEMENT_TYPES:
+            raise ValueError(
+                f"FlowgateElement.element_type must be one of "
+                f"{_VALID_ELEMENT_TYPES!r}, got {self.element_type!r}"
+            )
+
 
 @dataclass(frozen=True)
 class Flowgate:
@@ -79,6 +94,17 @@ class ResolvedSeed:
     element_type: Literal["branch", "generator"]
     seed_buses: frozenset[int]
     raw_tokens: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.role not in _VALID_ROLES:
+            raise ValueError(
+                f"ResolvedSeed.role must be one of {_VALID_ROLES!r}, got {self.role!r}"
+            )
+        if self.element_type not in _VALID_ELEMENT_TYPES:
+            raise ValueError(
+                f"ResolvedSeed.element_type must be one of "
+                f"{_VALID_ELEMENT_TYPES!r}, got {self.element_type!r}"
+            )
 
 
 # ---------- parsing primitives ----------
