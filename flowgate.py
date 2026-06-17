@@ -23,11 +23,6 @@ from psse_model_util.model import Model
 logger = logging.getLogger(__name__)
 
 # ---------- defaults (override at call site or CLI) ----------
-# Path defaults are intentionally empty — callers (or the CLI) supply real paths.
-# They exist as named constants so callers can override in one place if needed.
-DEFAULT_RAW_FILEPATH: pathlib.Path | str = ""
-DEFAULT_MON_FILEPATH: pathlib.Path | str = ""
-
 DEFAULT_HOPS: int = 4
 DEFAULT_KV_MIN: float = 160.0
 DEFAULT_KV_MAX: float = 765.0
@@ -153,7 +148,7 @@ def _parse_remove_machine_line(line: str, flowgate_id: int) -> FlowgateElement:
     )
 
 
-def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flowgate]:
+def parse_mon_file(path: pathlib.Path | str) -> list[Flowgate]:
     """Parse a PSS/E .mon flowgate-definitions file into a list of Flowgate objects.
 
     Recognized constructs:
