@@ -292,3 +292,35 @@ def test_end_to_end_synthetic_to_dataframes(model_1):
     # Verify the documented composition pattern works.
     full = {**out, "unresolved": unresolved}
     assert set(full.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
+
+
+def test_extract_key_facilities_full_pipeline():
+    """The convenience wrapper produces the same 4-key dict as composing the
+    four stages by hand."""
+    from psse_model_util.flowgate import extract_key_facilities
+
+    out = extract_key_facilities(
+        mon_path=DATA_DIR / "synthetic_pjm.mon",
+        raw_path=DATA_DIR / "Model_1.raw",
+        sc="PJM",
+    )
+    assert set(out.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
+    assert len(out["branches"]) > 0
+    assert out["unresolved"].empty
+
+
+def test_extract_key_facilities_with_areas_filter():
+    """Passing areas=[9999] (no equipment) yields empty branches/gens/3W and
+    pushes all seeds into unresolved."""
+    from psse_model_util.flowgate import extract_key_facilities
+
+    out = extract_key_facilities(
+        mon_path=DATA_DIR / "synthetic_pjm.mon",
+        raw_path=DATA_DIR / "Model_1.raw",
+        sc="PJM",
+        areas=[9999],
+    )
+    assert len(out["branches"]) == 0
+    assert len(out["generators"]) == 0
+    assert len(out["transformers_3w"]) == 0
+    assert len(out["unresolved"]) > 0
