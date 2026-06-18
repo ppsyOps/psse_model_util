@@ -8,11 +8,22 @@ dynamic = ["version"]
 description = "Python library for reading, editing, validating, and comparing PSS/E power system models (RAW v33/34/35 and RAWX formats)."
 readme = "README.md"
 requires-python = ">=3.11,!=3.14.1,<3.15"
-license = { text = "Proprietary" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
     { name = "cadvena" }
 ]
 keywords = ["psse", "power systems", "RAW", "RAWX", "PSS/E"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
 
 dependencies = [
     # Core data
@@ -36,6 +47,11 @@ dependencies = [
     "portalocker>=2.0",
     "arrow>=1.4.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/ppsyOps/psse_model_util"
+Repository = "https://github.com/ppsyOps/psse_model_util"
+Issues = "https://github.com/ppsyOps/psse_model_util/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -68,6 +84,8 @@ dev = [
 [tool.ruff]
 target-version = "py311"
 line-length = 120
+
+[tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E501"]
 
