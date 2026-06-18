@@ -561,6 +561,16 @@ def _int_or_none(value) -> int | None:
     the joined bus was dropped from the filtered set; this helper keeps
     those rows in the output with an empty area column rather than
     crashing on int(NaN).
+
+    Design choice — keep, don't drop:
+
+    A branch with one endpoint inside the kept areas and one endpoint
+    outside is **kept** in the output; the outside endpoint's area cell is
+    empty (None → empty CSV cell). Dropping these rows would discard
+    real signal — they're exactly the branches at the perimeter of the
+    search area, which downstream analysis (e.g. tie-line review) often
+    cares about most. Consumers who want strictly-inside rows can filter
+    on `(from_area.notna() & to_area.notna())` themselves.
     """
     return int(value) if pd.notna(value) else None
 
