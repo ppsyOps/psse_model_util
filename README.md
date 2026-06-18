@@ -28,6 +28,16 @@ Python library for reading, editing, validating, and comparing PSS/E power syste
 - [PDM](https://pdm-project.org/) for dependency management
 - [Hatch](https://hatch.pypa.io/) for builds and versioning
 
+### Install from PyPI
+
+```bash
+# Latest stable release
+pip install psse-model-util
+
+# Latest pre-release (beta / rc) — pip skips pre-releases without --pre
+pip install --pre psse-model-util
+```
+
 ### Install (editable / dev)
 
 ```bash
@@ -211,7 +221,7 @@ pdm run pytest tests/test_model.py -k "test_filter_by_area"
 
 # Test with coverage report
 pdm run pytest --cov=psse_model_util --cov-report=term-missing
-# Current: 343 tests, 75% coverage (CI gate: 40%)
+# Current: 434 tests, 78% coverage (CI gate: 40%)
 
 # Version (hatch-managed calver)
 hatch version
@@ -222,13 +232,25 @@ hatch version
 
 ---
 
-## Versioning
+## Versioning & Releases
 
-Uses calver: `YYYY.M.micro` — managed by Hatch via `__about__.py`.
+Uses **CalVer**: `YYYY.M.micro` — managed by Hatch via `src/psse_model_util/__about__.py` (the single source of truth for the version).
 
 ```
-2026.4.3  →  year=2026, month=4, micro=3
+2026.4.5    →  year=2026, month=4, micro=5            (stable)
+2026.4.5b1  →  beta 1 of 2026.4.5                     (pre-release)
+2026.5.0rc1 →  release candidate 1 of 2026.5.0        (pre-release)
 ```
+
+Pre-release suffixes follow [PEP 440](https://peps.python.org/pep-0440/): `bN` (beta), `rcN` (release candidate). `pip` ignores pre-releases unless you pass `--pre`, so betas reach only opt-in testers while stable installs stay on full releases.
+
+### Release process
+
+Publishing is automated via **Trusted Publishing** (OIDC — no API tokens) in `.github/workflows/publish.yml`:
+
+1. Bump `__version__` in `src/psse_model_util/__about__.py` (use a `bN`/`rcN` suffix for a pre-release).
+2. Cut a GitHub Release, **or** run the **Publish to PyPI** workflow manually (*Actions → Publish to PyPI → Run workflow*). A release created by `cd.yml` uses `GITHUB_TOKEN`, which cannot trigger `publish.yml`, so the manual run is the reliable trigger.
+3. The workflow builds, publishes to **TestPyPI**, then to **PyPI**. The `pypi` step is gated by a required-reviewer environment, so the final publish needs a manual approval click.
 
 ---
 
