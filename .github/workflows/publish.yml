@@ -7,6 +7,10 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
+  # Manual trigger — releases cut by cd.yml use GITHUB_TOKEN, which cannot
+  # trigger this workflow, so a published-release run must be started by hand
+  # (or a human-created Release). workflow_dispatch always works.
+  workflow_dispatch:
 
 jobs:
   build:
