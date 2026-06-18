@@ -344,7 +344,39 @@ def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]:
     return [fg for fg in fgs if fg.sc == sc]
 
 
-_UNRESOLVED_COLUMNS = ["flowgate_id", "role", "element_type", "raw_tokens", "reason"]
+_UNRESOLVED_COLUMNS = [
+    "flowgate_id", "role", "element_type",
+    "from_token", "to_token", "ckt_id",  # populated for element_type == "branch"
+    "bus_token", "machine_id",            # populated for element_type == "generator"
+    "reason",
+]
+
+
+def _unresolved_token_fields(elem: "FlowgateElement") -> dict:
+    """Split a FlowgateElement's raw_tokens into per-type unresolved columns.
+
+    Branches fill (from_token, to_token, ckt_id); generators fill
+    (bus_token, machine_id). The other columns are None so they render
+    as empty cells in the CSV.
+    """
+    if elem.element_type == "branch":
+        from_token, to_token, ckt_id = elem.raw_tokens
+        return {
+            "from_token": from_token,
+            "to_token": to_token,
+            "ckt_id": ckt_id,
+            "bus_token": None,
+            "machine_id": None,
+        }
+    # element_type == "generator" (enforced by FlowgateElement.__post_init__)
+    bus_token, machine_id = elem.raw_tokens
+    return {
+        "from_token": None,
+        "to_token": None,
+        "ckt_id": None,
+        "bus_token": bus_token,
+        "machine_id": machine_id,
+    }
 
 
 def _build_bus_lookup(model: Model) -> dict[tuple[str, float], int]:
@@ -412,7 +444,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "bus_not_found",
                     })
                     continue
@@ -421,7 +453,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "branch_not_found",
                     })
                     continue
@@ -440,7 +472,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "bus_not_found",
                     })
                     continue
@@ -451,7 +483,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "generator_not_found",
                     })
                     continue
