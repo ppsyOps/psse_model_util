@@ -88,9 +88,9 @@
 | --- | ------------------------------------------------------------------------------------------------------------------------ | ----------- |
 | P.1 | Real-system scrub (utility/ISO footprint, internal paths) + MIT relicense                                                | ✅ Completed |
 | P.2 | `src/` package layout — wheel installs cleanly as `psse_model_util`                                                       | ✅ Completed |
-| P.3 | Register PyPI + TestPyPI accounts, enable 2FA, configure **Trusted Publishing** (OIDC) for `ppsyOps/psse_model_util`      | ⬜ Queued    |
-| P.4 | TestPyPI rehearsal: publish a `…b1` pre-release, `pip install --pre` from TestPyPI into a clean venv, smoke test          | ⬜ Queued    |
-| P.5 | CD automation: extend `cd.yml` to publish on tag — `v*b*/rc*`→TestPyPI, `vX.Y.Z`→PyPI — via `pypa/gh-action-pypi-publish` | ⬜ Queued    |
+| P.3 | Register PyPI + TestPyPI accounts, enable 2FA, configure **Trusted Publishing** (OIDC) for `ppsyOps/psse_model_util`      | ✅ Completed |
+| P.5 | CD automation: `.github/workflows/publish.yml` — on a published Release, build → TestPyPI (auto) → PyPI (`pypi` env gate), OIDC | ✅ Completed |
+| P.4 | TestPyPI rehearsal: bump to a `…b1` pre-release, cut a Release, verify `pip install --pre` from TestPyPI in a clean venv  | ⬜ Queued    |
 | P.6 | Document the beta convention: CalVer + PEP 440 suffix (`2026.5.0b1`, `rc1`); beta installs via `pip install --pre`        | ⬜ Queued    |
 | P.7 | Native-areas config + neighbor discovery ([issue #8](https://github.com/ppsyOps/psse_model_util/issues/8))                | ⬜ Queued    |
 
