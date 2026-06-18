@@ -1043,7 +1043,7 @@ def main(raw1_path: Path | str,
         print('Loading model1...')
         model1 = Model(raw1_path)
 
-        # Filter the models to a subset of areas (PJM + 1st tier)
+        # Filter the models to a subset of areas (native + first-tier neighbors)
         print('Filtering model1...')
         native_model1 = model1.filter_by_area(areas=include_areas)
         print('Loading model2...')

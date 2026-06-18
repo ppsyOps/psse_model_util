@@ -57,7 +57,7 @@ logger = setup_logger("contingency_util")
 logger.debug('    Loading functions...')
 
 # Default file system paths for contingency processing
-BASE_FOLDER: str = r'K:\panc\contingencies'
+BASE_FOLDER: str = r''  # set to your contingencies folder
 DEFAULT_INPUT_FOLDER: str = BASE_FOLDER + r'\input'  # Place all input files here, including exactly one raw file.
 DEFAULT_OUTPUT_FOLDER: str = BASE_FOLDER + r'\test_output'
 
@@ -72,7 +72,7 @@ KV_FILTER: tuple[int, int] = 138, 160  # (min_kv, max_kv)
 KV_EXCEPTIONS: tuple[str, str] = 'MACHINE', 'LOAD'
 
 # Folder containing files from which to read contingencies
-CONTINGENCY_DEFINITIONS_FOLDER: str = r'K:\panc\contingencies\contingencies'
+CONTINGENCY_DEFINITIONS_FOLDER: str = r''  # set to your contingency-definitions folder
 
 # Regex pattern for extracting bus numbers from contingency definitions
 # Matches: 'BUS' followed by exactly 6 digits

@@ -49,7 +49,7 @@ or perform graph analysis:
     filtered_model = model.filter_by_area(areas=['AREA1', 'AREA2'])
 
 This module is designed to be memory-efficient and performant, suitable for handling
-large power system models such as MMWG or IDC cases used in the Eastern Interconnection.
+large bulk-electric-system (BES) power-flow models.
 
 If you load a model once, you can save the Model object to disk directly as a
 pickle, to make loading it in the future much cheaper and much faster!
@@ -319,7 +319,7 @@ class Network(AbstractSection):
 
     Example:
         # >>> from model import Model
-        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
+        >>> fp = r"path/to/Model_1.raw"
         >>> model = Model(fp, name="Summer_Peak")
         >>> network = model.network
         >>>
@@ -1160,7 +1160,7 @@ class Network(AbstractSection):
         sections = self.model_dfs()
         for section, df in sections.items():
             # Skip buses (already done above.
-            # Skip substations, as they are complex and not present in IDC models.
+            # Skip substations, as they are complex and not present in typical planning models.
             if section.startswith('sub') or section == 'bus':
                 # Do not add substations to model
                 continue
@@ -1906,7 +1906,7 @@ class Network(AbstractSection):
 class Harmonics(AbstractSection):
     """
     Represents the 'harmonics' section of the PSSE v35 RAWX (JSON) file.
-    The MMWG based .rawx files do not contain harmonics data, so this section
+    RAW-sourced .rawx files do not contain harmonics data, so this section
     has minimal functionality.
     """
 
@@ -1922,7 +1922,7 @@ class Harmonics(AbstractSection):
 class TimeSeries(AbstractSection):
     """
     Represents the 'timeseries' section of the PSSE v35 RAWX (JSON) file.
-    The MMWG based .rawx files do not contain timeseries data, so this section
+    RAW-sourced .rawx files do not contain timeseries data, so this section
     has minimal functionality.
     """
 
@@ -1966,7 +1966,7 @@ class Model:
     Example:
         >>> # Load from RAW file
         >>> from model import Model
-        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
+        >>> fp = r"path/to/Model_1.raw"
         >>> model = Model(fp, name="Summer_Peak")
         >>>
         >>> # Filter to specific areas
@@ -2572,10 +2572,10 @@ class Model:
         Example:
         --------
         >>> from model import Model
-        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
+        >>> fp = r"path/to/Model_1.raw"
         >>> model = Model(fp)
         >>> print(model.pickle_path)
-        C:\\Personal\\Projects\\psse_model_util\\cache\\Model_1.model
+        path/to/cache/Model_1.model
         """
         if not hasattr(self, '_pickle_path'):
             self._pickle_path = None
@@ -2617,7 +2617,7 @@ class Model:
         Example:
         --------
          >>> from model import Model
-        >>> fp = r"C:\\Personal\\Projects\\psse_model_util\tests\\data\\Model_1.raw"
+        >>> fp = r"path/to/Model_1.raw"
         >>> model = Model(fp)
         >>> model.pickle_path = '/custom/path/mymodel.model'
         >>> print(model.pickle_path)
@@ -2702,7 +2702,6 @@ if __name__ == '__main__':
 
     clear_site_cache()
 
-    # fp = Path(r'K:\panc\contingencies\IDC_24S_sum24idctr1p8.raw')
     fp = Path(__file__).parent.parent / r'tests\data\sample_34.raw'
     # fp = Path(__file__).parent.parent / r'tests\data\Model_1.raw'
 
@@ -2710,10 +2709,10 @@ if __name__ == '__main__':
     if not pickle_path.exists():
         model = Model(file_path_or_json=fp, force_recalculate=True)
         if 'sample' in model.name:
-            # Dictionary of native PJM areas with their area numbers as keys and names as values
+            # Example native areas
             NATIVE_AREAS = {101: 'CENTRAL', 206: 'EAST', 301: 'CENTRAL_DC'}
 
-            # Dictionary of neighboring areas to PJM with their area numbers as keys and names as values
+            # Example neighboring areas
             NEIGHBOR_AREAS = {401: 'EAST_COGEN1', 3011: 'WEST', 402: 'EAST_COGEN2'}
 
             # Combined dictionary of native and neighboring areas, used for filtering models
