@@ -21,7 +21,7 @@ def synthetic_seeds(model_1):
         parse_mon_file,
         resolve_elements,
     )
-    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_pjm.mon"), sc="PJM")
+    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_flowgates.mon"), sc="SCA")
     seeds, _ = resolve_elements(fgs, model_1)
     return seeds
 
@@ -126,7 +126,7 @@ def test_collect_generators_mw_filter_default(model_1, synthetic_seeds):
     out = collect_key_facilities(model_1, synthetic_seeds)
     gens = out["generators"]
     if gens.empty:
-        pytest.skip("No generators in PJM neighborhood; nothing to verify")
+        pytest.skip("No generators in SCA neighborhood; nothing to verify")
 
     # Build a (bus_name, volt, machid) -> pt lookup from the source
     bus_attrs = model_1.network.bus.reset_index()[["ibus", "name", "baskv"]]
@@ -162,7 +162,7 @@ def test_collect_3w_transformers_shape(model_1, synthetic_seeds):
     xf3 = out["transformers_3w"]
     # Skip if Model_1 has none
     if xf3.empty:
-        pytest.skip("Model_1 has no 3W transformers in the PJM neighborhoods")
+        pytest.skip("Model_1 has no 3W transformers in the SCA neighborhoods")
     for _, row in xf3.iterrows():
         assert row["w1_bus_name"]
         assert row["w2_bus_name"]
@@ -195,7 +195,7 @@ def test_branches_role_column_values(model_1, synthetic_seeds):
 
 
 def test_branches_have_at_least_one_monitor_and_contingency_row(model_1, synthetic_seeds):
-    """The synthetic fixture has both monitor and contingency seeds in PJM areas;
+    """The synthetic fixture has both monitor and contingency seeds in SCA areas;
     at least one of each role should appear in the branches output."""
     from psse_model_util.flowgate import collect_key_facilities
 
@@ -220,14 +220,14 @@ def test_equipment_in_two_flowgates_produces_two_rows(model_1, tmp_path):
 
     # Borrow FG 1001's monitor BRANCH line from the synthetic fixture so the
     # bus tokens resolve cleanly against Model_1.raw.
-    fixture_text = (DATA_DIR / "synthetic_pjm.mon").read_text()
+    fixture_text = (DATA_DIR / "synthetic_flowgates.mon").read_text()
     import re
     # Extract the first BRANCH FROM BUS '...' TO BUS '...' CKT <id> line.
     m = re.search(
         r"BRANCH FROM BUS '([^']{18})' TO BUS '([^']{18})' CKT (\S+)",
         fixture_text,
     )
-    assert m, "could not locate a BRANCH line in synthetic_pjm.mon"
+    assert m, "could not locate a BRANCH line in synthetic_flowgates.mon"
     from_token, to_token, ckt = m.group(1), m.group(2), m.group(3)
 
     shared_branch_mon = (
@@ -238,7 +238,7 @@ def test_equipment_in_two_flowgates_produces_two_rows(model_1, tmp_path):
         " CONTINGENCY 7001\n"
         f"    OPEN BRANCH FROM BUS '{from_token}' TO BUS '{to_token}' CKT {ckt}\n"
         " END\n"
-        "    SC PJM\n"
+        "    SC SCA\n"
         "END\n"
         "\n"
         f"MONITOR FLOWGATE 7002  'shared branch FG B'\n"
@@ -246,13 +246,13 @@ def test_equipment_in_two_flowgates_produces_two_rows(model_1, tmp_path):
         " CONTINGENCY 7002\n"
         f"    OPEN BRANCH FROM BUS '{from_token}' TO BUS '{to_token}' CKT {ckt}\n"
         " END\n"
-        "    SC PJM\n"
+        "    SC SCA\n"
         "END\n"
     )
 
     p = tmp_path / "shared.mon"
     p.write_text(shared_branch_mon)
-    fgs = filter_by_sc(parse_mon_file(p), sc="PJM")
+    fgs = filter_by_sc(parse_mon_file(p), sc="SCA")
     seeds, unresolved = resolve_elements(fgs, model_1)
     assert unresolved.empty, f"unexpected unresolved:\n{unresolved}"
 
@@ -277,15 +277,15 @@ def test_end_to_end_synthetic_to_dataframes(model_1):
         resolve_elements,
     )
 
-    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
-    pjm = filter_by_sc(fgs, sc="PJM")
-    assert [fg.flowgate_id for fg in pjm] == [1001, 1002, 1003]
+    fgs = parse_mon_file(DATA_DIR / "synthetic_flowgates.mon")
+    sca = filter_by_sc(fgs, sc="SCA")
+    assert [fg.flowgate_id for fg in sca] == [1001, 1002, 1003]
 
-    seeds, unresolved = resolve_elements(pjm, model_1)
+    seeds, unresolved = resolve_elements(sca, model_1)
     assert unresolved.empty, f"unexpected unresolved rows:\n{unresolved}"
 
     out = collect_key_facilities(model_1, seeds)
-    # Sanity: branches non-empty (synthetic PJM seeds are 345 kV)
+    # Sanity: branches non-empty (synthetic SCA seeds are 345 kV)
     assert len(out["branches"]) > 0
     # The collect function returns 3 keys; unresolved is composed in by callers.
     assert set(out.keys()) == {"branches", "generators", "transformers_3w"}
@@ -300,9 +300,9 @@ def test_extract_key_facilities_full_pipeline():
     from psse_model_util.flowgate import extract_key_facilities
 
     out = extract_key_facilities(
-        mon_path=DATA_DIR / "synthetic_pjm.mon",
+        mon_path=DATA_DIR / "synthetic_flowgates.mon",
         raw_path=DATA_DIR / "Model_1.raw",
-        sc="PJM",
+        sc="SCA",
     )
     assert set(out.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
     assert len(out["branches"]) > 0
@@ -315,9 +315,9 @@ def test_extract_key_facilities_with_areas_filter():
     from psse_model_util.flowgate import extract_key_facilities
 
     out = extract_key_facilities(
-        mon_path=DATA_DIR / "synthetic_pjm.mon",
+        mon_path=DATA_DIR / "synthetic_flowgates.mon",
         raw_path=DATA_DIR / "Model_1.raw",
-        sc="PJM",
+        sc="SCA",
         areas=[9999],
     )
     assert len(out["branches"]) == 0
