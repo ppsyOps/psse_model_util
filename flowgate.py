@@ -554,6 +554,45 @@ def neighborhood_buses(
     return result
 
 
+def _merge_bus_ends(
+    df: pd.DataFrame,
+    bus_attrs: pd.DataFrame,
+    ends: list[tuple[str, str]],
+) -> pd.DataFrame:
+    """Left-join `bus_attrs` onto `df` once per `(join_col, prefix)` pair.
+
+    For each entry `(join_col, prefix)`, the bus DataFrame's `name`,
+    `baskv`, and `area` columns are renamed to `prefix + "name"`,
+    `prefix + "volt"`, and `prefix + "area"`, and the join key column is
+    renamed to `join_col` (so the merge aligns even when `join_col != "ibus"`).
+
+    Example for a 2-end branch:
+
+        _merge_bus_ends(
+            df,
+            bus_attrs,
+            ends=[("ibus", "from_"), ("jbus", "to_")],
+        )
+
+    produces a frame with `from_name, from_volt, from_area, to_name,
+    to_volt, to_area` columns added.
+    """
+    result = df
+    for join_col, prefix in ends:
+        renames = {
+            "name": f"{prefix}name",
+            "baskv": f"{prefix}volt",
+            "area": f"{prefix}area",
+        }
+        if join_col != "ibus":
+            renames["ibus"] = join_col
+        right = bus_attrs.rename(columns=renames)[
+            [join_col, f"{prefix}name", f"{prefix}volt", f"{prefix}area"]
+        ]
+        result = result.merge(right, on=join_col, how="left")
+    return result
+
+
 def _int_or_none(value) -> int | None:
     """Coerce a pandas cell to int, or return None when the cell is NaN.
 
@@ -590,77 +629,49 @@ def _collect_branches_for_fg(
     bus_attrs is the bus DataFrame reset_index with ibus as a column,
     pre-projected to [ibus, name, baskv, area].
     """
-    rows: list[dict] = []
+    out_rows: list[dict] = []
 
-    # AC lines
-    ac = model.network.acline.reset_index()
-    ac_hit = ac[ac["ibus"].isin(neighborhood) | ac["jbus"].isin(neighborhood)]
-    if not ac_hit.empty:
-        ac_hit = ac_hit.merge(
-            bus_attrs.rename(columns={
-                "name": "from_name",
-                "baskv": "from_volt",
-                "area": "from_area",
-            })[["ibus", "from_name", "from_volt", "from_area"]],
-            on="ibus", how="left",
-        ).merge(
-            bus_attrs.rename(columns={
-                "ibus": "jbus",
-                "name": "to_name",
-                "baskv": "to_volt",
-                "area": "to_area",
-            })[["jbus", "to_name", "to_volt", "to_area"]],
-            on="jbus", how="left",
-        )
-        ac_hit = ac_hit[
-            ((ac_hit["from_volt"] >= kv_min) & (ac_hit["from_volt"] <= kv_max))
-            | ((ac_hit["to_volt"] >= kv_min) & (ac_hit["to_volt"] <= kv_max))
-        ]
-        for _, r in ac_hit.iterrows():
-            rows.append({
-                "flowgate_id": fg_id, "role": role, "equipment_type": "line",
-                "from_name": r["from_name"], "from_volt": r["from_volt"],
-                "from_area": _int_or_none(r["from_area"]),
-                "to_name": r["to_name"], "to_volt": r["to_volt"],
-                "to_area": _int_or_none(r["to_area"]),
-                "ckt_id": str(r["ckt"]).strip(),
-            })
-
-    # 2W transformers (kbus == 0)
     xf = model.network.transformer.reset_index()
-    xf2 = xf[(xf["kbus"] == 0) & (xf["ibus"].isin(neighborhood) | xf["jbus"].isin(neighborhood))]
-    if not xf2.empty:
-        xf2 = xf2.merge(
-            bus_attrs.rename(columns={
-                "name": "from_name",
-                "baskv": "from_volt",
-                "area": "from_area",
-            })[["ibus", "from_name", "from_volt", "from_area"]],
-            on="ibus", how="left",
-        ).merge(
-            bus_attrs.rename(columns={
-                "ibus": "jbus",
-                "name": "to_name",
-                "baskv": "to_volt",
-                "area": "to_area",
-            })[["jbus", "to_name", "to_volt", "to_area"]],
-            on="jbus", how="left",
-        )
-        xf2 = xf2[
-            ((xf2["from_volt"] >= kv_min) & (xf2["from_volt"] <= kv_max))
-            | ((xf2["to_volt"] >= kv_min) & (xf2["to_volt"] <= kv_max))
-        ]
-        for _, r in xf2.iterrows():
-            rows.append({
-                "flowgate_id": fg_id, "role": role, "equipment_type": "transformer_2w",
-                "from_name": r["from_name"], "from_volt": r["from_volt"],
-                "from_area": _int_or_none(r["from_area"]),
-                "to_name": r["to_name"], "to_volt": r["to_volt"],
-                "to_area": _int_or_none(r["to_area"]),
-                "ckt_id": str(r["ckt"]).strip(),
-            })
+    sources = [
+        (
+            model.network.acline.reset_index(),
+            "line",
+            None,  # no extra mask; the neighborhood filter alone applies
+        ),
+        (
+            xf,
+            "transformer_2w",
+            xf["kbus"] == 0,  # restrict to 2-winding rows
+        ),
+    ]
+    ends = [("ibus", "from_"), ("jbus", "to_")]
 
-    return rows
+    for source_df, equipment_type, extra_mask in sources:
+        mask = source_df["ibus"].isin(neighborhood) | source_df["jbus"].isin(neighborhood)
+        if extra_mask is not None:
+            mask = mask & extra_mask
+        df = source_df[mask]
+        if df.empty:
+            continue
+        joined = _merge_bus_ends(df, bus_attrs, ends=ends)
+        in_kv = (
+            joined["from_volt"].between(kv_min, kv_max)
+            | joined["to_volt"].between(kv_min, kv_max)
+        )
+        kept = joined[in_kv].copy()  # defragment after the merge chain
+        if kept.empty:
+            continue
+        kept = kept.assign(
+            flowgate_id=fg_id,
+            role=role,
+            equipment_type=equipment_type,
+            from_area=kept["from_area"].map(_int_or_none),
+            to_area=kept["to_area"].map(_int_or_none),
+            ckt_id=kept["ckt"].astype(str).str.strip(),
+        )
+        out_rows.extend(kept[_BRANCH_COLS].to_dict("records"))
+
+    return out_rows
 
 
 def _collect_generators_for_fg(
@@ -681,20 +692,19 @@ def _collect_generators_for_fg(
     if hit.empty:
         return []
     hit = hit.merge(
-        bus_attrs.rename(columns={
-            "name": "bus_name", "baskv": "volt", "area": "area",
-        })[["ibus", "bus_name", "volt", "area"]],
+        bus_attrs.rename(columns={"name": "bus_name", "baskv": "volt"})[
+            ["ibus", "bus_name", "volt", "area"]
+        ],
         on="ibus", how="left",
     )
-    rows: list[dict] = []
-    for _, r in hit.iterrows():
-        rows.append({
-            "flowgate_id": fg_id, "role": role,
-            "bus_name": r["bus_name"], "volt": float(r["volt"]),
-            "area": _int_or_none(r["area"]),
-            "ckt_id": str(r["machid"]).strip(),
-        })
-    return rows
+    hit = hit.assign(
+        flowgate_id=fg_id,
+        role=role,
+        volt=hit["volt"].astype(float),
+        area=hit["area"].map(_int_or_none),
+        ckt_id=hit["machid"].astype(str).str.strip(),
+    )
+    return hit[_GEN_COLS].to_dict("records")
 
 
 def _collect_3w_for_fg(
@@ -721,39 +731,44 @@ def _collect_3w_for_fg(
     ]
     if xf3.empty:
         return []
-    # Join bus attrs three times for w1/w2/w3
+    # Join bus attrs three times — winding voltages come from each winding
+    # bus's baskv (not the transformer's nomv* which may be 0). _merge_bus_ends
+    # is shaped for the 2-end branch case (which carries an `_area` field);
+    # 3W windings don't need area columns, so we inline the three merges.
     xf3 = xf3.merge(
-        bus_attrs.rename(columns={
-            "name": "w1_bus_name", "baskv": "w1_volt",
-        })[["ibus", "w1_bus_name", "w1_volt"]],
+        bus_attrs.rename(columns={"name": "w1_bus_name", "baskv": "w1_volt"})[
+            ["ibus", "w1_bus_name", "w1_volt"]
+        ],
         on="ibus", how="left",
     ).merge(
-        bus_attrs.rename(columns={
-            "ibus": "jbus", "name": "w2_bus_name", "baskv": "w2_volt",
-        })[["jbus", "w2_bus_name", "w2_volt"]],
+        bus_attrs.rename(columns={"ibus": "jbus", "name": "w2_bus_name", "baskv": "w2_volt"})[
+            ["jbus", "w2_bus_name", "w2_volt"]
+        ],
         on="jbus", how="left",
     ).merge(
-        bus_attrs.rename(columns={
-            "ibus": "kbus", "name": "w3_bus_name", "baskv": "w3_volt",
-        })[["kbus", "w3_bus_name", "w3_volt"]],
+        bus_attrs.rename(columns={"ibus": "kbus", "name": "w3_bus_name", "baskv": "w3_volt"})[
+            ["kbus", "w3_bus_name", "w3_volt"]
+        ],
         on="kbus", how="left",
     )
-    xf3 = xf3[
+    in_kv = (
         xf3["w1_volt"].between(kv_min, kv_max)
         | xf3["w2_volt"].between(kv_min, kv_max)
         | xf3["w3_volt"].between(kv_min, kv_max)
-    ]
-    rows: list[dict] = []
-    for _, r in xf3.iterrows():
-        rows.append({
-            "flowgate_id": fg_id, "role": role,
-            "transformer_name": str(r["name"]).strip(),
-            "w1_bus_name": r["w1_bus_name"], "w1_volt": float(r["w1_volt"]),
-            "w2_bus_name": r["w2_bus_name"], "w2_volt": float(r["w2_volt"]),
-            "w3_bus_name": r["w3_bus_name"], "w3_volt": float(r["w3_volt"]),
-            "ckt_id": str(r["ckt"]).strip(),
-        })
-    return rows
+    )
+    kept = xf3[in_kv].copy()  # defragment after the 3-merge chain
+    if kept.empty:
+        return []
+    kept = kept.assign(
+        flowgate_id=fg_id,
+        role=role,
+        transformer_name=kept["name"].astype(str).str.strip(),
+        w1_volt=kept["w1_volt"].astype(float),
+        w2_volt=kept["w2_volt"].astype(float),
+        w3_volt=kept["w3_volt"].astype(float),
+        ckt_id=kept["ckt"].astype(str).str.strip(),
+    )
+    return kept[_XF3_COLS].to_dict("records")
 
 
 _BRANCH_COLS = [
