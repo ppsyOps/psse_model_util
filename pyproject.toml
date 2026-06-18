@@ -61,15 +61,11 @@ dev = [
 ]
 
 [tool.hatch.version]
-path = "__about__.py"
+path = "src/psse_model_util/__about__.py"
 pattern = "__version__ = ['\"](?P<version>[^'\"]+)['\"]"
 
 [tool.hatch.build.targets.wheel]
-packages = ["."]
-exclude = [
-    "*.cmd",
-    "dist/",
-]
+packages = ["src/psse_model_util"]
 
 [tool.pdm]
 distribution = true
@@ -98,17 +94,15 @@ addopts = [
 ]
 
 [tool.coverage.run]
-source = ["."]
+source = ["src/psse_model_util"]
 omit = [
     "tests/*",
     "dist/*",
     "*/__pycache__/*",
     # Scaffolded / WIP — not yet testable
-    "inch.py",
-    "util/contingency_util.py",
-    "version.py",
-    # Deprecated visualization — to be replaced in Phase 3.1
-    "one_line_diagram.py",
+    "src/psse_model_util/inch.py",
+    "src/psse_model_util/util/contingency_util.py",
+    "src/psse_model_util/version.py",
 ]
 
 [tool.coverage.report]

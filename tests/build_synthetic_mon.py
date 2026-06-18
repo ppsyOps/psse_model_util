@@ -5,28 +5,14 @@ Output:    tests/data/synthetic_flowgates.mon  (commit it)
 
 This script is intentionally NOT on the pytest path.
 """
-import importlib.machinery
 import sys
-import types
 from pathlib import Path
 
-# Make `psse_model_util` importable when this script is run directly
-# (mirrors the logic in tests/conftest.py).
-_PROJECT_DIR = Path(__file__).resolve().parent.parent
-_PARENT_DIR = _PROJECT_DIR.parent
-if (_PARENT_DIR / "psse_model_util").is_dir():
-    if str(_PARENT_DIR) not in sys.path:
-        sys.path.insert(0, str(_PARENT_DIR))
-elif "psse_model_util" not in sys.modules:
-    if str(_PROJECT_DIR) not in sys.path:
-        sys.path.insert(0, str(_PROJECT_DIR))
-    _pkg = types.ModuleType("psse_model_util")
-    _pkg.__path__ = [str(_PROJECT_DIR)]
-    _pkg.__package__ = "psse_model_util"
-    _pkg.__spec__ = importlib.machinery.ModuleSpec(
-        "psse_model_util", loader=None, origin=str(_PROJECT_DIR)
-    )
-    sys.modules["psse_model_util"] = _pkg
+# Make `psse_model_util` importable when this script is run directly without an
+# editable install (mirrors the fallback in tests/conftest.py).
+_SRC_DIR = Path(__file__).resolve().parent.parent / "src"
+if _SRC_DIR.is_dir() and str(_SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(_SRC_DIR))
 
 from psse_model_util.model import Model  # noqa: E402
 

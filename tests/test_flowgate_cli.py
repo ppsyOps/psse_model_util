@@ -17,14 +17,13 @@ CLI_SCRIPT = (
     reason=f"CLI script not found at {CLI_SCRIPT}; skipping smoke test.",
 )
 def test_cli_writes_four_csvs(tmp_path):
-    # PYTHONPATH must point at the grandparent of psse_model_util so the
-    # flat-layout package is importable as `psse_model_util.*` in the subprocess.
-    package_root = Path(__file__).resolve().parent.parent
-    grandparent = package_root.parent
+    # PYTHONPATH must point at the src/ dir so the package is importable as
+    # `psse_model_util.*` in the subprocess (src/ layout).
+    src_dir = Path(__file__).resolve().parent.parent / "src"
     env = os.environ.copy()
     existing_pp = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (
-        str(grandparent) + (os.pathsep + existing_pp if existing_pp else "")
+        str(src_dir) + (os.pathsep + existing_pp if existing_pp else "")
     )
 
     result = subprocess.run(
