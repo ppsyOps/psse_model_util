@@ -86,7 +86,7 @@
 
 | ID  | Item                                                                                                                     | Status      |
 | --- | ------------------------------------------------------------------------------------------------------------------------ | ----------- |
-| P.1 | Real-system scrub (PJM/MMWG/IDC/real paths) + MIT relicense                                                               | ✅ Completed |
+| P.1 | Real-system scrub (utility/ISO footprint, internal paths) + MIT relicense                                                | ✅ Completed |
 | P.2 | `src/` package layout — wheel installs cleanly as `psse_model_util`                                                       | ✅ Completed |
 | P.3 | Register PyPI + TestPyPI accounts, enable 2FA, configure **Trusted Publishing** (OIDC) for `ppsyOps/psse_model_util`      | ⬜ Queued    |
 | P.4 | TestPyPI rehearsal: publish a `…b1` pre-release, `pip install --pre` from TestPyPI into a clean venv, smoke test          | ⬜ Queued    |
