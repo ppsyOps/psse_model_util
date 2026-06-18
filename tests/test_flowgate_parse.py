@@ -39,6 +39,50 @@ def test_dataclasses_exist():
     assert 101 in rs.seed_buses
 
 
+def test_flowgate_element_rejects_bad_role():
+    from psse_model_util.flowgate import FlowgateElement
+
+    with pytest.raises(ValueError, match="role must be one of"):
+        FlowgateElement(
+            flowgate_id=1, role="bogus", element_type="branch", raw_tokens=("a",)
+        )
+
+
+def test_flowgate_element_rejects_bad_element_type():
+    from psse_model_util.flowgate import FlowgateElement
+
+    with pytest.raises(ValueError, match="element_type must be one of"):
+        FlowgateElement(
+            flowgate_id=1, role="monitor", element_type="bus", raw_tokens=("a",)
+        )
+
+
+def test_resolved_seed_rejects_bad_role():
+    from psse_model_util.flowgate import ResolvedSeed
+
+    with pytest.raises(ValueError, match="role must be one of"):
+        ResolvedSeed(
+            flowgate_id=1,
+            role="bogus",
+            element_type="branch",
+            seed_buses=frozenset({1}),
+            raw_tokens=("a",),
+        )
+
+
+def test_resolved_seed_rejects_bad_element_type():
+    from psse_model_util.flowgate import ResolvedSeed
+
+    with pytest.raises(ValueError, match="element_type must be one of"):
+        ResolvedSeed(
+            flowgate_id=1,
+            role="monitor",
+            element_type="3w",
+            seed_buses=frozenset({1}),
+            raw_tokens=("a",),
+        )
+
+
 def test_split_bus_token_basic():
     from psse_model_util.flowgate import _split_bus_token
 

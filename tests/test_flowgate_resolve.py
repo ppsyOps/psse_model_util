@@ -56,8 +56,66 @@ def test_resolve_unresolved_dataframe_columns(model_1, synthetic_fgs):
     from psse_model_util.flowgate import resolve_elements
 
     _, unresolved = resolve_elements(synthetic_fgs, model_1)
-    expected_cols = {"flowgate_id", "role", "element_type", "raw_tokens", "reason"}
+    expected_cols = {
+        "flowgate_id", "role", "element_type",
+        "from_token", "to_token", "ckt_id",
+        "bus_token", "machine_id",
+        "reason",
+    }
     assert expected_cols.issubset(unresolved.columns)
+
+
+def test_resolve_unresolved_branch_fills_from_to_ckt(model_1, tmp_path):
+    """An unresolved branch row populates from_token/to_token/ckt_id;
+    bus_token and machine_id are empty."""
+    from psse_model_util.flowgate import parse_mon_file, resolve_elements
+
+    bogus = """\
+MONITOR FLOWGATE 5001  'bogus branch'
+         BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 7
+ CONTINGENCY 5001
+    OPEN BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 7
+ END
+    SC PJM
+END
+"""
+    p = tmp_path / "bogus.mon"
+    p.write_text(bogus)
+    _, unresolved = resolve_elements(parse_mon_file(p), model_1)
+    assert len(unresolved) == 2  # monitor + contingency
+    for _, row in unresolved.iterrows():
+        assert row["from_token"] == "ZZZNOTFOUND 345.00"
+        assert row["to_token"] == "ZZZALSOBAD  345.00"
+        assert row["ckt_id"] == "7"
+        assert pd.isna(row["bus_token"])
+        assert pd.isna(row["machine_id"])
+
+
+def test_resolve_unresolved_generator_fills_bus_machine(model_1, tmp_path):
+    """An unresolved REMOVE MACHINE row populates bus_token and machine_id;
+    from_token / to_token / ckt_id are empty."""
+    from psse_model_util.flowgate import parse_mon_file, resolve_elements
+
+    bogus = """\
+MONITOR FLOWGATE 5002  'bogus gen'
+         BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 1
+ CONTINGENCY 5002
+    REMOVE MACHINE ZZ9 FROM BUS 'ZZZMACHINE  22.000'
+ END
+    SC PJM
+END
+"""
+    p = tmp_path / "bogus_gen.mon"
+    p.write_text(bogus)
+    _, unresolved = resolve_elements(parse_mon_file(p), model_1)
+    gen_rows = unresolved[unresolved["element_type"] == "generator"]
+    assert len(gen_rows) == 1
+    row = gen_rows.iloc[0]
+    assert row["bus_token"] == "ZZZMACHINE  22.000"
+    assert row["machine_id"] == "ZZ9"
+    assert pd.isna(row["from_token"])
+    assert pd.isna(row["to_token"])
+    assert pd.isna(row["ckt_id"])
 
 
 def test_resolve_remove_machine_against_model(model_1, synthetic_fgs):

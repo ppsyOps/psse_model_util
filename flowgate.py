@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 import pathlib
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Literal
 
@@ -32,6 +33,10 @@ KV_KEY_DECIMALS: int = 3         # rounding precision for bus-lookup key
 
 
 # ---------- dataclasses ----------
+_VALID_ROLES = ("monitor", "contingency")
+_VALID_ELEMENT_TYPES = ("branch", "generator")
+
+
 @dataclass(frozen=True)
 class FlowgateElement:
     """One element parsed from a .mon flowgate block.
@@ -57,6 +62,17 @@ class FlowgateElement:
     element_type: Literal["branch", "generator"]
     raw_tokens: tuple[str, ...]
 
+    def __post_init__(self) -> None:
+        if self.role not in _VALID_ROLES:
+            raise ValueError(
+                f"FlowgateElement.role must be one of {_VALID_ROLES!r}, got {self.role!r}"
+            )
+        if self.element_type not in _VALID_ELEMENT_TYPES:
+            raise ValueError(
+                f"FlowgateElement.element_type must be one of "
+                f"{_VALID_ELEMENT_TYPES!r}, got {self.element_type!r}"
+            )
+
 
 @dataclass(frozen=True)
 class Flowgate:
@@ -79,6 +95,17 @@ class ResolvedSeed:
     element_type: Literal["branch", "generator"]
     seed_buses: frozenset[int]
     raw_tokens: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if self.role not in _VALID_ROLES:
+            raise ValueError(
+                f"ResolvedSeed.role must be one of {_VALID_ROLES!r}, got {self.role!r}"
+            )
+        if self.element_type not in _VALID_ELEMENT_TYPES:
+            raise ValueError(
+                f"ResolvedSeed.element_type must be one of "
+                f"{_VALID_ELEMENT_TYPES!r}, got {self.element_type!r}"
+            )
 
 
 # ---------- parsing primitives ----------
@@ -317,7 +344,39 @@ def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]:
     return [fg for fg in fgs if fg.sc == sc]
 
 
-_UNRESOLVED_COLUMNS = ["flowgate_id", "role", "element_type", "raw_tokens", "reason"]
+_UNRESOLVED_COLUMNS = [
+    "flowgate_id", "role", "element_type",
+    "from_token", "to_token", "ckt_id",  # populated for element_type == "branch"
+    "bus_token", "machine_id",            # populated for element_type == "generator"
+    "reason",
+]
+
+
+def _unresolved_token_fields(elem: "FlowgateElement") -> dict:
+    """Split a FlowgateElement's raw_tokens into per-type unresolved columns.
+
+    Branches fill (from_token, to_token, ckt_id); generators fill
+    (bus_token, machine_id). The other columns are None so they render
+    as empty cells in the CSV.
+    """
+    if elem.element_type == "branch":
+        from_token, to_token, ckt_id = elem.raw_tokens
+        return {
+            "from_token": from_token,
+            "to_token": to_token,
+            "ckt_id": ckt_id,
+            "bus_token": None,
+            "machine_id": None,
+        }
+    # element_type == "generator" (enforced by FlowgateElement.__post_init__)
+    bus_token, machine_id = elem.raw_tokens
+    return {
+        "from_token": None,
+        "to_token": None,
+        "ckt_id": None,
+        "bus_token": bus_token,
+        "machine_id": machine_id,
+    }
 
 
 def _build_bus_lookup(model: Model) -> dict[tuple[str, float], int]:
@@ -385,7 +444,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "bus_not_found",
                     })
                     continue
@@ -394,7 +453,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "branch_not_found",
                     })
                     continue
@@ -413,7 +472,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "bus_not_found",
                     })
                     continue
@@ -424,7 +483,7 @@ def resolve_elements(
                         "flowgate_id": elem.flowgate_id,
                         "role": elem.role,
                         "element_type": elem.element_type,
-                        "raw_tokens": repr(elem.raw_tokens),
+                        **_unresolved_token_fields(elem),
                         "reason": "generator_not_found",
                     })
                     continue
@@ -502,6 +561,16 @@ def _int_or_none(value) -> int | None:
     the joined bus was dropped from the filtered set; this helper keeps
     those rows in the output with an empty area column rather than
     crashing on int(NaN).
+
+    Design choice — keep, don't drop:
+
+    A branch with one endpoint inside the kept areas and one endpoint
+    outside is **kept** in the output; the outside endpoint's area cell is
+    empty (None → empty CSV cell). Dropping these rows would discard
+    real signal — they're exactly the branches at the perimeter of the
+    search area, which downstream analysis (e.g. tie-line review) often
+    cares about most. Consumers who want strictly-inside rows can filter
+    on `(from_area.notna() & to_area.notna())` themselves.
     """
     return int(value) if pd.notna(value) else None
 
@@ -768,4 +837,69 @@ def collect_key_facilities(
         "branches": pd.DataFrame(branch_rows, columns=_BRANCH_COLS),
         "generators": pd.DataFrame(gen_rows, columns=_GEN_COLS),
         "transformers_3w": pd.DataFrame(xf3_rows, columns=_XF3_COLS),
+    }
+
+
+def extract_key_facilities(
+    mon_path: pathlib.Path | str,
+    raw_path: pathlib.Path | str,
+    *,
+    sc: str = DEFAULT_SC,
+    areas: Iterable[int] | None = None,
+    hops: int = DEFAULT_HOPS,
+    kv_min: float = DEFAULT_KV_MIN,
+    kv_max: float = DEFAULT_KV_MAX,
+    gen_min_mw: float = DEFAULT_GEN_MIN_MW,
+) -> dict[str, pd.DataFrame]:
+    """Run the full flowgate pipeline and return the 4-DataFrame result.
+
+    Convenience wrapper that composes the four stage functions in order:
+
+        parse_mon_file(mon_path)
+        -> filter_by_sc(sc)
+        -> Model(raw_path)
+        -> [optional] model.network.filter_by_area(areas)
+        -> resolve_elements
+        -> collect_key_facilities
+
+    and folds the unresolved DataFrame from `resolve_elements` into the
+    final dict so callers get all four outputs in one place.
+
+    Parameters
+    ----------
+    mon_path : Path | str
+        Path to the PSS/E .mon flowgate-definitions file.
+    raw_path : Path | str
+        Path to the PSS/E .raw model.
+    sc : str, default DEFAULT_SC
+        Security Coordinator filter applied after parsing.
+    areas : Iterable[int] | None, default None
+        If provided, `Network.filter_by_area` is called to restrict the
+        search domain to those area IDs before resolution. Seeds whose
+        buses fall outside the listed areas will appear in the
+        `unresolved` DataFrame with reason "bus_not_found".
+    hops, kv_min, kv_max, gen_min_mw
+        Forwarded to `collect_key_facilities`.
+
+    Returns
+    -------
+    dict[str, pd.DataFrame]
+        Keys: 'branches', 'generators', 'transformers_3w', 'unresolved'.
+    """
+    fgs = parse_mon_file(mon_path)
+    fgs_filtered = filter_by_sc(fgs, sc=sc)
+    model = Model(raw_path)
+    if areas is not None:
+        model.network.filter_by_area(list(areas), inplace=True)
+    seeds, unresolved = resolve_elements(fgs_filtered, model)
+    return {
+        **collect_key_facilities(
+            model,
+            seeds,
+            hops=hops,
+            kv_min=kv_min,
+            kv_max=kv_max,
+            gen_min_mw=gen_min_mw,
+        ),
+        "unresolved": unresolved,
     }
