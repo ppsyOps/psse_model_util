@@ -237,7 +237,7 @@ For each subsection:
 
 ## Caching
 
-Parsing large RAW files (MMWG/IDC scale — tens of thousands of buses) takes time. `Model` automatically caches to/from pickle:
+Parsing large RAW files (tens of thousands of buses) takes time. `Model` automatically caches to/from pickle:
 
 - Cache path: `site_cache_dir / "<raw_stem>.model"`
 - On load: if cache exists and `force_recalculate=False` → skip parsing, load pickle

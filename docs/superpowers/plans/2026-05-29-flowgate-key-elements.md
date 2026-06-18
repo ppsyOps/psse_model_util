@@ -24,7 +24,7 @@
 - `tests/test_flowgate_collect.py` — Tasks 13-16 (DataFrame assembly tests)
 - `tests/test_flowgate_cli.py` — Task 19 (CLI smoke test)
 - `tests/build_synthetic_mon.py` — Task 6 helper (not on pytest path)
-- `tests/data/synthetic_pjm.mon` — generated once, committed
+- `tests/data/synthetic_flowgates.mon` — generated once, committed
 
 **New files in sibling repo `C:\Users\Chris\PycharmProjects\key_facilities\`:**
 - `key_facilities.py` — argparse CLI orchestrator
@@ -67,7 +67,7 @@ def test_module_imports_and_has_constants():
     assert flowgate.DEFAULT_KV_MIN == 160.0
     assert flowgate.DEFAULT_KV_MAX == 765.0
     assert flowgate.DEFAULT_GEN_MIN_MW == 15.0
-    assert flowgate.DEFAULT_SC == "PJM"
+    # sc is a required argument (no default) — no module-level SC default constant
     assert flowgate.KV_KEY_DECIMALS == 3
 
 
@@ -78,7 +78,7 @@ def test_dataclasses_exist():
         flowgate_id=1, role="monitor", element_type="branch", raw_tokens=("a",)
     )
     fg = Flowgate(
-        flowgate_id=1, description="d", sc="PJM", monitor=[fge], contingency=[]
+        flowgate_id=1, description="d", sc="SCA", monitor=[fge], contingency=[]
     )
     rs = ResolvedSeed(
         flowgate_id=1,
@@ -89,7 +89,7 @@ def test_dataclasses_exist():
     )
 
     assert fge.role == "monitor"
-    assert fg.sc == "PJM"
+    assert fg.sc == "SCA"
     assert 101 in rs.seed_buses
 ```
 
@@ -136,7 +136,7 @@ DEFAULT_HOPS: int = 4
 DEFAULT_KV_MIN: float = 160.0
 DEFAULT_KV_MAX: float = 765.0
 DEFAULT_GEN_MIN_MW: float = 15.0
-DEFAULT_SC: str = "PJM"          # SC = Security Coordinator
+# sc is a required argument (no default); SC = Security Coordinator
 KV_KEY_DECIMALS: int = 3         # rounding precision for bus-lookup key
 
 
@@ -158,7 +158,7 @@ class FlowgateElement:
 class Flowgate:
     flowgate_id: int
     description: str
-    sc: str  # Security Coordinator (e.g. "PJM")
+    sc: str  # Security Coordinator (e.g. "SCA")
     monitor: list[FlowgateElement]
     contingency: list[FlowgateElement]
 
@@ -198,7 +198,7 @@ git commit -m "feat(flowgate): scaffold module with constants and dataclasses"
 
 ## Task 2: Bus-token splitter
 
-Bus tokens look like `'05TANNER    345.00'` — 12-char name + 6-char kV. This helper is the foundational primitive everything else uses.
+Bus tokens look like `'NUCPLNT     500.00'` — 12-char name + 6-char kV. This helper is the foundational primitive everything else uses.
 
 **Files:**
 - Modify: `psse_model_util/flowgate.py` (add `_split_bus_token`)
@@ -215,16 +215,16 @@ import pytest
 def test_split_bus_token_basic():
     from psse_model_util.flowgate import _split_bus_token
 
-    name, kv = _split_bus_token("05TANNER    345.00")
-    assert name == "05TANNER"
+    name, kv = _split_bus_token("NUCPLNT     500.00")
+    assert name == "NUCPLNT"
     assert kv == 345.00
 
 
 def test_split_bus_token_strips_quotes():
     from psse_model_util.flowgate import _split_bus_token
 
-    name, kv = _split_bus_token("'05TANNER    345.00'")
-    assert name == "05TANNER"
+    name, kv = _split_bus_token("'NUCPLNT     500.00'")
+    assert name == "NUCPLNT"
     assert kv == 345.00
 
 
@@ -272,8 +272,8 @@ def _split_bus_token(token: str) -> tuple[str, float]:
     The token is 18 chars wide: 12-char left/right-padded name + 6-char
     kV string. Surrounding single quotes are stripped if present.
 
-    >>> _split_bus_token("'05TANNER    345.00'")
-    ('05TANNER', 345.0)
+    >>> _split_bus_token("'NUCPLNT     500.00'")
+    ('NUCPLNT', 500.0)
     """
     stripped = token.strip()
     if stripped.startswith("'") and stripped.endswith("'"):
@@ -315,14 +315,14 @@ Append to `tests/test_flowgate_parse.py`:
 ```python
 SIMPLE_MON_TEXT = """\
 BUSNAMES
-MONITOR FLOWGATE 1600  'Tanners Creek - Dearborn 345kV l/o L765.Marysville-Sorenson'
-         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT Z1
+MONITOR FLOWGATE 1600  'NUCPLNT - MID500 500kV l/o L765.EAST500-SUB500'
+         BRANCH FROM BUS 'NUCPLNT     500.00' TO BUS 'MID500      500.00' CKT Z1
  CONTINGENCY 1600
-    OPEN BRANCH FROM BUS '05MARYSVL_RS765.00' TO BUS '05SORENSN_RM765.00' CKT 1
+    OPEN BRANCH FROM BUS 'EAST500     500.00' TO BUS 'SUB500      500.00' CKT 1
  END
-    CA AEP OVEC
-    SC PJM
-    TP PJM PJM
+    CA SYN SYN
+    SC SCA
+    TP SCA SCA
 END
 """
 
@@ -337,8 +337,8 @@ def test_parse_mon_string_one_flowgate(tmp_path):
     assert len(fgs) == 1
     fg = fgs[0]
     assert fg.flowgate_id == 1600
-    assert fg.sc == "PJM"
-    assert fg.description.startswith("Tanners Creek")
+    assert fg.sc == "SCA"
+    assert fg.description.startswith("NUCPLNT")
     assert len(fg.monitor) == 1
     assert len(fg.contingency) == 1
 
@@ -354,8 +354,8 @@ def test_parse_monitor_element_tokens(tmp_path):
     assert mon.role == "monitor"
     assert mon.element_type == "branch"
     # raw_tokens: (from_token, to_token, ckt) for branch
-    assert mon.raw_tokens[0] == "05TANNER    345.00"
-    assert mon.raw_tokens[1] == "06DEARB1    345.00"
+    assert mon.raw_tokens[0] == "NUCPLNT     500.00"
+    assert mon.raw_tokens[1] == "MID500      500.00"
     assert mon.raw_tokens[2] == "Z1"
 
 
@@ -369,8 +369,8 @@ def test_parse_contingency_element_tokens(tmp_path):
     con = fgs[0].contingency[0]
     assert con.role == "contingency"
     assert con.element_type == "branch"
-    assert con.raw_tokens[0] == "05MARYSVL_RS765.00"
-    assert con.raw_tokens[1] == "05SORENSN_RM765.00"
+    assert con.raw_tokens[0] == "EAST500     500.00"
+    assert con.raw_tokens[1] == "SUB500      500.00"
     assert con.raw_tokens[2] == "1"
 ```
 
@@ -578,14 +578,14 @@ Append to `tests/test_flowgate_parse.py`:
 
 ```python
 REMOVE_MACHINE_MON = """\
-MONITOR FLOWGATE 59031  'Clifty Creek-Carrollton 138 (flo) Ghent Unit 3'
-         BRANCH FROM BUS '06CLIFTY    138.00' TO BUS '4CARROLLTON 138.00' CKT 1
+MONITOR FLOWGATE 59031  'MID230-DOWNTN 230 (flo) NUC-A Unit 3'
+         BRANCH FROM BUS 'MID230      230.00' TO BUS 'DOWNTN      230.00' CKT 1
  CONTINGENCY 59031
-    REMOVE MACHINE 3 FROM BUS '1GHENT 3    22.000'
+    REMOVE MACHINE 3 FROM BUS 'NUC-A       21.600'
  END
-    CA OVEC LGEE
-    SC LGEE
-    TP PJM LGEE
+    CA SYN SYN
+    SC SCB
+    TP SCA SCB
 END
 """
 
@@ -602,7 +602,7 @@ def test_parse_remove_machine(tmp_path):
     assert con.role == "contingency"
     assert con.element_type == "generator"
     # raw_tokens: (bus_token, machine_id)
-    assert con.raw_tokens[0] == "1GHENT 3    22.000"
+    assert con.raw_tokens[0] == "NUC-A       21.600"
     assert con.raw_tokens[1] == "3"
 
 
@@ -689,20 +689,20 @@ Append to `tests/test_flowgate_parse.py`:
 ```python
 MULTI_FG_MON = """\
 MONITOR FLOWGATE 100  'desc A'
-         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT 1
+         BRANCH FROM BUS 'NUCPLNT     500.00' TO BUS 'MID500      500.00' CKT 1
  CONTINGENCY 100
-    OPEN BRANCH FROM BUS '05MARYSVL_RS765.00' TO BUS '05SORENSN_RM765.00' CKT 1
+    OPEN BRANCH FROM BUS 'EAST500     500.00' TO BUS 'SUB500      500.00' CKT 1
  END
-    SC PJM
+    SC SCA
 END
 
 MONITOR FLOWGATE 200  'desc B'
-         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT 2
+         BRANCH FROM BUS 'NUCPLNT     500.00' TO BUS 'MID500      500.00' CKT 2
  CONTINGENCY 200
-    OPEN BRANCH FROM BUS 'BURNHAM  ;0R345.00' TO BUS 'CALUMET  ; R345.00' CKT 1
-    OPEN BRANCH FROM BUS 'CALUMET  ; R345.00' TO BUS 'CALUMET  ;4I345.00' CKT 1
+    OPEN BRANCH FROM BUS 'EAST230     230.00' TO BUS 'SUB230      230.00' CKT 1
+    OPEN BRANCH FROM BUS 'SUB230      230.00' TO BUS 'FACTS TE    230.00' CKT 1
  END
-    SC OTHER
+    SC SCB
 END
 """
 
@@ -714,7 +714,7 @@ def test_parse_multiple_flowgates(tmp_path):
     p.write_text(MULTI_FG_MON)
     fgs = parse_mon_file(p)
     assert [fg.flowgate_id for fg in fgs] == [100, 200]
-    assert [fg.sc for fg in fgs] == ["PJM", "OTHER"]
+    assert [fg.sc for fg in fgs] == ["SCA", "SCB"]
 
 
 def test_parse_multi_element_contingency(tmp_path):
@@ -726,7 +726,7 @@ def test_parse_multi_element_contingency(tmp_path):
     fgs = parse_mon_file(p)
     assert len(fgs[1].contingency) == 2
     assert fgs[1].contingency[0].raw_tokens[2] == "1"
-    assert fgs[1].contingency[1].raw_tokens[0] == "CALUMET  ; R345.00"
+    assert fgs[1].contingency[1].raw_tokens[0] == "SUB230      230.00"
 
 
 def test_filter_by_sc(tmp_path):
@@ -736,17 +736,18 @@ def test_filter_by_sc(tmp_path):
     p.write_text(MULTI_FG_MON)
     fgs = parse_mon_file(p)
 
-    pjm_only = filter_by_sc(fgs, sc="PJM")
-    assert [fg.flowgate_id for fg in pjm_only] == [100]
+    sca_only = filter_by_sc(fgs, sc="SCA")
+    assert [fg.flowgate_id for fg in sca_only] == [100]
 
 
-def test_filter_by_sc_default_is_pjm(tmp_path):
+def test_filter_by_sc_requires_sc(tmp_path):
     from psse_model_util.flowgate import parse_mon_file, filter_by_sc
 
     p = tmp_path / "multi.mon"
     p.write_text(MULTI_FG_MON)
     fgs = parse_mon_file(p)
-    assert [fg.flowgate_id for fg in filter_by_sc(fgs)] == [100]
+    # sc is a required argument (no default)
+    assert [fg.flowgate_id for fg in filter_by_sc(fgs, sc="SCA")] == [100]
 ```
 
 - [ ] **Step 5.2: Run tests to verify they fail**
@@ -759,8 +760,11 @@ Expected: 2 FAIL (multi parser tests — likely an "unexpected" state error), an
 The parser should already handle multiple flowgates because state resets after each closing `END`. If the multi-FG tests fail, the bug is elsewhere — investigate first. Then add `filter_by_sc`:
 
 ```python
-def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]:
-    """Keep only flowgates whose Security Coordinator matches `sc` (case-sensitive)."""
+def filter_by_sc(fgs: list[Flowgate], sc: str) -> list[Flowgate]:
+    """Keep only flowgates whose Security Coordinator matches `sc` (case-sensitive).
+
+    `sc` is a required argument (no default).
+    """
     return [fg for fg in fgs if fg.sc == sc]
 ```
 
@@ -781,19 +785,19 @@ git commit -m "feat(flowgate): add filter_by_sc; verify multi-flowgate parsing"
 
 ## Task 6: Synthetic .mon fixture builder
 
-This is a one-shot helper script. Its output `tests/data/synthetic_pjm.mon` becomes the fixture for downstream tests. Run once, commit the output.
+This is a one-shot helper script. Its output `tests/data/synthetic_flowgates.mon` becomes the fixture for downstream tests. Run once, commit the output.
 
 **Files:**
 - Create: `tests/build_synthetic_mon.py`
-- Create: `tests/data/synthetic_pjm.mon` (generated)
+- Create: `tests/data/synthetic_flowgates.mon` (generated)
 
 - [ ] **Step 6.1: Write the builder script**
 
 ```python
-"""One-shot generator for tests/data/synthetic_pjm.mon, aligned with Model_1.raw.
+"""One-shot generator for tests/data/synthetic_flowgates.mon, aligned with Model_1.raw.
 
 Run with:  python tests/build_synthetic_mon.py
-Output:    tests/data/synthetic_pjm.mon  (commit it)
+Output:    tests/data/synthetic_flowgates.mon  (commit it)
 
 This script is intentionally NOT on the pytest path.
 """
@@ -803,12 +807,12 @@ from psse_model_util.model import Model
 
 DATA_DIR = Path(__file__).resolve().parent / "data"
 RAW_FILE = DATA_DIR / "Model_1.raw"
-OUT_FILE = DATA_DIR / "synthetic_pjm.mon"
+OUT_FILE = DATA_DIR / "synthetic_flowgates.mon"
 
-# Areas treated as "PJM" for the synthetic fixture. Hardcoded so the fixture is
+# Areas treated as "SCA" for the synthetic fixture. Hardcoded so the fixture is
 # stable regardless of what psse_model_util.common.constants.NATIVE_AREAS is set
 # to at any given time.
-MODEL_1_PJM_AREAS = {1, 2, 3}
+MODEL_1_SC_AREAS = {1, 2, 3}
 
 
 def _bus_token(name: str, baskv: float) -> str:
@@ -830,35 +834,35 @@ def main() -> None:
         for ibus, row in bus.iterrows()
     }
 
-    # Pick 2 PJM monitor branches with both ends ≥ 160 kV in PJM areas
-    pjm_branches = ac[
-        ac["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_PJM_AREAS)
-        & ac["jbus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_PJM_AREAS)
+    # Pick 2 SCA monitor branches with both ends ≥ 160 kV in SCA areas
+    sca_branches = ac[
+        ac["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_SC_AREAS)
+        & ac["jbus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_SC_AREAS)
         & ac["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[1] >= 160.0)
     ].head(4)
 
-    if len(pjm_branches) < 4:
+    if len(sca_branches) < 4:
         raise RuntimeError(
-            f"Only found {len(pjm_branches)} PJM branches in Model_1.raw; "
+            f"Only found {len(sca_branches)} SCA branches in Model_1.raw; "
             f"need at least 4 to build the fixture."
         )
 
-    # Pick one PJM generator for the REMOVE MACHINE flowgate
-    pjm_gen = gen[
-        gen["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_PJM_AREAS)
+    # Pick one SCA generator for the REMOVE MACHINE flowgate
+    sca_gen = gen[
+        gen["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_SC_AREAS)
     ].head(1)
-    if pjm_gen.empty:
-        raise RuntimeError("No PJM generators in Model_1.raw.")
-    gen_row = pjm_gen.iloc[0]
+    if sca_gen.empty:
+        raise RuntimeError("No SCA generators in Model_1.raw.")
+    gen_row = sca_gen.iloc[0]
     gen_bus_name, gen_bus_kv, _ = bus_info[int(gen_row["ibus"])]
     gen_machid = str(gen_row["machid"]).strip()
 
-    # Pick one non-PJM branch for the SC OTHER flowgate
-    non_pjm = ac[
-        ~ac["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_PJM_AREAS)
+    # Pick one non-SCA branch for the SC SCB flowgate
+    non_sca = ac[
+        ~ac["ibus"].map(lambda b: bus_info.get(b, (None, 0, 0))[2]).isin(MODEL_1_SC_AREAS)
     ].head(1)
-    if non_pjm.empty:
-        raise RuntimeError("No non-PJM branches in Model_1.raw to use for SC OTHER.")
+    if non_sca.empty:
+        raise RuntimeError("No non-SCA branches in Model_1.raw to use for SC SCB.")
 
     lines: list[str] = ["BUSNAMES"]
 
@@ -880,13 +884,13 @@ def main() -> None:
             "END",
         ])
 
-    rows = pjm_branches.reset_index(drop=True)
-    # FG 1: branches[0] monitor, branches[1] contingency, SC PJM
-    emit_branch_fg(1001, rows.iloc[0], rows.iloc[1], "PJM")
-    # FG 2: branches[2] monitor, branches[3] contingency, SC PJM
-    emit_branch_fg(1002, rows.iloc[2], rows.iloc[3], "PJM")
+    rows = sca_branches.reset_index(drop=True)
+    # FG 1: branches[0] monitor, branches[1] contingency, SC SCA
+    emit_branch_fg(1001, rows.iloc[0], rows.iloc[1], "SCA")
+    # FG 2: branches[2] monitor, branches[3] contingency, SC SCA
+    emit_branch_fg(1002, rows.iloc[2], rows.iloc[3], "SCA")
 
-    # FG 3: REMOVE MACHINE contingency on a PJM generator
+    # FG 3: REMOVE MACHINE contingency on a SCA generator
     i_name, i_kv, _ = bus_info[int(rows.iloc[0]["ibus"])]
     j_name, j_kv, _ = bus_info[int(rows.iloc[0]["jbus"])]
     lines.extend([
@@ -897,25 +901,25 @@ def main() -> None:
         f"    REMOVE MACHINE {gen_machid} FROM BUS '{_bus_token(gen_bus_name, gen_bus_kv)}'",
         " END",
         "    CA SYN SYN",
-        "    SC PJM",
-        "    TP PJM PJM",
+        "    SC SCA",
+        "    TP SCA SCA",
         "END",
     ])
 
-    # FG 4: SC OTHER (must be dropped by filter_by_sc)
-    non_pjm_row = non_pjm.iloc[0]
-    ni_name, ni_kv, _ = bus_info[int(non_pjm_row["ibus"])]
-    nj_name, nj_kv, _ = bus_info[int(non_pjm_row["jbus"])]
+    # FG 4: SC SCB (must be dropped by filter_by_sc)
+    non_sca_row = non_sca.iloc[0]
+    ni_name, ni_kv, _ = bus_info[int(non_sca_row["ibus"])]
+    nj_name, nj_kv, _ = bus_info[int(non_sca_row["jbus"])]
     lines.extend([
         "",
-        "MONITOR FLOWGATE 9001  'synthetic non-PJM'",
-        f"         BRANCH FROM BUS '{_bus_token(ni_name, ni_kv)}' TO BUS '{_bus_token(nj_name, nj_kv)}' CKT {str(non_pjm_row['ckt']).strip()}",
+        "MONITOR FLOWGATE 9001  'synthetic non-SCA'",
+        f"         BRANCH FROM BUS '{_bus_token(ni_name, ni_kv)}' TO BUS '{_bus_token(nj_name, nj_kv)}' CKT {str(non_sca_row['ckt']).strip()}",
         " CONTINGENCY 9001",
-        f"    OPEN BRANCH FROM BUS '{_bus_token(ni_name, ni_kv)}' TO BUS '{_bus_token(nj_name, nj_kv)}' CKT {str(non_pjm_row['ckt']).strip()}",
+        f"    OPEN BRANCH FROM BUS '{_bus_token(ni_name, ni_kv)}' TO BUS '{_bus_token(nj_name, nj_kv)}' CKT {str(non_sca_row['ckt']).strip()}",
         " END",
         "    CA SYN SYN",
-        "    SC OTHER",
-        "    TP OTHER OTHER",
+        "    SC SCB",
+        "    TP SCB SCB",
         "END",
     ])
 
@@ -933,12 +937,12 @@ if __name__ == "__main__":
 pdm run python tests/build_synthetic_mon.py
 ```
 
-Expected output: `Wrote .../tests/data/synthetic_pjm.mon (N lines)`.
+Expected output: `Wrote .../tests/data/synthetic_flowgates.mon (N lines)`.
 
 - [ ] **Step 6.3: Sanity-check the generated file**
 
 ```bash
-pdm run python -c "from psse_model_util.flowgate import parse_mon_file; fgs = parse_mon_file('tests/data/synthetic_pjm.mon'); print(len(fgs), 'flowgates:', [fg.flowgate_id for fg in fgs])"
+pdm run python -c "from psse_model_util.flowgate import parse_mon_file; fgs = parse_mon_file('tests/data/synthetic_flowgates.mon'); print(len(fgs), 'flowgates:', [fg.flowgate_id for fg in fgs])"
 ```
 
 Expected: `4 flowgates: [1001, 1002, 1003, 9001]`
@@ -951,12 +955,12 @@ Append to `tests/test_flowgate_parse.py`:
 def test_synthetic_fixture_parses():
     from psse_model_util.flowgate import parse_mon_file
 
-    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
+    fgs = parse_mon_file(DATA_DIR / "synthetic_flowgates.mon")
     assert [fg.flowgate_id for fg in fgs] == [1001, 1002, 1003, 9001]
     # FG 1003 contingency should be a generator (REMOVE MACHINE)
     assert fgs[2].contingency[0].element_type == "generator"
-    # FG 9001 should have SC OTHER
-    assert fgs[3].sc == "OTHER"
+    # FG 9001 should have SC SCB
+    assert fgs[3].sc == "SCB"
 ```
 
 Run: `pdm run pytest tests/test_flowgate_parse.py -v -k synthetic_fixture`
@@ -965,8 +969,8 @@ Expected: PASS.
 - [ ] **Step 6.5: Commit fixture + builder + test**
 
 ```bash
-git add tests/build_synthetic_mon.py tests/data/synthetic_pjm.mon tests/test_flowgate_parse.py
-git commit -m "test(flowgate): add synthetic_pjm.mon fixture and builder script"
+git add tests/build_synthetic_mon.py tests/data/synthetic_flowgates.mon tests/test_flowgate_parse.py
+git commit -m "test(flowgate): add synthetic_flowgates.mon fixture and builder script"
 ```
 
 ---
@@ -1000,8 +1004,8 @@ def model_1():
 def synthetic_fgs():
     from psse_model_util.flowgate import parse_mon_file, filter_by_sc
 
-    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
-    return filter_by_sc(fgs, sc="PJM")  # drops 9001
+    fgs = parse_mon_file(DATA_DIR / "synthetic_flowgates.mon")
+    return filter_by_sc(fgs, sc="SCA")  # drops 9001
 
 
 def test_resolve_returns_two_results(model_1, synthetic_fgs):
@@ -1018,7 +1022,7 @@ def test_resolve_seeds_have_buses(model_1, synthetic_fgs):
     seeds, unresolved = resolve_elements(synthetic_fgs, model_1)
     assert isinstance(unresolved, pd.DataFrame)
     assert all(isinstance(s, ResolvedSeed) for s in seeds)
-    # Every PJM FG should have at least one resolved seed
+    # Every SCA FG should have at least one resolved seed
     fg_ids_with_seeds = {s.flowgate_id for s in seeds}
     assert fg_ids_with_seeds == {1001, 1002, 1003}
 
@@ -1185,7 +1189,7 @@ def test_resolve_unknown_machine_reports_unresolved(model_1, tmp_path):
     # Take FG 1003 from the fixture and replace the machine id with one
     # that won't exist in Model_1.raw.
     import re
-    fixture_text = (DATA_DIR / "synthetic_pjm.mon").read_text()
+    fixture_text = (DATA_DIR / "synthetic_flowgates.mon").read_text()
     mangled = re.sub(
         r"REMOVE MACHINE \S+ FROM",
         "REMOVE MACHINE ZZ9 FROM",
@@ -1277,7 +1281,7 @@ MONITOR FLOWGATE 5000  'bogus bus test'
  CONTINGENCY 5000
     OPEN BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 1
  END
-    SC PJM
+    SC SCA
 END
 """
 
@@ -1569,7 +1573,7 @@ def synthetic_seeds(model_1):
     from psse_model_util.flowgate import (
         parse_mon_file, filter_by_sc, resolve_elements,
     )
-    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_pjm.mon"), sc="PJM")
+    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_flowgates.mon"), sc="SCA")
     seeds, _ = resolve_elements(fgs, model_1)
     return seeds
 
@@ -1885,7 +1889,7 @@ def test_collect_generators_mw_filter_default(model_1, synthetic_seeds):
     out = collect_key_facilities(model_1, synthetic_seeds)
     gens = out["generators"]
     if gens.empty:
-        pytest.skip("No generators in PJM neighborhood; nothing to verify")
+        pytest.skip("No generators in SCA neighborhood; nothing to verify")
 
     # Build a (bus_name, volt, machid) -> pt lookup from the source
     bus_attrs = model_1.network.bus.reset_index()[["ibus", "name", "baskv"]]
@@ -1996,7 +2000,7 @@ def test_collect_3w_transformers_shape(model_1, synthetic_seeds):
     xf3 = out["transformers_3w"]
     # Skip if Model_1 has none
     if xf3.empty:
-        pytest.skip("Model_1 has no 3W transformers in the PJM neighborhoods")
+        pytest.skip("Model_1 has no 3W transformers in the SCA neighborhoods")
     for _, row in xf3.iterrows():
         assert row["w1_bus_name"]
         assert row["w2_bus_name"]
@@ -2131,7 +2135,7 @@ def test_branches_role_column_values(model_1, synthetic_seeds):
 
 
 def test_branches_have_at_least_one_monitor_and_contingency_row(model_1, synthetic_seeds):
-    """The synthetic fixture has both monitor and contingency seeds in PJM areas;
+    """The synthetic fixture has both monitor and contingency seeds in SCA areas;
     at least one of each role should appear in the branches output."""
     from psse_model_util.flowgate import collect_key_facilities
 
@@ -2149,7 +2153,7 @@ def test_equipment_in_two_flowgates_produces_two_rows(model_1):
     )
 
     # Reuse the fixture FG 1001 / 1002 by re-parsing
-    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_pjm.mon"), sc="PJM")
+    fgs = filter_by_sc(parse_mon_file(DATA_DIR / "synthetic_flowgates.mon"), sc="SCA")
     seeds, _ = resolve_elements(fgs, model_1)
     out = collect_key_facilities(model_1, seeds)
     # Pick any branch row and count how many flowgate_ids it appears under
@@ -2188,15 +2192,15 @@ def test_end_to_end_synthetic_to_dataframes(model_1):
         parse_mon_file, filter_by_sc, resolve_elements, collect_key_facilities,
     )
 
-    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
-    pjm = filter_by_sc(fgs, sc="PJM")
-    assert [fg.flowgate_id for fg in pjm] == [1001, 1002, 1003]
+    fgs = parse_mon_file(DATA_DIR / "synthetic_flowgates.mon")
+    sca = filter_by_sc(fgs, sc="SCA")
+    assert [fg.flowgate_id for fg in sca] == [1001, 1002, 1003]
 
-    seeds, unresolved = resolve_elements(pjm, model_1)
+    seeds, unresolved = resolve_elements(sca, model_1)
     assert unresolved.empty, f"unexpected unresolved rows:\n{unresolved}"
 
     out = collect_key_facilities(model_1, seeds)
-    # Sanity: branches non-empty (synthetic PJM seeds are 345 kV)
+    # Sanity: branches non-empty (synthetic SCA seeds are 500 kV)
     assert len(out["branches"]) > 0
     # All 4 keys present
     assert set(out.keys()) == {"branches", "generators", "transformers_3w", "unresolved"}
@@ -2273,7 +2277,6 @@ from psse_model_util.flowgate import (
     DEFAULT_HOPS,
     DEFAULT_KV_MAX,
     DEFAULT_KV_MIN,
-    DEFAULT_SC,
     collect_key_facilities,
     filter_by_sc,
     parse_mon_file,
@@ -2292,7 +2295,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--kv-min", type=float, default=DEFAULT_KV_MIN)
     p.add_argument("--kv-max", type=float, default=DEFAULT_KV_MAX)
     p.add_argument("--gen-min-mw", type=float, default=DEFAULT_GEN_MIN_MW)
-    p.add_argument("--sc", default=DEFAULT_SC, help="Security Coordinator filter")
+    p.add_argument("--sc", required=True, help="Security Coordinator filter (required)")
     p.add_argument("-v", "--verbose", action="store_true")
     return p.parse_args(argv)
 
@@ -2364,11 +2367,12 @@ thin orchestrator that writes the four output DataFrames as CSVs.
 python key_facilities.py \
   --mon path/to/flowgates.mon \
   --raw path/to/Model.raw \
-  --out-dir outputs/
+  --out-dir outputs/ \
+  --sc SCA
 ```
 
-Optional overrides: `--hops 4`, `--kv-min 160`, `--kv-max 765`,
-`--gen-min-mw 15`, `--sc PJM`.
+`--sc` is required. Optional overrides: `--hops 4`, `--kv-min 160`,
+`--kv-max 765`, `--gen-min-mw 15`.
 
 ## Output
 
@@ -2388,7 +2392,7 @@ Four CSV files in `--out-dir`:
 ```bash
 cd /c/Users/Chris/PycharmProjects/key_facilities
 python key_facilities.py \
-  --mon ../psse_model_util/tests/data/synthetic_pjm.mon \
+  --mon ../psse_model_util/tests/data/synthetic_flowgates.mon \
   --raw ../psse_model_util/tests/data/Model_1.raw \
   --out-dir /tmp/key_facilities_smoke
 ls /tmp/key_facilities_smoke
@@ -2438,10 +2442,10 @@ def test_cli_writes_four_csvs(tmp_path):
         [
             sys.executable,
             str(CLI_SCRIPT),
-            "--mon", str(DATA_DIR / "synthetic_pjm.mon"),
+            "--mon", str(DATA_DIR / "synthetic_flowgates.mon"),
             "--raw", str(DATA_DIR / "Model_1.raw"),
             "--out-dir", str(tmp_path),
-            "--sc", "PJM",
+            "--sc", "SCA",
         ],
         capture_output=True,
         text=True,
@@ -2505,4 +2509,4 @@ Expected: no errors.
 - **Generator id column:** `machid`, as a string. Strip whitespace when comparing.
 - **PSS/E machine ids and bus names may have leading/trailing spaces.** Always `str(x).strip()` before equality checks.
 - **`Model.__init__` is slow on large models** but uses a pickle cache. Don't pass `force_recalculate=True` in tests unless you know why.
-- **The synthetic fixture (`tests/data/synthetic_pjm.mon`) is committed** — do not regenerate it during normal runs; only run `tests/build_synthetic_mon.py` if `Model_1.raw` changes in a way that invalidates it.
+- **The synthetic fixture (`tests/data/synthetic_flowgates.mon`) is committed** — do not regenerate it during normal runs; only run `tests/build_synthetic_mon.py` if `Model_1.raw` changes in a way that invalidates it.

@@ -24,14 +24,14 @@ PSS/E `.mon` format. Sample fragment:
 
 ```
 BUSNAMES
-MONITOR FLOWGATE 1600  'Tanners Creek - Dearborn 345kV l/o L765.Marysville-Sorenson'
-         BRANCH FROM BUS '05TANNER    345.00' TO BUS '06DEARB1    345.00' CKT Z1
+MONITOR FLOWGATE 1600  'NUCPLNT - MID500 500kV l/o L765.EAST500-SUB500'
+         BRANCH FROM BUS 'NUCPLNT     500.00' TO BUS 'MID500      500.00' CKT Z1
  CONTINGENCY 1600
-    OPEN BRANCH FROM BUS '05MARYSVL_RS765.00' TO BUS '05SORENSN_RM765.00' CKT 1
+    OPEN BRANCH FROM BUS 'EAST500     500.00' TO BUS 'SUB500      500.00' CKT 1
  END
-    CA AEP OVEC
-    SC PJM
-    TP PJM PJM
+    CA SYN SYN
+    SC SCA
+    TP SCA SCA
 END
 ```
 
@@ -40,12 +40,12 @@ Key fields:
 - `BRANCH FROM BUS '<name+kv>' TO BUS '<name+kv>' CKT <id>` — a monitored AC line or 2-winding transformer. The `.mon` format does not distinguish line vs 2W transformer; resolution checks both `acline` and 2W rows of `transformer`.
 - `CONTINGENCY <id>` — opens the contingency block.
 - `OPEN BRANCH FROM BUS '<name+kv>' TO BUS '<name+kv>' CKT <id>` — branch (or 2W xfmr) outage.
-- `REMOVE MACHINE <machine_id> FROM BUS '<name+kv>'` — generator outage. Example: `REMOVE MACHINE 3 FROM BUS '1GHENT 3    22.000'`.
+- `REMOVE MACHINE <machine_id> FROM BUS '<name+kv>'` — generator outage. Example: `REMOVE MACHINE 3 FROM BUS 'NUC-A       21.600'`.
 - A single `CONTINGENCY` block may contain multiple `OPEN BRANCH` / `REMOVE MACHINE` lines (cascading or multi-element outages). Each line becomes its own seed; their neighborhoods are unioned within the FG.
 - `SC <name>` — Security Coordinator (the file is filtered by this).
 - `END` — closes the contingency block or the flowgate.
 
-Bus tokens are 18 characters wide: 12-char left-padded name + 6-char right-padded kV string (e.g. `'05TANNER    345.00'`, `'05MARYSVL_RS765.00'`). kV may have up to 3 decimal places.
+Bus tokens are 18 characters wide: 12-char left-padded name + 6-char right-padded kV string (e.g. `'NUCPLNT     500.00'`, `'EAST500     500.00'`). kV may have up to 3 decimal places.
 
 ### Input: `.raw` PSS/E model file
 
@@ -128,7 +128,7 @@ DEFAULT_HOPS: int = 4
 DEFAULT_KV_MIN: float = 160.0
 DEFAULT_KV_MAX: float = 765.0
 DEFAULT_GEN_MIN_MW: float = 15.0
-DEFAULT_SC: str = "PJM"            # SC = Security Coordinator
+# sc is a required argument (no default); SC = Security Coordinator
 KV_KEY_DECIMALS: int = 3           # rounding precision for bus-lookup key
 ```
 
@@ -164,7 +164,7 @@ class ResolvedSeed:
 ```python
 def parse_mon_file(path: pathlib.Path | str = DEFAULT_MON_FILEPATH) -> list[Flowgate]: ...
 
-def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]: ...
+def filter_by_sc(fgs: list[Flowgate], sc: str) -> list[Flowgate]: ...   # sc required
 
 def resolve_elements(
     fgs: list[Flowgate], model: Model
@@ -216,7 +216,8 @@ python key_facilities.py \
   --mon path/to/flowgates.mon \
   --raw path/to/Model_1.raw \
   --out-dir outputs/ \
-  [--hops 4] [--kv-min 160] [--kv-max 765] [--gen-min-mw 15] [--sc PJM]
+  --sc SCA \
+  [--hops 4] [--kv-min 160] [--kv-max 765] [--gen-min-mw 15]
 ```
 
 CLI behavior:
@@ -234,7 +235,7 @@ CLI behavior:
 flowgates.mon  ──parse_mon_file──►  list[Flowgate]
                                       │
                                       ▼
-                              filter_by_sc("PJM")
+                              filter_by_sc(fgs, "SCA")
                                       │
                                       ▼
 Model(.raw) ──►  resolve_elements  ──► list[ResolvedSeed]  +  unresolved_df
@@ -261,7 +262,7 @@ Model(.raw) ──►  resolve_elements  ──► list[ResolvedSeed]  +  unreso
 
 Small line-by-line state machine. States: `TOP`, `IN_MONITOR`, `IN_CONTINGENCY`. Transitions on keywords `MONITOR FLOWGATE`, `BRANCH`, `CONTINGENCY`, `OPEN BRANCH`, `REMOVE MACHINE`, `SC`, `CA`, `TP`, `END`.
 
-Bus-token splitter: a token like `'05TANNER    345.00'` is unquoted, then split as `name = token[:12].strip()`, `kv = float(token[12:].strip())`. The original token is preserved in `raw_tokens` for the unresolved report.
+Bus-token splitter: a token like `'NUCPLNT     500.00'` is unquoted, then split as `name = token[:12].strip()`, `kv = float(token[12:].strip())`. The original token is preserved in `raw_tokens` for the unresolved report.
 
 `REMOVE MACHINE` line shape: `REMOVE MACHINE <machine_id> FROM BUS '<bus_token>'`. The parser extracts `machine_id` as the whitespace-separated token between `MACHINE` and `FROM`, treating it as a string (matches PSS/E machine-id convention, which can be alphanumeric like `'1 '`, `'H1'`, etc.).
 
@@ -348,19 +349,19 @@ Per-FG and per-role processing produces one row per `(flowgate_id, role, equipme
 CLI end-of-run summary:
 
 ```
-Parsed 12 flowgates → 11 PJM → resolved 27/28 seeds (1 unresolved).
+Parsed 12 flowgates → 11 SCA → resolved 27/28 seeds (1 unresolved).
 Wrote branches.csv (143 rows), generators.csv (22 rows),
       transformers_3w.csv (4 rows), unresolved.csv (1 row).
 ```
 
 ## 7. Synthetic Test Fixture
 
-`Model_1.raw` contains no `PJM` data, so a synthetic `.mon` aligned with it is needed.
+`Model_1.raw` contains no `SCA` data, so a synthetic `.mon` aligned with it is needed.
 
 **One-shot generator script:** `tests/build_synthetic_mon.py` (not run by pytest; the output is committed).
 
 ```python
-MODEL_1_PJM_AREAS = {1, 2, 3}   # CENTRAL, EAST, CENTRAL_DC in Model_1.raw
+MODEL_1_SC_AREAS = {1, 2, 3}    # CENTRAL, EAST, CENTRAL_DC in Model_1.raw
                                 # hardcoded so the fixture is stable regardless of
                                 # what psse_model_util.common.constants.NATIVE_AREAS
                                 # is set to at any given time.
@@ -368,23 +369,23 @@ MODEL_1_PJM_AREAS = {1, 2, 3}   # CENTRAL, EAST, CENTRAL_DC in Model_1.raw
 
 Procedure:
 1. Load `tests/data/Model_1.raw`.
-2. From `model.network.acline`, pick ~3 branches whose from-bus area ∈ `MODEL_1_PJM_AREAS` and whose base kV ≥ 160 (so the kV filter doesn't drop everything).
+2. From `model.network.acline`, pick ~3 branches whose from-bus area ∈ `MODEL_1_SC_AREAS` and whose base kV ≥ 160 (so the kV filter doesn't drop everything).
 3. For each pick, pair it with a contingency branch in the same area (different ckt where possible).
-4. Add one extra flowgate whose contingency uses `REMOVE MACHINE <id> FROM BUS '<token>'` against a generator in `MODEL_1_PJM_AREAS` — used by the generator-contingency test.
-5. Add one flowgate whose seeds are in areas **outside** `{1, 2, 3}` and tag it `SC OTHER` — used by `test_filter_by_sc` to verify the SC filter drops it.
-6. Write `tests/data/synthetic_pjm.mon` in the exact `.mon` format from the production sample.
+4. Add one extra flowgate whose contingency uses `REMOVE MACHINE <id> FROM BUS '<token>'` against a generator in `MODEL_1_SC_AREAS` — used by the generator-contingency test.
+5. Add one flowgate whose seeds are in areas **outside** `{1, 2, 3}` and tag it `SC SCB` — used by `test_filter_by_sc` to verify the SC filter drops it.
+6. Write `tests/data/synthetic_flowgates.mon` in the exact `.mon` format from the sample.
 
 ## 8. Testing Strategy
 
 Active tests in `tests/test_flowgate.py` (on the pytest path):
 
-1. **`test_parse_mon_file_basic`** — `synthetic_pjm.mon` parses; ≥ 3 flowgates; each has `flowgate_id`, `sc`, ≥ 1 monitor element, ≥ 1 contingency element.
-2. **`test_parse_handles_quoted_bus_tokens`** — inline `.mon` string with `'05TANNER    345.00'`; assert `name == "05TANNER"`, `kv == 345.00`.
+1. **`test_parse_mon_file_basic`** — `synthetic_flowgates.mon` parses; ≥ 3 flowgates; each has `flowgate_id`, `sc`, ≥ 1 monitor element, ≥ 1 contingency element.
+2. **`test_parse_handles_quoted_bus_tokens`** — inline `.mon` string with `'NUCPLNT     500.00'`; assert `name == "NUCPLNT"`, `kv == 500.00`.
 3. **`test_parse_preserves_kv_decimal_precision`** — token with `69.125`; stored kV is `69.125`, not `69` or `69.13`.
-4. **`test_filter_by_sc`** — the `SC OTHER` flowgate is dropped when `sc="PJM"`.
+4. **`test_filter_by_sc`** — the `SC SCB` flowgate is dropped when `sc="SCA"`.
 5. **`test_resolve_elements_happy_path`** — all synthetic FGs resolve against `Model_1.raw`; `unresolved_df` is empty.
 6. **`test_resolve_elements_unresolved`** — hand-crafted `.mon` with a bogus bus name; bogus element lands in `unresolved_df` with a reason; the rest still resolve.
-7. **`test_parse_remove_machine`** — inline `.mon` with `REMOVE MACHINE 3 FROM BUS '1GHENT 3    22.000'`; assert parsed as a generator element with `machine_id == "3"` and the correct bus token.
+7. **`test_parse_remove_machine`** — inline `.mon` with `REMOVE MACHINE 3 FROM BUS 'NUC-A       21.600'`; assert parsed as a generator element with `machine_id == "3"` and the correct bus token.
 8. **`test_resolve_remove_machine_against_model`** — synthetic FG with a `REMOVE MACHINE` contingency resolves to a real generator in `Model_1.raw` (areas {1,2,3}); generator's bus is added to the seed set.
 9. **`test_neighborhood_buses_hop_count`** — small known subgraph from `Model_1.raw`; `hops=1` returns seed + direct neighbors, `hops=2` extends one more layer, `hops=4` matches a hand-counted expected set.
 10. **`test_collect_branches_kv_filter`** — low-voltage branch (< 160 kV) on a neighborhood bus is excluded; high-voltage one is kept; branch with one end ≥ 160 and the other < 160 is kept (loose rule).
@@ -392,7 +393,7 @@ Active tests in `tests/test_flowgate.py` (on the pytest path):
 12. **`test_collect_transformers_3w`** — 3W transformer with any winding bus in neighborhood is included; all three `(w*_bus_name, w*_volt)` populated.
 13. **`test_collect_rows_one_per_fg_equipment_pair`** — equipment reached by 2 FGs appears in 2 rows.
 14. **`test_collect_role_column`** — `role` column carries `"monitor"` / `"contingency"` correctly.
-15. **`test_cli_writes_csvs`** — `subprocess.run` the CLI script against `Model_1.raw` + `synthetic_pjm.mon`; assert four CSVs land in tmp out-dir with the right columns.
+15. **`test_cli_writes_csvs`** — `subprocess.run` the CLI script against `Model_1.raw` + `synthetic_flowgates.mon`; assert four CSVs land in tmp out-dir with the right columns.
 
 **Coverage target:** ≥ 80% on `psse_model_util/flowgate.py` (well above the repo's 40% gate).
 

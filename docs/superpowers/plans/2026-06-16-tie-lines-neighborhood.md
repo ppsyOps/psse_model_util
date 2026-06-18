@@ -19,7 +19,7 @@
 
 ### Key facts about the test fixture (`tests/data/Model_1.raw`)
 
-- Areas: 1, 2, 3, 4, 5, 6 (none overlap with PJM `INCLUDE_AREAS`, so always pass explicit `native_areas`)
+- Areas: 1, 2, 3, 4, 5, 6 (none overlap with the default `INCLUDE_AREAS`, so always pass explicit `native_areas`)
 - `NATIVE_AREAS = {1: "CENTRAL", 2: "EAST", 3: "CENTRAL_DC"}` for tests
 - `find_tie_lines(native_areas={1,2,3})` → 4 lines: 152→3004, 154→3008, 213→2000, 2000→214
 - `find_tie_lines(native_areas={1,2,3}, kv_min=345)` → 1 line: 152→3004 (500 kV both ends)
@@ -60,7 +60,7 @@ from psse_model_util.model import Model, Network
 DATA_DIR = Path(__file__).resolve().parent / "data"
 MODEL1_RAW = DATA_DIR / "Model_1.raw"
 
-# Model_1.raw uses areas 1-6. INCLUDE_AREAS uses PJM numbers (200+).
+# Model_1.raw uses areas 1-6. INCLUDE_AREAS uses different area numbers (200+).
 # Always pass explicit native_areas in tests.
 NATIVE_AREAS = {1: "CENTRAL", 2: "EAST", 3: "CENTRAL_DC"}
 

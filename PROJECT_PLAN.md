@@ -11,7 +11,7 @@
 **`psse_model_util`** is a Python library for reading, editing, validating, and comparing PSS/E power system models (RAW v33/34/35 and RAWX formats). The two central components are:
 
 - **`Model`** — reads, validates, edits, and visualizes a single PSS/E model. Supports RAW → RAWX conversion, DataFrame-based access to all network sections, NetworkX one-line diagram in memory, area/voltage filtering, pickle cache.
-- **`ModelComparison`** — compares two `Model` instances. Identifies added/removed equipment, impedance changes, load/generation changes, and — critically — topological changes like sectionalizations and merges/bypasses. Primary use case: comparing IDC summer vs. winter models.
+- **`ModelComparison`** — compares two `Model` instances. Identifies added/removed equipment, impedance changes, load/generation changes, and — critically — topological changes like sectionalizations and merges/bypasses. Primary use case: comparing seasonal BES model variants (summer vs. winter).
 
 **Core import format:** RAWX (JSON). RAW files (v33/34/35) are first converted via `raw_to_rawx.py` using `dataformat/rawx_raw_map.csv` as the field mapping, then loaded by the standard RAWX loader.
 

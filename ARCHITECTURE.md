@@ -277,7 +277,7 @@ All runtime paths are managed by `common/dirs.py` using `platformdirs`:
 | RAW files converted to RAWX-compatible dict before parsing | Single downstream code path; RAWX is the canonical internal format |
 | `rawx_raw_map.csv` drives all RAW→RAWX field mapping | Keeps field mappings data-driven and version-aware (v34 vs v35 columns side-by-side) |
 | DataFrame metadata in `df._metadata` | Allows per-DataFrame schema awareness without a separate registry; used by `filter_by_area()` and `graph()` |
-| Pickle cache keyed by raw file stem | Parsing large BES models (MMWG/IDC scale) is slow; cache makes repeated loads fast |
+| Pickle cache keyed by raw file stem | Parsing large BES models (tens of thousands of buses) is slow; cache makes repeated loads fast |
 | `filter_by_area()` filters all DFs via `bus_cols` metadata | Single filter method covers all equipment types without hard-coding section names |
 | NetworkX graph built lazily | Graph construction is expensive; only done when needed |
 | Plotly/Dash visualization is in-scope but slated for replacement | Current `draw_one_line()` is functional but will be replaced with a React + FastAPI web UI (Phase 3.1) |
@@ -291,5 +291,5 @@ All runtime paths are managed by `common/dirs.py` using `platformdirs`:
 | RAWX export bug | Exported `.rawx` doesn't reload in PSS/E — small format diff. Tracked for Phase 2.1. |
 | CSV export drops index columns | `index=False` in `to_csv()` loses bus numbers. Fix in Phase 1.5. |
 | `v33` support | Inferred but not explicitly tested. v34/v35 are primary targets. |
-| No large-scale BES test data | Anonymized BES model needed for MMWG/IDC-scale UAT (Phase 2.3). Synthetic test fixtures in `tests/data/` cover unit and integration tests. |
+| No large-scale BES test data | Anonymized large-scale BES model needed for scale UAT (Phase 2.3). Synthetic test fixtures in `tests/data/` cover unit and integration tests. |
 | Substation section parsing | Present but complex; substations excluded from NetworkX graph. |
