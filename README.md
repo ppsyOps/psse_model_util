@@ -8,7 +8,7 @@ Python library for reading, editing, validating, and comparing PSS/E power syste
 
 ## Overview
 
-`psse_model_util` parses PSS/E RAW and RAWX files into structured Python objects backed by pandas DataFrames and a NetworkX graph. Its primary use case is comparing IDC summer vs. winter Bulk Electric System (BES) models.
+`psse_model_util` parses PSS/E RAW and RAWX files into structured Python objects backed by pandas DataFrames and a NetworkX graph. Its primary use case is comparing seasonal Bulk Electric System (BES) model variants (e.g. summer vs. winter).
 
 **Key capabilities:**
 

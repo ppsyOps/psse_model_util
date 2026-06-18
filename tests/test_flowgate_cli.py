@@ -17,25 +17,24 @@ CLI_SCRIPT = (
     reason=f"CLI script not found at {CLI_SCRIPT}; skipping smoke test.",
 )
 def test_cli_writes_four_csvs(tmp_path):
-    # PYTHONPATH must point at the grandparent of psse_model_util so the
-    # flat-layout package is importable as `psse_model_util.*` in the subprocess.
-    package_root = Path(__file__).resolve().parent.parent
-    grandparent = package_root.parent
+    # PYTHONPATH must point at the src/ dir so the package is importable as
+    # `psse_model_util.*` in the subprocess (src/ layout).
+    src_dir = Path(__file__).resolve().parent.parent / "src"
     env = os.environ.copy()
     existing_pp = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = (
-        str(grandparent) + (os.pathsep + existing_pp if existing_pp else "")
+        str(src_dir) + (os.pathsep + existing_pp if existing_pp else "")
     )
 
     result = subprocess.run(
         [
             sys.executable,
             str(CLI_SCRIPT),
-            "--mon", str(DATA_DIR / "synthetic_pjm.mon"),
+            "--mon", str(DATA_DIR / "synthetic_flowgates.mon"),
             "--raw", str(DATA_DIR / "Model_1.raw"),
             "--areas", "1", "2", "3",
             "--out-dir", str(tmp_path),
-            "--sc", "PJM",
+            "--sc", "SCA",
         ],
         capture_output=True,
         text=True,
@@ -52,7 +51,7 @@ def test_cli_writes_four_csvs(tmp_path):
     reason=f"CLI script not found at {CLI_SCRIPT}; skipping smoke test.",
 )
 def test_cli_areas_filter_drops_out_of_scope_equipment(tmp_path):
-    """Pass an empty-area set (--areas 9999) and confirm every PJM seed
+    """Pass an empty-area set (--areas 9999) and confirm every SCA seed
     becomes unresolved; branches/generators/transformers come out empty."""
     package_root = Path(__file__).resolve().parent.parent
     grandparent = package_root.parent
@@ -66,11 +65,11 @@ def test_cli_areas_filter_drops_out_of_scope_equipment(tmp_path):
         [
             sys.executable,
             str(CLI_SCRIPT),
-            "--mon", str(DATA_DIR / "synthetic_pjm.mon"),
+            "--mon", str(DATA_DIR / "synthetic_flowgates.mon"),
             "--raw", str(DATA_DIR / "Model_1.raw"),
             "--areas", "9999",  # no equipment in this area
             "--out-dir", str(tmp_path),
-            "--sc", "PJM",
+            "--sc", "SCA",
         ],
         capture_output=True,
         text=True,

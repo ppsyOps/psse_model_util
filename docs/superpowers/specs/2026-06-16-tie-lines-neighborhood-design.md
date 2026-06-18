@@ -7,7 +7,7 @@
 
 ## Overview
 
-Adds four methods to `Network` in `model.py` for identifying tie lines and finding the electrical neighborhood around any set of buses. Primary use case: IDC BES summer/winter comparisons where users need to identify area boundary equipment and reason about what's electrically close to those boundaries.
+Adds four methods to `Network` in `model.py` for identifying tie lines and finding the electrical neighborhood around any set of buses. Primary use case: seasonal BES model variant (summer/winter) comparisons where users need to identify area boundary equipment and reason about what's electrically close to those boundaries.
 
 All methods live on `Network` only. No `Model`-level delegation wrappers are added — this is the correct pattern going forward. See the deprecation roadmap item for the existing wrappers.
 

@@ -14,8 +14,8 @@ from psse_model_util.model import Model, Network
 DATA_DIR = Path(__file__).resolve().parent / "data"
 MODEL1_RAW = DATA_DIR / "Model_1.raw"
 
-# Model_1.raw uses areas 1-6. INCLUDE_AREAS uses PJM numbers (200+).
-# Always pass explicit native_areas in tests.
+# Model_1.raw uses areas 1-6, matching the default NATIVE_AREAS/NEIGHBOR_AREAS.
+# Pass explicit native_areas in tests to stay independent of the package defaults.
 NATIVE_AREAS = {1: "CENTRAL", 2: "EAST", 3: "CENTRAL_DC"}
 
 

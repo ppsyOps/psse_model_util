@@ -19,8 +19,8 @@ def model_1():
 def synthetic_fgs():
     from psse_model_util.flowgate import filter_by_sc, parse_mon_file
 
-    fgs = parse_mon_file(DATA_DIR / "synthetic_pjm.mon")
-    return filter_by_sc(fgs, sc="PJM")  # drops 9001
+    fgs = parse_mon_file(DATA_DIR / "synthetic_flowgates.mon")
+    return filter_by_sc(fgs, sc="SCA")  # drops 9001
 
 
 def test_resolve_returns_two_results(model_1, synthetic_fgs):
@@ -37,7 +37,7 @@ def test_resolve_seeds_have_buses(model_1, synthetic_fgs):
     seeds, unresolved = resolve_elements(synthetic_fgs, model_1)
     assert isinstance(unresolved, pd.DataFrame)
     assert all(isinstance(s, ResolvedSeed) for s in seeds)
-    # Every PJM FG should have at least one resolved seed
+    # Every SCA FG should have at least one resolved seed
     fg_ids_with_seeds = {s.flowgate_id for s in seeds}
     assert fg_ids_with_seeds == {1001, 1002, 1003}
 
@@ -76,7 +76,7 @@ MONITOR FLOWGATE 5001  'bogus branch'
  CONTINGENCY 5001
     OPEN BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 7
  END
-    SC PJM
+    SC SCA
 END
 """
     p = tmp_path / "bogus.mon"
@@ -102,7 +102,7 @@ MONITOR FLOWGATE 5002  'bogus gen'
  CONTINGENCY 5002
     REMOVE MACHINE ZZ9 FROM BUS 'ZZZMACHINE  22.000'
  END
-    SC PJM
+    SC SCA
 END
 """
     p = tmp_path / "bogus_gen.mon"
@@ -133,7 +133,7 @@ def test_resolve_unknown_machine_reports_unresolved(model_1, tmp_path):
 
     # Take FG 1003 from the fixture and replace the machine id with one
     # that won't exist in Model_1.raw.
-    fixture_text = (DATA_DIR / "synthetic_pjm.mon").read_text()
+    fixture_text = (DATA_DIR / "synthetic_flowgates.mon").read_text()
     mangled = re.sub(
         r"REMOVE MACHINE \S+ FROM",
         "REMOVE MACHINE ZZ9 FROM",
@@ -156,7 +156,7 @@ MONITOR FLOWGATE 5000  'bogus bus test'
  CONTINGENCY 5000
     OPEN BRANCH FROM BUS 'ZZZNOTFOUND 345.00' TO BUS 'ZZZALSOBAD  345.00' CKT 1
  END
-    SC PJM
+    SC SCA
 END
 """
 

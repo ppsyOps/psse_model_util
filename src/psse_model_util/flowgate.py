@@ -28,7 +28,6 @@ DEFAULT_HOPS: int = 4
 DEFAULT_KV_MIN: float = 160.0
 DEFAULT_KV_MAX: float = 765.0
 DEFAULT_GEN_MIN_MW: float = 15.0
-DEFAULT_SC: str = "PJM"          # SC = Security Coordinator
 KV_KEY_DECIMALS: int = 3         # rounding precision for bus-lookup key
 
 
@@ -78,7 +77,7 @@ class FlowgateElement:
 class Flowgate:
     flowgate_id: int
     description: str
-    sc: str  # Security Coordinator (e.g. "PJM"). Empty string means no SC declared.
+    sc: str  # Security Coordinator (e.g. "SCA"). Empty string means no SC declared.
     monitor: list[FlowgateElement]
     contingency: list[FlowgateElement]
 
@@ -118,8 +117,8 @@ def _split_bus_token(token: str) -> tuple[str, float]:
     The token is 18 chars wide: 12-char left/right-padded name + 6-char
     kV string. Surrounding single quotes are stripped if present.
 
-    >>> _split_bus_token("'05TANNER    345.00'")
-    ('05TANNER', 345.0)
+    >>> _split_bus_token("'NUCPLNT     500.00'")
+    ('NUCPLNT', 500.0)
     """
     # Strip only surrounding quotes — do NOT .strip() the whole token, because
     # the 6-char kV field can legitimately have a trailing space (e.g. '21.60 ').
@@ -339,7 +338,7 @@ def parse_mon_file(path: pathlib.Path | str) -> list[Flowgate]:
     return flowgates
 
 
-def filter_by_sc(fgs: list[Flowgate], sc: str = DEFAULT_SC) -> list[Flowgate]:
+def filter_by_sc(fgs: list[Flowgate], sc: str) -> list[Flowgate]:
     """Keep only flowgates whose Security Coordinator matches `sc` (case-sensitive)."""
     return [fg for fg in fgs if fg.sc == sc]
 
@@ -859,7 +858,7 @@ def extract_key_facilities(
     mon_path: pathlib.Path | str,
     raw_path: pathlib.Path | str,
     *,
-    sc: str = DEFAULT_SC,
+    sc: str,
     areas: Iterable[int] | None = None,
     hops: int = DEFAULT_HOPS,
     kv_min: float = DEFAULT_KV_MIN,
@@ -886,7 +885,7 @@ def extract_key_facilities(
         Path to the PSS/E .mon flowgate-definitions file.
     raw_path : Path | str
         Path to the PSS/E .raw model.
-    sc : str, default DEFAULT_SC
+    sc : str
         Security Coordinator filter applied after parsing.
     areas : Iterable[int] | None, default None
         If provided, `Network.filter_by_area` is called to restrict the

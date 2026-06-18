@@ -1,25 +1,37 @@
 name: Publish to PyPI
 
+# Trusted Publishing (OIDC) — no API tokens. Triggered when a GitHub Release is
+# published. The TestPyPI job runs automatically; the PyPI job is gated by the
+# `pypi` environment (add a required reviewer in repo Settings → Environments
+# for a manual approval click).
 on:
   release:
     types: [published]
+  # Manual trigger — releases cut by cd.yml use GITHUB_TOKEN, which cannot
+  # trigger this workflow, so a published-release run must be started by hand
+  # (or a human-created Release). workflow_dispatch always works.
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build sdist + wheel
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.x"
-      - run: pip install build
-      - run: python -m build
+          python-version: "3.11"
+      - name: Build
+        run: |
+          python -m pip install --upgrade build
+          python -m build
       - uses: actions/upload-artifact@v4
         with:
           name: dist
           path: dist/
 
   publish-testpypi:
+    name: Publish to TestPyPI
     needs: build
     runs-on: ubuntu-latest
     environment:
@@ -35,8 +47,10 @@ jobs:
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
 
   publish-pypi:
+    name: Publish to PyPI
     needs: publish-testpypi
     runs-on: ubuntu-latest
     environment:

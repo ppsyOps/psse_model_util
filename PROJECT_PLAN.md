@@ -11,7 +11,7 @@
 **`psse_model_util`** is a Python library for reading, editing, validating, and comparing PSS/E power system models (RAW v33/34/35 and RAWX formats). The two central components are:
 
 - **`Model`** — reads, validates, edits, and visualizes a single PSS/E model. Supports RAW → RAWX conversion, DataFrame-based access to all network sections, NetworkX one-line diagram in memory, area/voltage filtering, pickle cache.
-- **`ModelComparison`** — compares two `Model` instances. Identifies added/removed equipment, impedance changes, load/generation changes, and — critically — topological changes like sectionalizations and merges/bypasses. Primary use case: comparing IDC summer vs. winter models.
+- **`ModelComparison`** — compares two `Model` instances. Identifies added/removed equipment, impedance changes, load/generation changes, and — critically — topological changes like sectionalizations and merges/bypasses. Primary use case: comparing seasonal BES model variants (summer vs. winter).
 
 **Core import format:** RAWX (JSON). RAW files (v33/34/35) are first converted via `raw_to_rawx.py` using `dataformat/rawx_raw_map.csv` as the field mapping, then loaded by the standard RAWX loader.
 
@@ -78,6 +78,21 @@
 | 4.1 | CURRENT / open-source integration assessment | TBD     | ⬜ Queued |
 | 4.2 | Performance profiling                        | TBD     | ⬜ Queued |
 | 4.3 | API docs — Sphinx or mkdocs-material         | TBD     | ⬜ Queued |
+
+### Phase P — Prepare for PyPI
+
+> Goal: Publish `psse-model-util` to public PyPI (stable) and TestPyPI (rehearsals),
+> with PEP 440 pre-releases for beta. Plan: `docs/superpowers/plans/2026-06-18-prepare-for-pypi.md`.
+
+| ID  | Item                                                                                                                     | Status      |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| P.1 | Real-system scrub (utility/ISO footprint, internal paths) + MIT relicense                                                | ✅ Completed |
+| P.2 | `src/` package layout — wheel installs cleanly as `psse_model_util`                                                       | ✅ Completed |
+| P.3 | Register PyPI + TestPyPI accounts, enable 2FA, configure **Trusted Publishing** (OIDC) for `ppsyOps/psse_model_util`      | ✅ Completed |
+| P.5 | CD automation: `.github/workflows/publish.yml` — on a published Release, build → TestPyPI (auto) → PyPI (`pypi` env gate), OIDC | ✅ Completed |
+| P.4 | TestPyPI rehearsal: bump to a `…b1` pre-release, cut a Release, verify `pip install --pre` from TestPyPI in a clean venv  | ⬜ Queued    |
+| P.6 | Document the beta convention: CalVer + PEP 440 suffix (`2026.5.0b1`, `rc1`); beta installs via `pip install --pre`        | ⬜ Queued    |
+| P.7 | Native-areas config + neighbor discovery ([issue #8](https://github.com/ppsyOps/psse_model_util/issues/8))                | ⬜ Queued    |
 
 ---
 

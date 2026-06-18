@@ -3,7 +3,7 @@ test_raw_to_rawx.py — raw_to_rawx module tests.
 
 Substation data context
 -----------------------
-Industry power-system files distributed by ISOs (PJM, ISO-NE, MISO, etc.)
+Industry power-system files distributed by ISOs/RTOs
 do NOT include substation sections.  Because of this, `_parse_substation_section`
 is never exercised by the normal Model-loading integration tests.
 

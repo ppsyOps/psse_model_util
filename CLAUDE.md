@@ -81,7 +81,7 @@ These are defined in `dataformat/rawx_json_template.py` and applied once at load
 
 ### Pickle cache
 
-`Model.__init__()` checks `site_cache_dir/<stem>.model` before parsing. If found (and `force_recalculate=False`), it loads directly from pickle. Large BES models (MMWG/IDC scale) are slow to parse; the cache is critical for interactive use.
+`Model.__init__()` checks `site_cache_dir/<stem>.model` before parsing. If found (and `force_recalculate=False`), it loads directly from pickle. Large BES models are slow to parse; the cache is critical for interactive use.
 
 ### Runtime directories
 
