@@ -79,6 +79,21 @@
 | 4.2 | Performance profiling                        | TBD     | ⬜ Queued |
 | 4.3 | API docs — Sphinx or mkdocs-material         | TBD     | ⬜ Queued |
 
+### Phase P — Prepare for PyPI
+
+> Goal: Publish `psse-model-util` to public PyPI (stable) and TestPyPI (rehearsals),
+> with PEP 440 pre-releases for beta. Plan: `docs/superpowers/plans/2026-06-18-prepare-for-pypi.md`.
+
+| ID  | Item                                                                                                                     | Status      |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| P.1 | Real-system scrub (PJM/MMWG/IDC/real paths) + MIT relicense                                                               | ✅ Completed |
+| P.2 | `src/` package layout — wheel installs cleanly as `psse_model_util`                                                       | ✅ Completed |
+| P.3 | Register PyPI + TestPyPI accounts, enable 2FA, configure **Trusted Publishing** (OIDC) for `ppsyOps/psse_model_util`      | ⬜ Queued    |
+| P.4 | TestPyPI rehearsal: publish a `…b1` pre-release, `pip install --pre` from TestPyPI into a clean venv, smoke test          | ⬜ Queued    |
+| P.5 | CD automation: extend `cd.yml` to publish on tag — `v*b*/rc*`→TestPyPI, `vX.Y.Z`→PyPI — via `pypa/gh-action-pypi-publish` | ⬜ Queued    |
+| P.6 | Document the beta convention: CalVer + PEP 440 suffix (`2026.5.0b1`, `rc1`); beta installs via `pip install --pre`        | ⬜ Queued    |
+| P.7 | Native-areas config + neighbor discovery ([issue #8](https://github.com/ppsyOps/psse_model_util/issues/8))                | ⬜ Queued    |
+
 ---
 
 ## 🔁 Channel Map
