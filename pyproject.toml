@@ -111,4 +111,6 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "raise NotImplementedError",
 ]
-fail_under = 40
+# CI gate. Goal is 100%; the gate is a ratchet set below current coverage
+# (~86%) so it fails the build on regressions. Raise it as coverage climbs.
+fail_under = 80
