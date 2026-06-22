@@ -766,7 +766,9 @@ class ModelComparison:
         index = any(name is not None for name in df.index.names)
         try:
             df.to_csv(csv_path, index=index)
-        except PermissionError as e:
+        except OSError as e:
+            # OSError covers PermissionError (Windows) and IsADirectoryError
+            # (POSIX) when csv_path is unwritable.
             warnings.warn(f'Unable to write general information to {csv_path}.  {str(e)}')
 
     @staticmethod

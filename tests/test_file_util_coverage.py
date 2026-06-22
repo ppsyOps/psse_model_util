@@ -54,17 +54,21 @@ def test_write_bytesio_overwrites_existing(tmp_path):
     assert file_path.read_bytes() == b"second"
 
 
-def test_write_bytesio_warns_on_write_error(tmp_path):
+def test_write_bytesio_warns_on_write_error(tmp_path, monkeypatch):
     """A write failure is caught and surfaced as a warning (lines 203-204).
 
-    The target name contains a character Windows forbids in filenames, so the
-    parent exists, the path does not (skipping the overwrite branch), and
-    open(..., 'wb') raises inside the try/except.
+    Force the failure cross-platform by injecting a raising ``open`` into the
+    module globals (rather than relying on OS-specific illegal filenames).
     """
-    target = tmp_path / "bad<name>.bin"
-    assert not target.exists()
+    import psse_model_util.common.file_util as fu
+
+    def _boom(*args, **kwargs):
+        raise OSError("simulated write failure")
+
+    monkeypatch.setattr(fu, "open", _boom, raising=False)
+    target = tmp_path / "out.bin"
     with pytest.warns(UserWarning, match="Error:"):
-        write_bytesio_to_disk(io.BytesIO(b"data"), target)
+        fu.write_bytesio_to_disk(io.BytesIO(b"data"), target)
 
 
 # ---------------------------------------------------------------------------
