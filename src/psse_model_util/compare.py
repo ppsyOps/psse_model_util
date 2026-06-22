@@ -341,6 +341,21 @@ class ModelComparison:
         for df_name in common_df_names:
             df1 = getattr(self.model1.network, df_name)
             df2 = getattr(self.model2.network, df_name)
+
+            # Some sections (e.g. ntermdc, whose sub-records are flattened into
+            # one frame) carry duplicate column names. Per-column delta/presence
+            # selection on those raises a cryptic 2D-broadcast error that was
+            # previously swallowed, silently dropping the enrichment. Detect it
+            # up front: include the outer-merged frame but skip enrichment, with
+            # a clear warning rather than a buried numpy traceback.
+            if df1.columns.duplicated().any() or df2.columns.duplicated().any():
+                warnings.warn(
+                    f"Section '{df_name}' has duplicate column names; including "
+                    f"the merged frame but skipping _delta/presence columns.")
+                result[df_name] = pd.merge(
+                    df1, df2, how='outer', left_index=True, right_index=True,
+                    suffixes=('_model1', '_model2'))
+                continue
             try:
                 bypassd_df = pd.merge(df1, df2, how='outer', left_index=True,
                                       right_index=True, suffixes=('_model1', '_model2'))
@@ -829,22 +844,17 @@ class ModelComparison:
                 warnings.warn("Dataframe not found: " + section)
 
     def flatten_and_stringify(self, item):
-        """Helper method to flatten and stringify complex data structures."""
+        """Recursively flatten a (possibly nested) list/tuple into a single
+        comma-separated string; stringify scalars as-is."""
         if isinstance(item, (list, tuple)):
-            result = ', '.join(self.flatten_and_stringify(i) for i in item)
-        result = str(item)
-        return "[" + result + "]"
+            return ', '.join(self.flatten_and_stringify(i) for i in item)
+        return str(item)
 
     def process_graph_data(self, data):
         """Process graph comparison data for CSV export.
         Used by _graph_comparison_to_csv"""
-        processed_data = {}
-        for key, value in data.items():
-            key_str = self.flatten_and_stringify(key)
-            value_str = self.flatten_and_stringify(value)
-            processed_data[key_str] = value_str
-        processed_data = {k[1:-1]: v[2:-2] for k, v in processed_data.items()}
-        return processed_data
+        return {self.flatten_and_stringify(key): self.flatten_and_stringify(value)
+                for key, value in data.items()}
 
     def _graph_comparison_to_csv(self):
         """Export path sectionalizes and bypass to CSV."""
