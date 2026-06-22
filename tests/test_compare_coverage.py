@@ -275,20 +275,45 @@ def test_query_inplace_updates_comparison(fresh_comparison):
 # ---------------------------------------------------------------------------
 
 def test_flatten_and_stringify_scalar(computed):
-    assert computed.flatten_and_stringify(42) == "[42]"
+    assert computed.flatten_and_stringify(42) == "42"
 
 
 def test_flatten_and_stringify_sequence(computed):
-    # Note: implementation overwrites the list join with str(item) before
-    # wrapping, so the bracketed repr of the tuple is what gets returned.
-    out = computed.flatten_and_stringify((1, 2))
-    assert out.startswith("[") and out.endswith("]")
+    # The recursion is functional: a (possibly nested) sequence flattens to a
+    # single comma-separated string.
+    assert computed.flatten_and_stringify((1, 2)) == "1, 2"
+    assert computed.flatten_and_stringify([1, [2, 3]]) == "1, 2, 3"
 
 
 def test_process_graph_data(computed):
     data = {("bus", 101): ["a", "b"]}
     processed = computed.process_graph_data(data)
-    assert isinstance(processed, dict)
+    assert processed == {"bus, 101": "a, b"}
+
+
+# ---------------------------------------------------------------------------
+# Duplicate-column sections (e.g. ntermdc) — resilience regression
+# ---------------------------------------------------------------------------
+
+def test_duplicate_column_section_is_resilient(fresh_comparison):
+    """ntermdc flattens its sub-records into one frame with duplicate column
+    names (e.g. 'ib', 'idc'). compare_network_dfs must not raise on it: it
+    warns and includes the outer-merged frame without _delta/presence columns,
+    instead of swallowing a cryptic 2D-broadcast error."""
+    comp = fresh_comparison()
+    # precondition: the section really does have duplicate column names
+    assert comp.model1.network.ntermdc.columns.duplicated().any()
+
+    with pytest.warns(UserWarning, match="duplicate column names"):
+        result = comp.compare_network_dfs()
+
+    assert "ntermdc" in result
+    merged = result["ntermdc"]
+    # enrichment skipped -> no presence/_delta columns were added
+    assert "presence" not in merged.columns
+    assert not any(str(c).endswith("_delta") for c in merged.columns)
+    # but the merged frame still carries the model1/model2 data
+    assert any(str(c).endswith("_model1") for c in merged.columns)
 
 
 # ---------------------------------------------------------------------------

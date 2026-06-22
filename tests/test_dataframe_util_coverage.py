@@ -366,14 +366,16 @@ def test_excel_make_naive_branch_runs(tmp_path):
     assert rows[0] == ["ts", "v"]
 
 
-def test_excel_make_naive_tz_aware_still_fails(tmp_path):
-    # Characterization of the limitation noted above: because _make_df_naive
-    # does not strip tz from tz-aware columns, openpyxl still rejects them.
+def test_excel_make_naive_tz_aware_succeeds(tmp_path):
+    # make_naive=True must strip tz from tz-aware columns so openpyxl can write
+    # them (this is the whole point of the flag).
     aware = pd.to_datetime(["2020-01-01", "2020-01-02"]).tz_localize("UTC")
     df = pd.DataFrame({"ts": aware, "v": [1, 2]})
     fp = tmp_path / "out.xlsx"
-    with pytest.raises((TypeError, ValueError)):
-        dfu.df_to_excel_worksheet(df, "Data", fp, make_naive=True)
+    dfu.df_to_excel_worksheet(df, "Data", fp, make_naive=True)
+    assert fp.exists()
+    rows = _read_sheet(fp, "Data")
+    assert rows[0] == ["ts", "v"]
 
 
 def test_excel_chunking(tmp_path):
@@ -388,24 +390,20 @@ def test_excel_chunking(tmp_path):
 
 
 def test_make_df_naive_helper_direct_naive_passthrough():
-    # Characterization: the private _make_df_naive helper uses
-    # select_dtypes(include=['datetime64']), which does NOT match tz-aware
-    # columns. A naive datetime column passes through unchanged.
+    # A naive datetime column passes through unchanged (stays tz-naive, not
+    # mangled).
     naive = pd.to_datetime(["2020-01-01", "2020-01-02"])
     df = pd.DataFrame({"ts": naive})
     out = dfu._make_df_naive(df)
     assert out["ts"].dt.tz is None
 
 
-def test_make_df_naive_helper_does_not_strip_tz_aware():
-    # Characterization of a genuine limitation: _make_df_naive leaves tz-aware
-    # columns aware because select_dtypes(include=['datetime64']) excludes the
-    # 'datetime64[ns, tz]' dtype. (Contrast with the public make_df_naive,
-    # which handles tz-aware columns correctly.)
+def test_make_df_naive_helper_strips_tz_aware():
+    # _make_df_naive must drop the timezone from tz-aware columns.
     aware = pd.to_datetime(["2020-01-01"]).tz_localize("UTC")
     df = pd.DataFrame({"ts": aware})
     out = dfu._make_df_naive(df)
-    assert out["ts"].dt.tz is not None
+    assert out["ts"].dt.tz is None
 
 
 # ---------------------------------------------------------------------------

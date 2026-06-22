@@ -371,8 +371,14 @@ def _make_df_naive(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame with naive datetime columns.
     """
-    for col in df.select_dtypes(include=['datetime64']).columns:
-        df[col] = df[col].dt.tz_localize(None)
+    for col in df.columns:
+        s = df[col]
+        # select_dtypes(include=['datetime64']) matches only tz-NAIVE columns,
+        # so the old version skipped the tz-aware columns it was meant to fix
+        # (and would have raised on the naive ones). Strip tz from aware columns
+        # only; leave naive datetimes and non-datetimes untouched.
+        if pd.api.types.is_datetime64_any_dtype(s) and s.dt.tz is not None:
+            df[col] = s.dt.tz_localize(None)
     return df
 
 
