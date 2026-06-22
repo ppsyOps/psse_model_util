@@ -233,6 +233,7 @@ def read_pickle(pickle_path: Path | str = None,
     except Exception as e:
         if resilient:
             warnings.warn(f'Unable to read object from disk "{pickle_path}".  {str(e)}')
+            return None
         else:
             raise e
 

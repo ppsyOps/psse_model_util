@@ -112,5 +112,5 @@ exclude_lines = [
     "raise NotImplementedError",
 ]
 # CI gate. Goal is 100%; the gate is a ratchet set below current coverage
-# (~86%) so it fails the build on regressions. Raise it as coverage climbs.
-fail_under = 80
+# (~91%) so it fails the build on regressions. Raise it as coverage climbs.
+fail_under = 90
