@@ -255,7 +255,7 @@ rawx_json_template = \
                               float, float, float, float, float, float, str, float, float, float, int, int, float,
                               BusId, int, int, float, float, float, float, float, float, str, float, float, float, int,
                               int, float],
-                "bus_cols": ["ibus1"],
+                "bus_cols": ["ibus1", "ibus2"],
                 "id_cols": ["name"],
             },
             "impcor": {

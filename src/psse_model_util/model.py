@@ -90,6 +90,24 @@ FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
 logger = setup_logger('model')
 
 
+def _fmt_kv(v) -> str:
+    """
+    Render a base-kV value compactly with a 'kV' suffix.
+
+    Strips meaningless trailing zeros and a bare trailing decimal point, so
+    ``500.0`` -> ``'500kV'``, ``34.5`` -> ``'34.5kV'``, ``123.450`` ->
+    ``'123.45kV'``. Returns ``''`` for missing values.
+    """
+    if pd.isna(v):
+        return ''
+    f = float(v)
+    if f == int(f):
+        s = str(int(f))
+    else:
+        s = f'{f:f}'.rstrip('0').rstrip('.')
+    return f'{s}kV'
+
+
 class ModelEncoder(json.JSONEncoder):
     """
     Custom JSON encoder for Model class data.
@@ -609,6 +627,46 @@ class Network(AbstractSection):
             area_name_col = f'{bus_col}_area_name'
             if area_name_map is not None and area_col in df.columns:
                 df[area_name_col] = df[area_col].map(area_name_map)
+
+        # Build a human-readable `derived_name` from the joined bus fields plus
+        # the equipment's own identifier(s):
+        #   single-bus:  "<name> <kv>kV - <id>"
+        #   multi-bus:   "<name> <kv>kV - <name> <kv>kV <id>"  (bare id, no label)
+        # A 'ckt' identifier (acline, transformer, sysswd) is labelled "CKT".
+        # Absent buses (e.g. kbus=0 on a two-winding transformer) are skipped.
+        id_cols = metadata.get('id_cols', [])
+        equip_id_cols = [c for c in id_cols if c not in bus_cols and c in df.columns]
+
+        # One "<name> <kv>kV" segment per bus column; empty where the bus is absent.
+        bus_segments = []
+        for bus_col in bus_cols:
+            name_col, baskv_col = f'{bus_col}_name', f'{bus_col}_baskv'
+            if name_col in df.columns and baskv_col in df.columns:
+                seg = (df[name_col].fillna('').astype(str).str.strip()
+                       + ' ' + df[baskv_col].map(_fmt_kv)).str.strip()
+                bus_segments.append(seg.where(df[name_col].notna(), ''))
+
+        if bus_segments:
+            # Join present segments with ' - ' (skip empty segments row-wise).
+            derived = bus_segments[0]
+            for seg in bus_segments[1:]:
+                derived = pd.Series(
+                    np.where(seg.str.len() > 0, derived + ' - ' + seg, derived),
+                    index=df.index,
+                )
+            if equip_id_cols:
+                # Render each id column; a 'ckt' column gets the "CKT" label.
+                tokens = []
+                for col in equip_id_cols:
+                    val = df[col].fillna('').astype(str).str.strip()
+                    tokens.append('CKT ' + val if col == 'ckt' else val)
+                equip_id = tokens[0]
+                for tok in tokens[1:]:
+                    equip_id = equip_id + ' ' + tok
+                # single-bus joins the id with ' - '; multi-bus with a space
+                sep = ' - ' if len(bus_segments) == 1 else ' '
+                derived = derived + sep + equip_id.str.strip()
+            df['derived_name'] = derived.str.strip()
 
         # Restore the original index
         df.set_index(original_index_columns, inplace=True)
