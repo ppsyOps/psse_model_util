@@ -16,7 +16,6 @@ import pytest
 
 from psse_model_util.common import dataframe_util as dfu
 
-
 # ---------------------------------------------------------------------------
 # convert_df_column_dtypes
 # ---------------------------------------------------------------------------

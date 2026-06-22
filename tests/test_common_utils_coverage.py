@@ -27,7 +27,6 @@ from psse_model_util.common.json_util import (
 )
 from psse_model_util.common.logging_config import get_log_file_path
 
-
 # ---------------------------------------------------------------------------
 # common.__init__.multi_replace
 # ---------------------------------------------------------------------------
