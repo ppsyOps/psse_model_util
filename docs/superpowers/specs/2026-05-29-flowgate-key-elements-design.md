@@ -113,7 +113,25 @@ Returned from `collect_key_facilities()`; CLI also writes each as a CSV.
 
 ## 3. Architecture
 
-### 3.1 New submodule: `psse_model_util/flowgate.py`
+### 3.1 New submodule: `psse_model_util/flowgate/` (package)
+
+The implementation lives in `src/psse_model_util/flowgate/` as a package
+of private submodules with a single re-export surface in `__init__.py`:
+
+```
+src/psse_model_util/flowgate/
+├── __init__.py     # public re-exports + compat shims
+├── _types.py       # constants, _VALID_*, dataclasses
+├── _parse.py       # parse_mon_file, filter_by_sc + regex/helpers
+├── _resolve.py     # resolve_elements + lookup helpers
+├── _graph.py       # _build_bus_only_graph, neighborhood_buses
+├── _collect.py     # collect_key_facilities + per-type collectors
+└── _api.py         # extract_key_facilities (end-to-end wrapper)
+```
+
+`from psse_model_util.flowgate import X` works for every previously-published
+name. The original design described this as a single `flowgate.py` file; it
+was split into a package once the single file grew past ~900 lines.
 
 Top-of-module constants:
 
@@ -395,7 +413,7 @@ Active tests in `tests/test_flowgate.py` (on the pytest path):
 14. **`test_collect_role_column`** — `role` column carries `"monitor"` / `"contingency"` correctly.
 15. **`test_cli_writes_csvs`** — `subprocess.run` the CLI script against `Model_1.raw` + `synthetic_flowgates.mon`; assert four CSVs land in tmp out-dir with the right columns.
 
-**Coverage target:** ≥ 80% on `psse_model_util/flowgate.py` (well above the repo's 40% gate).
+**Coverage target:** ≥ 80% on `psse_model_util.flowgate` (the whole package; well above the repo's 40% gate).
 
 **Out of scope:**
 - v33 RAW parsing (covered by the package's own tests).
