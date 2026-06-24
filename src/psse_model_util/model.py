@@ -558,11 +558,11 @@ class Network(AbstractSection):
         """Return the SectionSchema for a section, or an empty schema if unknown."""
         return self._section_schemas.get(section, SectionSchema())
 
-    def bus_cols(self, section: str) -> tuple:
+    def bus_cols(self, section: str) -> tuple[str, ...]:
         """Bus-number columns for a section (empty tuple if none/unknown)."""
         return self.section_schema(section).bus_cols
 
-    def id_cols(self, section: str) -> tuple:
+    def id_cols(self, section: str) -> tuple[str, ...]:
         """Unique-equipment index columns for a section (empty tuple if none/unknown)."""
         return self.section_schema(section).id_cols
 

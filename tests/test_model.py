@@ -761,3 +761,9 @@ class TestSectionSchemaRegistry:
         assert model1_network.bus_cols("bus") == ("ibus",)
         assert model1_network.id_cols("load") == ("ibus", "loadid")
         assert model1_network.bus_cols("area") == ()  # section exists, no bus_cols
+
+    def test_section_schemas_survive_pickle(self, model1_network):
+        import pickle
+        rt = pickle.loads(pickle.dumps(model1_network))
+        assert rt.bus_cols("acline") == ("ibus", "jbus")
+        assert rt.id_cols("load") == ("ibus", "loadid")
