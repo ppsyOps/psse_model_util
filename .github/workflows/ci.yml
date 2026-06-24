@@ -20,7 +20,7 @@ jobs:
         run: pip install pdm
 
       - name: Install lint dependencies
-        run: pdm install -G lint
+        run: pdm install -G dev
 
       - name: Run Ruff
         run: pdm run ruff check .
