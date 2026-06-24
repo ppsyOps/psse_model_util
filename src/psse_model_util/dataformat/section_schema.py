@@ -6,6 +6,7 @@ Replaces the legacy ``df._metadata`` dict. Instances are held in
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from types import MappingProxyType
 from typing import Any, Mapping, Sequence
 
 
@@ -27,7 +28,7 @@ class SectionSchema:
         # Coerce list/sequence inputs to tuples without breaking frozen-ness.
         object.__setattr__(self, "id_cols", tuple(self.id_cols))
         object.__setattr__(self, "bus_cols", tuple(self.bus_cols))
-        object.__setattr__(self, "data_type", dict(self.data_type))
+        object.__setattr__(self, "data_type", MappingProxyType(dict(self.data_type)))
 
     @classmethod
     def from_template(cls, template: Mapping[str, Any], fields: Sequence[str]) -> "SectionSchema":

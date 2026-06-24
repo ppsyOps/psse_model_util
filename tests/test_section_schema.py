@@ -1,3 +1,5 @@
+import dataclasses
+
 import pytest
 
 from psse_model_util.dataformat.classes import BusId, Name, Voltage
@@ -19,10 +21,15 @@ def test_explicit_construction_coerces_to_tuples():
 
 
 def test_is_frozen():
-    import dataclasses
     s = SectionSchema()
     with pytest.raises(dataclasses.FrozenInstanceError):
         s.id_cols = ("x",)
+
+
+def test_data_type_is_read_only():
+    s = SectionSchema(data_type={"ibus": int})
+    with pytest.raises(TypeError):
+        s.data_type["sneaky"] = str
 
 
 def test_from_template_zips_data_type_list_to_fields():
