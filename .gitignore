@@ -21,6 +21,7 @@ env/
 
 # PDM / Hatch
 .pdm.toml
+.pdm-python
 __pypackages__/
 .hatch/
 
