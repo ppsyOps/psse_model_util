@@ -36,23 +36,34 @@ def _merge_bus_ends(
     bus_attrs: pd.DataFrame,
     ends: list[tuple[str, str]],
 ) -> pd.DataFrame:
-    """Left-join `bus_attrs` onto `df` once per `(join_col, prefix)` pair.
+    """Left-join ``bus_attrs`` onto ``df`` once per ``(join_col, prefix)`` pair.
 
-    For each entry `(join_col, prefix)`, the bus DataFrame's `name`,
-    `baskv`, and `area` columns are renamed to `prefix + "name"`,
-    `prefix + "volt"`, and `prefix + "area"`, and the join key column is
-    renamed to `join_col` (so the merge aligns even when `join_col != "ibus"`).
+    For each entry ``(join_col, prefix)``, the bus DataFrame's ``name``,
+    ``baskv``, and ``area`` columns are renamed to ``prefix + "name"``,
+    ``prefix + "volt"``, and ``prefix + "area"``, and the join key column is
+    renamed to ``join_col`` (so the merge aligns even when
+    ``join_col != "ibus"``).
 
-    Example for a 2-end branch:
+    Args:
+        df: The left DataFrame to add bus-end columns to.
+        bus_attrs: Bus attributes (``ibus``, ``name``, ``baskv``, ``area``).
+        ends: ``(join_col, prefix)`` pairs, one per bus end to join.
 
-        _merge_bus_ends(
-            df,
-            bus_attrs,
-            ends=[("ibus", "from_"), ("jbus", "to_")],
-        )
+    Returns:
+        ``df`` with prefixed bus-end columns added, one set per ``ends``
+        entry.
 
-    produces a frame with `from_name, from_volt, from_area, to_name,
-    to_volt, to_area` columns added.
+    Examples:
+        For a 2-end branch::
+
+            _merge_bus_ends(
+                df,
+                bus_attrs,
+                ends=[("ibus", "from_"), ("jbus", "to_")],
+            )
+
+        produces a frame with ``from_name``, ``from_volt``, ``from_area``,
+        ``to_name``, ``to_volt``, and ``to_area`` columns added.
     """
     result = df
     for join_col, prefix in ends:
@@ -74,19 +85,25 @@ def _int_or_none(value) -> int | None:
     """Coerce a pandas cell to int, or return None when the cell is NaN.
 
     Left-joins against an area-filtered bus table can yield NaN areas when
-    the joined bus was dropped from the filtered set; this helper keeps
-    those rows in the output with an empty area column rather than
-    crashing on int(NaN).
+    the joined bus was dropped from the filtered set; this helper keeps those
+    rows in the output with an empty area column rather than crashing on
+    ``int(NaN)``.
 
-    Design choice — keep, don't drop:
+    Args:
+        value: A pandas cell value to coerce.
 
-    A branch with one endpoint inside the kept areas and one endpoint
-    outside is **kept** in the output; the outside endpoint's area cell is
-    empty (None → empty CSV cell). Dropping these rows would discard
-    real signal — they're exactly the branches at the perimeter of the
-    search area, which downstream analysis (e.g. tie-line review) often
-    cares about most. Consumers who want strictly-inside rows can filter
-    on `(from_area.notna() & to_area.notna())` themselves.
+    Returns:
+        The value as an ``int``, or ``None`` if the value is NaN.
+
+    Note:
+        Design choice -- keep, don't drop. A branch with one endpoint inside
+        the kept areas and one endpoint outside is kept in the output; the
+        outside endpoint's area cell is empty (``None`` renders as an empty
+        CSV cell). Dropping these rows would discard real signal -- they're
+        exactly the branches at the perimeter of the search area, which
+        downstream analysis (e.g. tie-line review) often cares about most.
+        Consumers who want strictly-inside rows can filter on
+        ``(from_area.notna() & to_area.notna())`` themselves.
     """
     return int(value) if pd.notna(value) else None
 
@@ -100,11 +117,23 @@ def _collect_branches_for_fg(
     kv_max: float,
     bus_attrs: pd.DataFrame,
 ) -> list[dict]:
-    """Collect AC lines and 2W transformers with at least one endpoint in
-    `neighborhood` and at least one end within [kv_min, kv_max].
+    """Collect AC lines and 2W transformers near a neighborhood.
 
-    bus_attrs is the bus DataFrame reset_index with ibus as a column,
-    pre-projected to [ibus, name, baskv, area].
+    Keeps rows with at least one endpoint in ``neighborhood`` and at least
+    one end within ``[kv_min, kv_max]``.
+
+    Args:
+        model: The model to read branches from.
+        neighborhood: Bus numbers defining the search area.
+        fg_id: Flowgate id stamped onto each output row.
+        role: ``"monitor"`` or ``"contingency"``, stamped onto each row.
+        kv_min: Lower bound (inclusive) of the kept voltage band.
+        kv_max: Upper bound (inclusive) of the kept voltage band.
+        bus_attrs: Bus DataFrame reset_index with ibus as a column,
+            pre-projected to ``[ibus, name, baskv, area]``.
+
+    Returns:
+        A list of row dicts keyed by ``_BRANCH_COLS``.
     """
     out_rows: list[dict] = []
 
@@ -159,10 +188,22 @@ def _collect_generators_for_fg(
     gen_min_mw: float,
     bus_attrs: pd.DataFrame,
 ) -> list[dict]:
-    """Collect generators with ibus in `neighborhood` and pt >= gen_min_mw.
+    """Collect generators near a neighborhood above a size threshold.
 
-    bus_attrs is the bus DataFrame reset_index with ibus as a column,
-    pre-projected to [ibus, name, baskv, area].
+    Keeps generators with ``ibus`` in ``neighborhood`` and ``pt >=
+    gen_min_mw``.
+
+    Args:
+        model: The model to read generators from.
+        neighborhood: Bus numbers defining the search area.
+        fg_id: Flowgate id stamped onto each output row.
+        role: ``"monitor"`` or ``"contingency"``, stamped onto each row.
+        gen_min_mw: Minimum generator ``pt`` (MW) to keep.
+        bus_attrs: Bus DataFrame reset_index with ibus as a column,
+            pre-projected to ``[ibus, name, baskv, area]``.
+
+    Returns:
+        A list of row dicts keyed by ``_GEN_COLS``.
     """
     gen = model.network.generator.reset_index()
     hit = gen[(gen["ibus"].isin(neighborhood)) & (gen["pt"] >= gen_min_mw)]
@@ -193,9 +234,25 @@ def _collect_3w_for_fg(
     kv_max: float,
     bus_attrs: pd.DataFrame,
 ) -> list[dict]:
-    """Collect 3W transformers with at least one winding bus in `neighborhood`
-    and at least one winding within [kv_min, kv_max]. Winding kV comes from
-    each winding bus's baskv (not the transformer's nomv* which may be 0).
+    """Collect 3W transformers near a neighborhood.
+
+    Keeps 3-winding transformers with at least one winding bus in
+    ``neighborhood`` and at least one winding within ``[kv_min, kv_max]``.
+    Winding kV comes from each winding bus's ``baskv`` (not the transformer's
+    ``nomv*``, which may be 0).
+
+    Args:
+        model: The model to read transformers from.
+        neighborhood: Bus numbers defining the search area.
+        fg_id: Flowgate id stamped onto each output row.
+        role: ``"monitor"`` or ``"contingency"``, stamped onto each row.
+        kv_min: Lower bound (inclusive) of the kept voltage band.
+        kv_max: Upper bound (inclusive) of the kept voltage band.
+        bus_attrs: Bus DataFrame reset_index with ibus as a column,
+            pre-projected to ``[ibus, name, baskv, area]``.
+
+    Returns:
+        A list of row dicts keyed by ``_XF3_COLS``.
     """
     xf = model.network.transformer.reset_index()
     xf3 = xf[
@@ -257,22 +314,34 @@ def collect_key_facilities(
     kv_max: float = DEFAULT_KV_MAX,
     gen_min_mw: float = DEFAULT_GEN_MIN_MW,
 ) -> dict[str, pd.DataFrame]:
-    """For each seed, expand to its `hops`-bus neighborhood and collect filtered
-    branches, generators, and 3W transformers as DataFrames.
+    """Collect key facilities in the neighborhood of each resolved seed.
 
-    Row granularity: one row per (flowgate_id, role, equipment). Equipment
+    For each seed, expand to its ``hops``-bus neighborhood and collect
+    filtered branches, generators, and 3W transformers as DataFrames. Row
+    granularity is one row per ``(flowgate_id, role, equipment)``; equipment
     reached by multiple flowgates appears in multiple rows.
 
-    The returned dict contains 3 keys: 'branches', 'generators',
-    'transformers_3w'. Resolution failures live in the second return value
-    of `resolve_elements`; callers compose the final 4-key dict themselves
-    if they need an 'unresolved' entry. Example:
+    Args:
+        model: The model to collect facilities from.
+        seeds: Resolved seeds produced by :func:`resolve_elements`.
+        hops: Neighborhood radius in bus hops.
+        kv_min: Lower bound (inclusive) of the kept voltage band.
+        kv_max: Upper bound (inclusive) of the kept voltage band.
+        gen_min_mw: Minimum generator ``pt`` (MW) to keep.
 
-        seeds, unresolved = resolve_elements(fgs, model)
-        result = {
-            **collect_key_facilities(model, seeds),
-            "unresolved": unresolved,
-        }
+    Returns:
+        A dict with three keys -- ``'branches'``, ``'generators'``, and
+        ``'transformers_3w'`` -- each mapped to a DataFrame. Resolution
+        failures are *not* included here; they live in the second return
+        value of :func:`resolve_elements`, and callers compose the final
+        4-key dict themselves if they need an ``'unresolved'`` entry.
+
+    Examples:
+        >>> seeds, unresolved = resolve_elements(fgs, model)
+        >>> result = {
+        ...     **collect_key_facilities(model, seeds),
+        ...     "unresolved": unresolved,
+        ... }
     """
     # Per-FG neighborhoods (keyed by (flowgate_id, role) so monitor and
     # contingency seeds are tracked separately).

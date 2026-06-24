@@ -1,8 +1,10 @@
-"""Contingency File Processing and Network Model Validation Module.
+"""Work in progress — not yet functional.
 
-This module provides utilities for processing power system contingency definitions,
-validating network components against a PSS/E RAW file model, and generating
-area-specific contingency files with quality separation.
+Contingency / alternate-path analysis scaffolding. This module is intended to
+process power system contingency definitions, validate network components
+against a PSS/E RAW file model, and generate area-specific contingency files
+with quality separation. Roadmap phase: WIP scaffolding (not yet wired up; the
+package-level ``Model`` import below is not currently importable).
 
 Key Functionality:
 1. Network model initialization from PSS/E RAW files
@@ -29,6 +31,8 @@ Example Usage:
     Processing 42 contingencies...
     Generated 5 area files in 'output'
 """
+
+from __future__ import annotations  # noqa: E402
 
 print('Loading code (contingency_util.py)...')
 print('    Starting imports...')

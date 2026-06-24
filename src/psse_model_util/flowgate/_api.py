@@ -31,7 +31,7 @@ def extract_key_facilities(
 ) -> dict[str, pd.DataFrame]:
     """Run the full flowgate pipeline and return the 4-DataFrame result.
 
-    Convenience wrapper that composes the four stage functions in order:
+    Convenience wrapper that composes the stage functions in order::
 
         parse_mon_file(mon_path)
         -> filter_by_sc(sc)
@@ -40,29 +40,30 @@ def extract_key_facilities(
         -> resolve_elements
         -> collect_key_facilities
 
-    and folds the unresolved DataFrame from `resolve_elements` into the
+    and folds the unresolved DataFrame from :func:`resolve_elements` into the
     final dict so callers get all four outputs in one place.
 
-    Parameters
-    ----------
-    mon_path : Path | str
-        Path to the PSS/E .mon flowgate-definitions file.
-    raw_path : Path | str
-        Path to the PSS/E .raw model.
-    sc : str
-        Security Coordinator filter applied after parsing.
-    areas : Iterable[int] | None, default None
-        If provided, `Network.filter_by_area` is called to restrict the
-        search domain to those area IDs before resolution. Seeds whose
-        buses fall outside the listed areas will appear in the
-        `unresolved` DataFrame with reason "bus_not_found".
-    hops, kv_min, kv_max, gen_min_mw
-        Forwarded to `collect_key_facilities`.
+    Args:
+        mon_path: Path to the PSS/E .mon flowgate-definitions file.
+        raw_path: Path to the PSS/E .raw model.
+        sc: Security Coordinator filter applied after parsing.
+        areas: If provided, :meth:`Network.filter_by_area` is called to
+            restrict the search domain to those area IDs before resolution.
+            Seeds whose buses fall outside the listed areas will appear in
+            the ``unresolved`` DataFrame with reason ``"bus_not_found"``.
+        hops: Neighborhood radius in bus hops; forwarded to
+            :func:`collect_key_facilities`.
+        kv_min: Lower bound (inclusive) of the kept voltage band; forwarded
+            to :func:`collect_key_facilities`.
+        kv_max: Upper bound (inclusive) of the kept voltage band; forwarded
+            to :func:`collect_key_facilities`.
+        gen_min_mw: Minimum generator size (MW); forwarded to
+            :func:`collect_key_facilities`.
 
-    Returns
-    -------
-    dict[str, pd.DataFrame]
-        Keys: 'branches', 'generators', 'transformers_3w', 'unresolved'.
+    Returns:
+        A dict with keys ``'branches'``, ``'generators'``,
+        ``'transformers_3w'``, and ``'unresolved'``, each mapped to a
+        DataFrame.
     """
     fgs = parse_mon_file(mon_path)
     fgs_filtered = filter_by_sc(fgs, sc=sc)

@@ -1,76 +1,27 @@
+"""RAWX section schema: the per-section field, data_type, bus_cols, and id_cols template.
+
+This module defines :data:`rawx_json_template`, a nested dictionary describing the
+expected structure and metadata for PSS/E v35 RAWX (JSON) file data. It is consumed
+by the ``Network._create_dataframe`` method (part of ``Model``) to turn raw JSON into
+typed, indexed :class:`pandas.DataFrame` objects with consistent metadata.
+
+For each section (``bus``, ``acline``, ``transformer``, ...) the template provides:
+
+* ``fields``: the expected column names for the section's DataFrame.
+* ``data``: a placeholder for the section's rows (empty in the template; filled from
+  the source file at parse time).
+* ``data_type``: the expected per-field types, used to coerce column dtypes. When
+  given as a list/tuple it is zipped with ``fields`` into a name-to-type mapping.
+* ``bus_cols``: the columns holding bus numbers, used by ``Network.filter_by_area``
+  and ``Network.section_with_bus`` to filter by area and to join with the bus table.
+* ``id_cols``: the columns used as the DataFrame index (the unique equipment id).
+
+Centralizing this schema lets the parser handle each section's differing columns,
+types, and indexing uniformly, provides defaults for sections missing from a file,
+enables validation against a known format, and avoids per-file type inference.
 """
-The rawx_json_template.rawx_json_template is to provides a standardized structure and metadata for parsing and
-organizing PSSE v35 RAWX (JSON) file data. It serves several important functions in the Model class:
+from __future__ import annotations
 
-1. Data Structure Definition:
-   It defines the expected structure of the RAWX data, including all sections (like 'network', 'harmonics',
-   'timeseries', etc.) and subsections (like 'fields', 'data', etc.) and their respective fields.
-
-2. Metadata Provision:
-   For each section and subsection, it provides crucial metadata.  While 'fields' and 'data' dict entries are expected
-    in the raw files, other fields ('data_type', 'bus_cols' and 'id_cols') provide important metadata.
-   - 'fields': The expected column names for each DataFrame (for PSS/e v35 RAWX files).
-   - 'data_type': The expected data types for each field
-           Used in the _create_dataframe method of the Network class (which is part of Model).
-           It specifies the data types for each column in a DataFrame.
-           When creating a DataFrame, these data types are used to convert the raw data to the correct types.
-           If 'data_type' is provided as a list or tuple, it's converted to a dictionary where the keys are field names
-           and values are the corresponding data types.
-
-   - 'bus_cols': Columns that contain bus information
-            Used in multiple methods, including filter_by_area and section_with_bus in the Network class.
-            Identifies which columns in a DataFrame contain bus information.
-            In filter_by_area, it's used to determine which columns to check when filtering data based on specified
-            areas.
-            In section_with_bus, it's used to know which columns should be joined with the bus DataFrame to add bus
-            information.
-
-   - 'id_cols': Columns that should be used as identifiers or index
-            Used in the _create_dataframe method of the Network class.
-            Specifies which columns should be used as the index for the DataFrame.
-            If 'id_cols' is provided in the metadata, the method attempts to set these columns as the index of the
-            DataFrame.
-
-   - Usage:
-        In the _create_dataframe method:
-            The method checks if these metadata fields exist in the rawx_json_template for the current section.
-            If they exist, they're added to the DataFrame's metadata.
-            The 'data_type' is used to convert column data types.
-            The 'id_cols' is used to set the DataFrame's index.
-
-        In other methods like filter_by_area and section_with_bus:
-            The methods check the DataFrame's metadata for 'bus_cols'.
-            If present, 'bus_cols' is used to identify which columns contain bus information for filtering or joining
-            operations.
-
-        This approach allows for flexible and dynamic handling of different sections in the RAWX data, with each section
-        potentially having different column structures, data types, and indexing requirements. CopyRetryClaude can make
-        mistakes. Please double-check responses.
-
-3. Default Values:
-   It can provide default values or empty structures for sections that might be missing in some RAWX files, ensuring
-   consistency across different files.
-
-4. Data Validation:
-   By defining the expected structure and data types, it allows for validation of incoming data against a known, correct
-   format.
-
-5. Flexibility and Extensibility:
-   Having a template makes it easier to extend or modify the parser to handle new versions of the RAWX format or
-    additional data fields.
-
-6. Performance Optimization:
-   By predetermining the structure and data types, it allows for more efficient parsing and DataFrame creation, as the
-   code doesn't need to infer these details from the data itself.
-
-7. Consistency in Processing:
-   It ensures that all RAWX files are processed in a consistent manner, regardless of minor variations in the input
-   data.
-
-In the Model class, this template is used extensively in the _create_dataframe method to structure the incoming JSON
-data into appropriate pandas DataFrames with the correct metadata. It guides the entire process of transforming the raw
-JSON data into a structured, queryable model representation.
-"""
 from psse_model_util.dataformat.classes import (
     AreaId,
     BusId,

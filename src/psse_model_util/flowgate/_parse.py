@@ -17,13 +17,25 @@ _BUS_TOKEN_LEN = 18  # 12-char name + 6-char kV
 
 
 def _split_bus_token(token: str) -> tuple[str, float]:
-    """Split a PSS/E .mon bus token into (name, base_kv).
+    """Split a PSS/E .mon bus token into ``(name, base_kv)``.
 
-    The token is 18 chars wide: 12-char left/right-padded name + 6-char
-    kV string. Surrounding single quotes are stripped if present.
+    The token is 18 chars wide: a 12-char left/right-padded name followed by
+    a 6-char kV string. Surrounding single quotes are stripped if present.
 
-    >>> _split_bus_token("'NUCPLNT     500.00'")
-    ('NUCPLNT', 500.0)
+    Args:
+        token: The 18-char bus token, optionally wrapped in single quotes.
+
+    Returns:
+        A ``(name, base_kv)`` tuple: the stripped bus name and its base kV
+        as a float.
+
+    Raises:
+        ValueError: If the token (after quote-stripping) is not exactly 18
+            characters wide.
+
+    Examples:
+        >>> _split_bus_token("'NUCPLNT     500.00'")
+        ('NUCPLNT', 500.0)
     """
     # Strip only surrounding quotes — do NOT .strip() the whole token, because
     # the 6-char kV field can legitimately have a trailing space (e.g. '21.60 ').
@@ -54,7 +66,24 @@ _REMOVE_MACHINE_RE = re.compile(
 
 
 def _parse_branch_line(line: str, flowgate_id: int, role: str) -> FlowgateElement:
-    """Parse a 'BRANCH FROM BUS '...' TO BUS '...' CKT <ckt>' line."""
+    """Parse a ``BRANCH FROM BUS '...' TO BUS '...' CKT <ckt>`` line.
+
+    Also used for ``OPEN BRANCH`` contingency lines, which share the same
+    token layout.
+
+    Args:
+        line: The raw .mon line to parse.
+        flowgate_id: Id of the owning flowgate, stamped onto the result.
+        role: ``"monitor"`` or ``"contingency"``.
+
+    Returns:
+        A branch :class:`FlowgateElement` with
+        ``raw_tokens == (from_token, to_token, ckt)``.
+
+    Raises:
+        ValueError: If the line does not contain exactly two quoted bus
+            tokens, or is missing the ``CKT`` id.
+    """
     tokens = _BUS_TOKEN_RE.findall(line)
     if len(tokens) != 2:
         raise ValueError(
@@ -74,10 +103,23 @@ def _parse_branch_line(line: str, flowgate_id: int, role: str) -> FlowgateElemen
 
 
 def _parse_remove_machine_line(line: str, flowgate_id: int) -> FlowgateElement:
-    """Parse 'REMOVE MACHINE <machine_id> FROM BUS '<token>''.
+    """Parse a ``REMOVE MACHINE <machine_id> FROM BUS '<token>'`` line.
 
-    machine_id is the whitespace-separated token between MACHINE and FROM,
-    preserved as a string (PSS/E ids can be alphanumeric, e.g. 'H1').
+    ``machine_id`` is the whitespace-separated token between ``MACHINE`` and
+    ``FROM``, preserved as a string (PSS/E ids can be alphanumeric, e.g.
+    ``"H1"``).
+
+    Args:
+        line: The raw .mon line to parse.
+        flowgate_id: Id of the owning flowgate, stamped onto the result.
+
+    Returns:
+        A generator :class:`FlowgateElement` with ``role == "contingency"``
+        and ``raw_tokens == (bus_token, machine_id)``.
+
+    Raises:
+        ValueError: If the line does not match the expected REMOVE MACHINE
+            layout.
     """
     m = _REMOVE_MACHINE_RE.search(line)
     if not m:
@@ -93,22 +135,35 @@ def _parse_remove_machine_line(line: str, flowgate_id: int) -> FlowgateElement:
 
 
 def parse_mon_file(path: pathlib.Path | str) -> list[Flowgate]:
-    """Parse a PSS/E .mon flowgate-definitions file into a list of Flowgate objects.
+    """Parse a PSS/E .mon flowgate-definitions file into Flowgate objects.
 
-    Recognized constructs:
-      MONITOR FLOWGATE <id> '<description>'
-        BRANCH FROM BUS '<token>' TO BUS '<token>' CKT <id>     -- monitored branch
-      CONTINGENCY <id>
-        OPEN BRANCH FROM BUS '...' TO BUS '...' CKT <id>        -- branch outage
-        REMOVE MACHINE <id> FROM BUS '<token>'                  -- generator outage
-      END                                                        -- closes contingency
-        SC <name>                                                -- Security Coordinator
-        CA <args>                                                -- ignored
-        TP <args>                                                -- ignored
-      END                                                        -- closes flowgate
+    The parser is a small state machine over the .mon grammar. Recognized
+    constructs::
 
-    Raises ValueError on structural errors (unbalanced MONITOR/END, malformed BRANCH).
-    Logs a warning and skips unknown contingency actions.
+        MONITOR FLOWGATE <id> '<description>'
+          BRANCH FROM BUS '<token>' TO BUS '<token>' CKT <id>   # monitored branch
+        CONTINGENCY <id>
+          OPEN BRANCH FROM BUS '...' TO BUS '...' CKT <id>       # branch outage
+          REMOVE MACHINE <id> FROM BUS '<token>'                 # generator outage
+        END                                                      # closes contingency
+          SC <name>                                              # Security Coordinator
+          CA <args>                                              # ignored
+          TP <args>                                              # ignored
+        END                                                      # closes flowgate
+
+    Unknown lines inside a block are logged at WARNING level and skipped
+    (RESILIENT behavior).
+
+    Args:
+        path: Path to the .mon flowgate-definitions file.
+
+    Returns:
+        One :class:`Flowgate` per MONITOR FLOWGATE block, in file order.
+
+    Raises:
+        ValueError: On structural errors such as an unbalanced MONITOR/END,
+            a nested MONITOR FLOWGATE, a CONTINGENCY outside a MONITOR block,
+            or a malformed BRANCH/REMOVE MACHINE line.
     """
     p = pathlib.Path(path)
     text = p.read_text()
@@ -244,5 +299,15 @@ def parse_mon_file(path: pathlib.Path | str) -> list[Flowgate]:
 
 
 def filter_by_sc(fgs: list[Flowgate], sc: str) -> list[Flowgate]:
-    """Keep only flowgates whose Security Coordinator matches `sc` (case-sensitive)."""
+    """Keep only flowgates whose Security Coordinator matches ``sc``.
+
+    The comparison is case-sensitive and exact.
+
+    Args:
+        fgs: Flowgates to filter.
+        sc: Security Coordinator code to match against each flowgate's ``sc``.
+
+    Returns:
+        A new list containing only the flowgates whose ``sc`` equals ``sc``.
+    """
     return [fg for fg in fgs if fg.sc == sc]

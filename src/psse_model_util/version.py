@@ -1,6 +1,8 @@
-"""
-version.py — backwards-compat shim. Real version lives in __about__.py.
-Do not add logic here; use __about__.__version__ directly.
+"""DEPRECATED backwards-compatibility shim.
+
+Kept only so older imports of ``psse_model_util.version`` keep working. The
+canonical version string lives in :mod:`psse_model_util.__about__`; use
+``__about__.__version__`` directly. Do not add logic here.
 """
 from psse_model_util.__about__ import __version__
 
