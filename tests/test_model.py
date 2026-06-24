@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from psse_model_util.dataformat.section_schema import SectionSchema
 from psse_model_util.model import AbstractSection, Model, ModelDecoder, ModelEncoder, Network
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
@@ -738,3 +739,25 @@ def test_load_node_positions_with_cache(model1_network, tmp_path, monkeypatch):
 
     result = model1_network.load_node_positions()
     assert result == positions
+
+
+# ---------------------------------------------------------------------------
+# Network._section_schemas registry and accessors
+# ---------------------------------------------------------------------------
+
+class TestSectionSchemaRegistry:
+    def test_known_section_returns_populated_schema(self, model1_network):
+        s = model1_network.section_schema("acline")
+        assert s.bus_cols == ("ibus", "jbus")
+        assert s.id_cols == ("ibus", "jbus", "ckt")
+        assert "rpu" in s.data_type
+
+    def test_unknown_section_returns_empty_schema(self, model1_network):
+        s = model1_network.section_schema("does_not_exist")
+        assert s == SectionSchema()
+        assert s.bus_cols == ()
+
+    def test_bus_cols_and_id_cols_conveniences(self, model1_network):
+        assert model1_network.bus_cols("bus") == ("ibus",)
+        assert model1_network.id_cols("load") == ("ibus", "loadid")
+        assert model1_network.bus_cols("area") == ()  # section exists, no bus_cols

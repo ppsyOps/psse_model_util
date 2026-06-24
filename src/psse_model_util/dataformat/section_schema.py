@@ -30,6 +30,13 @@ class SectionSchema:
         object.__setattr__(self, "bus_cols", tuple(self.bus_cols))
         object.__setattr__(self, "data_type", MappingProxyType(dict(self.data_type)))
 
+    def __reduce__(self):
+        # MappingProxyType is not picklable; reconstruct via the plain dict.
+        return (
+            self.__class__,
+            (self.id_cols, self.bus_cols, dict(self.data_type)),
+        )
+
     @classmethod
     def from_template(cls, template: Mapping[str, Any], fields: Sequence[str]) -> "SectionSchema":
         """Build a schema from a ``rawx_json_template['network'][section]`` entry.

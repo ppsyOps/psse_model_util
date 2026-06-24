@@ -84,6 +84,7 @@ from psse_model_util.common.file_util import read_pickle, to_pickle
 from psse_model_util.common.json_util import load_and_clean_json
 from psse_model_util.common.logging_config import get_log_file_path, setup_logger
 from psse_model_util.dataformat.rawx_json_template import rawx_json_template
+from psse_model_util.dataformat.section_schema import SectionSchema
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
@@ -386,6 +387,7 @@ class Network(AbstractSection):
         self.zone: pd.DataFrame = pd.DataFrame()
 
         logger.info('Network.__init__ starting...')
+        self._section_schemas: dict[str, SectionSchema] = {}
         for subsection, data in section.items():
             logger.info(f'Network.__init__ creating dataframe {subsection}...')
             self.subsection = subsection  # Added to aid in debugging
@@ -463,6 +465,15 @@ class Network(AbstractSection):
         fields: list = data.pop('fields')
         values: list = data.pop('data')
         meta: dict = data
+
+        # Build and register the typed schema for this section (registry is the
+        # new source of truth; the df._metadata writes below are legacy and are
+        # removed in a later task).
+        if self.subsection in rawx_json_template['network']:
+            self._section_schemas[self.subsection] = SectionSchema.from_template(
+                rawx_json_template['network'][self.subsection], fields)
+        else:
+            self._section_schemas[self.subsection] = SectionSchema()
 
         # Get metadata from "data" argument for from rawx_json_template.
         if self.subsection in rawx_json_template['network']:
@@ -542,6 +553,18 @@ class Network(AbstractSection):
                 # raise
 
         return df
+
+    def section_schema(self, section: str) -> SectionSchema:
+        """Return the SectionSchema for a section, or an empty schema if unknown."""
+        return self._section_schemas.get(section, SectionSchema())
+
+    def bus_cols(self, section: str) -> tuple:
+        """Bus-number columns for a section (empty tuple if none/unknown)."""
+        return self.section_schema(section).bus_cols
+
+    def id_cols(self, section: str) -> tuple:
+        """Unique-equipment index columns for a section (empty tuple if none/unknown)."""
+        return self.section_schema(section).id_cols
 
     def section_with_bus(self, section: str,
                          filter_condition: str = None,
