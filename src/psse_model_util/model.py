@@ -391,7 +391,6 @@ class Network(AbstractSection):
 
         self._orig_dfs_cache: dict[str, pd.DataFrame] = dict()
         self._orig_dfs_cache['bus'] = copy.deepcopy(self.bus)
-        self._orig_dfs_cache['bus']._metadata = self.bus._metadata
 
         self._graph: nx.Graph = self.graph(regenerate=True) if generate_graph else nx.Graph()
         logger.info(f'Network.__init__  finished: '
@@ -449,7 +448,6 @@ class Network(AbstractSection):
             df = self._create_dataframe(section_data)
             setattr(self.network, section_name, df)
         """
-        orig_keys = tuple(data.keys())
         if 'fields' not in data.keys():
             logger.info(f'data keys: {list(data.keys())}')
             logger.info(f'data[:100]: {str(data)[:100]} ...')
@@ -467,19 +465,6 @@ class Network(AbstractSection):
                 rawx_json_template['network'][self.subsection], fields)
         else:
             self._section_schemas[self.subsection] = SectionSchema()
-
-        # Get metadata from "data" argument for from rawx_json_template.
-        if self.subsection in rawx_json_template['network']:
-            template = rawx_json_template['network'][self.subsection]
-            template = {k: v for k, v in template.items() if k not in orig_keys}
-            # Add metatdata from rawx_json_template to the dataframe's _metadata
-            # attribute.
-            for key in template:
-                meta.setdefault(key, template[key])
-
-        # If meta['data_type'] is a list or tuple, convert it to a dict.
-        if 'data_type' in meta.keys() and not isinstance(meta['data_type'], dict):
-            meta['data_type'] = {k: v for k, v in zip(fields, meta['data_type'])}
 
         if not values:
             # data is empty.  Return empty dataframe.
@@ -508,42 +493,27 @@ class Network(AbstractSection):
             logger.warning(f'meta: {len(meta)}, {meta}')
             raise
 
-        # Get metadata like data_type, bus_cols, and id_cols from rawx_json_template.
-        metadata = df._metadata or {}
-        if self.subsection in rawx_json_template['network']:
-            template = rawx_json_template['network'][self.subsection]
-            template = {k: v for k, v in template.items() if k not in orig_keys}
-            # Add metatdata from rawx_json_template to the dataframe's _metadata
-            # attribute.
-            for key in template:
-                metadata[key] = template[key]
-                # id_cols = data['id_cols'] if 'id_cols' in data else None
+        # Coerce dtypes and set the index using the registry schema (no metadata
+        # is written onto the frame).
+        schema = self._section_schemas.get(self.subsection, SectionSchema())
 
-        if 'data_type' in metadata:
-            # new_dtypes = metadata['data_type']
-            new_dtypes = dict(zip(fields, metadata['data_type']))
-            metadata = metadata
+        if schema.data_type:
             df = convert_df_column_dtypes(df_in=df,
-                                          new_dtypes=new_dtypes,
+                                          new_dtypes=dict(schema.data_type),
                                           convert_all_columns=True,
                                           default_types=(int, float, str))
-            df._metadata = metadata
 
-        # Replace the default df index with the columns specified in id_cols
-        # (optionally specified in rawx_json_template).
-        if 'id_cols' in metadata:
-            id_cols = [_ for _ in metadata['id_cols'] if _ in df.columns]  # id_cols = metadata['id_cols']
-            ommited_from_index = set(id_cols) - set(df.columns)
-            if len(ommited_from_index) > 0:
-                msg = f'Unable to move columns to index (may be okay for models older than v35): {str(ommited_from_index)}.'
-                warnings.warn(msg)
-            # Set the index using the specified id_cols
+        if schema.id_cols:
+            id_cols = [c for c in schema.id_cols if c in df.columns]
+            ommited_from_index = set(schema.id_cols) - set(df.columns)
+            if ommited_from_index:
+                warnings.warn(
+                    f'Unable to move columns to index (may be okay for models older '
+                    f'than v35): {str(ommited_from_index)}.')
             try:
                 df.set_index(id_cols, inplace=True)
             except KeyError as e:
-                msg = f'Error moving columns {str(id_cols)} to index. {str(e)}'
-                warnings.warn(msg)
-                # raise
+                warnings.warn(f'Error moving columns {str(id_cols)} to index. {str(e)}')
 
         return df
 
