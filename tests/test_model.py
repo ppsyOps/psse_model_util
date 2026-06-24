@@ -47,7 +47,9 @@ def model1_network():
 def empty_network():
     network = Network.__new__(Network)
     network.bus = pd.DataFrame(columns=["ibus", "baskv"])
-    network.bus._metadata = {"bus_cols": ["ibus"], "id_cols": ["ibus"], "data_type": {}}
+    network._section_schemas = {
+        "bus": SectionSchema(bus_cols=["ibus"], id_cols=["ibus"], data_type={}),
+    }
     network._graph = None
     return network
 
@@ -131,18 +133,9 @@ class TestFilterByKv:
         assert len(result.bus) == 0
 
     def test_metadata_preservation(self, model1_network):
-        original_metadata = {
-            name: df._metadata
-            for name, df in model1_network.model_dfs().items()
-            if hasattr(df, "_metadata")
-        }
+        original = model1_network._section_schemas
         result = model1_network.filter_by_kv(230, 500)
-        filtered_metadata = {
-            name: df._metadata
-            for name, df in result.model_dfs().items()
-            if hasattr(df, "_metadata")
-        }
-        assert original_metadata == filtered_metadata
+        assert result._section_schemas == original
 
     def test_inplace(self, model1_network):
         original_bus_count = len(model1_network.bus)
@@ -190,11 +183,20 @@ def test_network_graph(filtered_model):
 
 
 def test_append_bus_info_to_dfs(filtered_model):
-    filtered_model.network.append_bus_info_to_dfs()
-    for df_name, df in filtered_model.network.model_dfs().items():
-        if df_name != "bus" and hasattr(df, "_metadata") and "bus_cols" in df._metadata:
-            for bus_col in df._metadata["bus_cols"]:
-                assert f"{bus_col}_name" in df.columns
+    net = filtered_model.network
+    net.append_bus_info_to_dfs()
+    for df_name, df in net.model_dfs().items():
+        if df_name != "bus":
+            # Only assert on sections where the registry records bus_cols AND
+            # append_bus_info_to_dfs() actually processed the section (which it
+            # does when _metadata['bus_cols'] is non-empty — the src predicate
+            # during this coexistence period).
+            reg_bus_cols = net.bus_cols(df_name)
+            meta = getattr(df, "_metadata", {})
+            meta_bus_cols = meta.get("bus_cols", []) if isinstance(meta, dict) else []
+            for bus_col in reg_bus_cols:
+                if bus_col in meta_bus_cols:
+                    assert f"{bus_col}_name" in df.columns
 
 
 def test_to_pickle(filtered_model, tmp_path):
@@ -527,14 +529,13 @@ def test_filter_by_area_no_matching_bus_cols_warns(model1_network):
 # ---------------------------------------------------------------------------
 
 def test_network_copy_shallow(model1_network):
-    """copy(deep=False) produces a distinct Network whose DataFrames are new objects
-    but whose metadata dicts are shared references (not deepcopied)."""
+    """copy(deep=False) produces a distinct Network whose DataFrames are new
+    objects and whose section schemas are shared references (not deepcopied)."""
     shallow = model1_network.copy(deep=False)
     assert shallow is not model1_network
-    # DataFrames are always deepcopied (the df itself), so identity differs
     assert shallow.bus is not model1_network.bus
-    # In shallow mode, metadata dict is a shared reference
-    assert shallow.bus._metadata is model1_network.bus._metadata
+    # Immutable schema objects are shared in shallow mode
+    assert shallow.section_schema("bus") is model1_network.section_schema("bus")
 
 
 # ---------------------------------------------------------------------------
@@ -700,7 +701,8 @@ def test_abstract_section_single_row_data():
 # ---------------------------------------------------------------------------
 
 def test_abstract_section_copy_shallow():
-    """AbstractSection.copy(deep=False) shares DataFrame metadata references."""
+    """AbstractSection.copy(deep=False) deep-copies DataFrames and shallow-copies
+    scalar attributes."""
     section_data = {
         'test_sec': {
             'fields': ['col_a', 'col_b'],
@@ -708,12 +710,11 @@ def test_abstract_section_copy_shallow():
         }
     }
     obj = AbstractSection(section_data)
-    obj.test_sec._metadata = {'bus_cols': ['col_a']}
+    obj.marker = "shared"  # an immutable non-DataFrame attribute
     shallow = obj.copy(deep=False)
     assert shallow is not obj
-    # DataFrame is a new object but metadata is a shared reference in shallow mode
-    assert shallow.test_sec is not obj.test_sec
-    assert shallow.test_sec._metadata is obj.test_sec._metadata
+    assert shallow.test_sec is not obj.test_sec          # df always deep-copied
+    assert shallow.marker is obj.marker                  # copy.copy() of an immutable returns the same object
 
 
 # ---------------------------------------------------------------------------
