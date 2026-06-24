@@ -170,7 +170,7 @@ psse_model_util/
 │   ├── constants.py           # INCLUDE_AREAS, filter constants, query defaults
 │   ├── dataframe_util.py      # convert_df_column_dtypes()
 │   ├── dirs.py                # Canonical app dirs (platformdirs)
-│   ├── file_util.py           # to_pickle(), read_pickle(), wait_for_file()
+│   ├── file_util.py           # to_pickle(), read_pickle(), model-file discovery, CSV helpers
 │   ├── json_util.py           # load_and_clean_json()
 │   └── logging_config.py      # Logger setup
 ├── dataformat/
