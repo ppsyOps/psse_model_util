@@ -627,19 +627,6 @@ class Network(AbstractSection):
             # a copy of Network.bus to Network.orig_bus.
             bus_df: pd.DataFrame = copy.deepcopy(self._orig_dfs_cache['bus'])
             bus_df.columns = [f"{bus_col}_{col}" for col in bus_df.columns]
-            # Skip if the join key is not present in the DataFrame columns
-            # (e.g. after a caller replaced the section with a stripped df).
-            if bus_col not in df.columns:
-                logger.debug(f'section_with_bus: {bus_col!r} not in {section!r} columns; skipping merge.')
-                continue
-            # Coerce the join key to match the bus index dtype to avoid merge
-            # type-mismatch errors (e.g. when the section column is str but the
-            # bus index is int64, which occurs for sections without data_type
-            # conversion in the rawx template).
-            try:
-                df[bus_col] = df[bus_col].astype(bus_df.index.dtype)
-            except (ValueError, TypeError):
-                pass
             df: pd.DataFrame = pd.merge(
                 df,
                 bus_df,
@@ -725,7 +712,12 @@ class Network(AbstractSection):
             It preserves the _metadata of each dataframe, including any bus_cols information.
         """
         for section, df in self.model_dfs().items():
-            if section != 'bus' and self.bus_cols(section) and not df.empty:
+            bus_cols = self.bus_cols(section)
+            if (section != 'bus'
+                    and bus_cols
+                    and self.section_schema(section).data_type
+                    and not df.empty
+                    and all(c in df.columns or c in df.index.names for c in bus_cols)):
                 self.section_with_bus(section, inplace=True)
 
     def filter_by_area(self, areas: dict | list[str] = INCLUDE_AREAS,

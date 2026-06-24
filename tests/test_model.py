@@ -186,7 +186,7 @@ def test_append_bus_info_to_dfs(filtered_model):
     net = filtered_model.network
     net.append_bus_info_to_dfs()
     for df_name, df in net.model_dfs().items():
-        if df_name != "bus" and not df.empty:
+        if df_name != "bus" and not df.empty and net.section_schema(df_name).data_type:
             for bus_col in net.bus_cols(df_name):
                 assert f"{bus_col}_name" in df.columns
 
