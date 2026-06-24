@@ -287,13 +287,6 @@ class AbstractSection:
             if isinstance(attr_value, pd.DataFrame):
                 # For DataFrames, use pandas copy method
                 setattr(new_abstract_section, attr_name, copy.deepcopy(attr_value))
-
-                # Copy DataFrame metadata
-                new_df = getattr(new_abstract_section, attr_name)
-                if deep:
-                    new_df._metadata = copy.deepcopy(attr_value._metadata)
-                else:
-                    new_df._metadata = attr_value._metadata
             else:
                 # For other attributes, use Python's copy or deepcopy
                 if deep:
@@ -597,14 +590,12 @@ class Network(AbstractSection):
         logger.info(f'Adding bus information to {section} starting...')
         # Get the specified section's DataFrame
         df = getattr(self, section)
-        metadata = df._metadata
-        df = copy.deepcopy(df)
-
         if not isinstance(df, pd.DataFrame):
             raise ValueError(f"{section} is not a DataFrame attribute of Network.")
+        df = copy.deepcopy(df)
 
-        # Get the bus columns from metadata
-        bus_cols = metadata.setdefault('bus_cols', {})
+        # Get the bus columns from the registry
+        bus_cols = self.bus_cols(section)
 
         if not bus_cols:
             raise ValueError(f"No bus columns found in metadata for {section}.")
@@ -636,6 +627,19 @@ class Network(AbstractSection):
             # a copy of Network.bus to Network.orig_bus.
             bus_df: pd.DataFrame = copy.deepcopy(self._orig_dfs_cache['bus'])
             bus_df.columns = [f"{bus_col}_{col}" for col in bus_df.columns]
+            # Skip if the join key is not present in the DataFrame columns
+            # (e.g. after a caller replaced the section with a stripped df).
+            if bus_col not in df.columns:
+                logger.debug(f'section_with_bus: {bus_col!r} not in {section!r} columns; skipping merge.')
+                continue
+            # Coerce the join key to match the bus index dtype to avoid merge
+            # type-mismatch errors (e.g. when the section column is str but the
+            # bus index is int64, which occurs for sections without data_type
+            # conversion in the rawx template).
+            try:
+                df[bus_col] = df[bus_col].astype(bus_df.index.dtype)
+            except (ValueError, TypeError):
+                pass
             df: pd.DataFrame = pd.merge(
                 df,
                 bus_df,
@@ -657,7 +661,7 @@ class Network(AbstractSection):
         #   multi-bus:   "<name> <kv>kV - <name> <kv>kV <id>"  (bare id, no label)
         # A 'ckt' identifier (acline, transformer, sysswd) is labelled "CKT".
         # Absent buses (e.g. kbus=0 on a two-winding transformer) are skipped.
-        id_cols = metadata.get('id_cols', [])
+        id_cols = self.id_cols(section)
         equip_id_cols = [c for c in id_cols if c not in bus_cols and c in df.columns]
 
         # One "<name> <kv>kV" segment per bus column; empty where the bus is absent.
@@ -696,8 +700,6 @@ class Network(AbstractSection):
         if not isinstance(df.index, pd.MultiIndex) and original_index_columns[0] == 'index':
             df.index.name = None
 
-        df._metadata = metadata
-
         # If inplace, update the original DataFrame
         if inplace:
             setattr(self, section, df)
@@ -723,12 +725,7 @@ class Network(AbstractSection):
             It preserves the _metadata of each dataframe, including any bus_cols information.
         """
         for section, df in self.model_dfs().items():
-            # Check if the dataframe has bus_cols in its metadata
-            if (section != 'bus'
-                    and hasattr(df, '_metadata')
-                    and 'bus_cols' in df._metadata
-                    and df._metadata['bus_cols']):
-                # Apply section_with_bus method in place
+            if section != 'bus' and self.bus_cols(section) and not df.empty:
                 self.section_with_bus(section, inplace=True)
 
     def filter_by_area(self, areas: dict | list[str] = INCLUDE_AREAS,
@@ -773,10 +770,8 @@ class Network(AbstractSection):
         network: 'Network' = self if inplace else self.copy()
 
         # Filter bus DataFrame by area
-        bus_meta = network.bus._metadata
         logger.info(f"Network.filter_by_area: filtering buses for areas: {areas}")
         network.bus = network.bus[network.bus['area'].isin(areas)]
-        network.bus._metadata = bus_meta
 
         filtered_buses = set(network.bus.index)
         logger.info(f"Network.filter_by_area: retained {len(filtered_buses)} buses after area filtering.")
@@ -784,11 +779,9 @@ class Network(AbstractSection):
         # Filter all DataFrames that reference buses
         for attr_name, df in network.__dict__.items():
             if isinstance(df, pd.DataFrame) and attr_name != 'bus':
-                meta = df._metadata
-                if 'bus_cols' not in meta:
+                bus_cols = network.bus_cols(attr_name)
+                if not bus_cols:
                     continue  # skip DataFrames without bus references
-
-                bus_cols = meta['bus_cols']
                 # Check if bus_cols are in the columns or index
                 index_bus_cols = [col for col in bus_cols if col in df.index.names]
                 column_bus_cols = [col for col in bus_cols if col in df.columns]
@@ -809,7 +802,6 @@ class Network(AbstractSection):
                     continue
 
                 df = df[mask]
-                df._metadata = meta
                 setattr(network, attr_name, df)
 
         # Handle network graph based on graph_effect argument
@@ -884,13 +876,9 @@ class Network(AbstractSection):
         if not isinstance(df, pd.DataFrame):
             raise AttributeError(f"'{section}' is not a DataFrame")
 
-        # Save metadata before filtering
-        metadata = df._metadata if hasattr(df, '_metadata') else {}
-
         try:
             # Apply the filter using pandas query
             filtered_df = df.query(where_clause)
-            filtered_df._metadata = metadata
             logger.info(f"Network.filter_section: filtered '{section}' down to {len(filtered_df)} rows")
         except Exception as e:
             logger.error(f"Network.filter_section: failed to filter '{section}' with error: {str(e)}")
@@ -980,19 +968,15 @@ class Network(AbstractSection):
 
         # Update bus DataFrame
         network.bus = filtered_buses
-        network.bus._metadata = bus_df._metadata
 
         # Filter other equipment based on bus connections
         for section_name, df in network.model_dfs().items():
             if section_name == 'bus':
                 continue
 
-            metadata = df._metadata
-            if not metadata or 'bus_cols' not in metadata:
+            bus_cols = network.bus_cols(section_name)
+            if not bus_cols:
                 continue
-
-            # Get bus columns for this equipment type
-            bus_cols = metadata['bus_cols']
 
             # Reset index if necessary to access bus columns
             if isinstance(df.index, pd.MultiIndex):
@@ -1014,9 +998,6 @@ class Network(AbstractSection):
             # Restore index if needed
             if isinstance(df.index, pd.MultiIndex):
                 filtered_df.set_index(df.index.names, inplace=True)
-
-            # Preserve metadata
-            filtered_df._metadata = metadata
 
             # Update section in network
             setattr(network, section_name, filtered_df)
@@ -1065,12 +1046,7 @@ class Network(AbstractSection):
         # Iterate through all attributes of the current instance
         for attr_name, attr_value in self.__dict__.items():
             if isinstance(attr_value, pd.DataFrame):
-                # For DataFrames, use pandas copy method
                 new_df = copy.deepcopy(attr_value)
-                if deep:
-                    new_df._metadata = copy.deepcopy(attr_value._metadata)
-                else:
-                    new_df._metadata = attr_value._metadata
                 setattr(new_network, attr_name, new_df)
             else:
                 # For other attributes, use Python's copy or deepcopy
@@ -1246,17 +1222,21 @@ class Network(AbstractSection):
                 # Do not add substations to model
                 continue
 
-            logger.debug(f'{section}._metadata: {df._metadata}')
+            schema = self.section_schema(section)
+            logger.debug(f'{section} schema: {schema}')
 
             # Skip rawx sections that do not have bus information, as they
-            # do nto get added to the network graph.
-            if 'bus_cols' not in df._metadata or 'id_cols' not in df._metadata:
+            # do not get added to the network graph.
+            # Also skip sections without data_type: those sections did not have
+            # _metadata written by _create_dataframe (legacy behaviour preserved
+            # until a later task removes the _metadata writes entirely).
+            if not schema.bus_cols or not schema.id_cols or not schema.data_type:
                 # Do not add items to the network graph if they don't have any
                 # associated buses and clear identifiers.
                 continue
 
             # Get a list of column names that contain bus numbers or equipment IDs.
-            bus_cols, id_cols = df._metadata['bus_cols'], df._metadata['id_cols']
+            bus_cols, id_cols = schema.bus_cols, schema.id_cols
             # Process for adding equipment from a rawx section to the network
             # graph differs for 1-bus, 2-bus and 3-bus equipment.
             match len(bus_cols):
@@ -1432,11 +1412,10 @@ class Network(AbstractSection):
         for attr_name, df in result.__dict__.items():
             if not isinstance(df, pd.DataFrame):
                 continue
-            meta = df._metadata
-            if 'bus_cols' not in meta:
+            bus_cols = result.bus_cols(attr_name)
+            if not bus_cols:
                 continue
 
-            bus_cols = meta['bus_cols']
             index_bus_cols = [c for c in bus_cols if c in df.index.names]
             column_bus_cols = [c for c in bus_cols if c in df.columns]
 
@@ -1450,7 +1429,6 @@ class Network(AbstractSection):
                 continue
 
             filtered = df[mask]
-            filtered._metadata = meta
             setattr(result, attr_name, filtered)
 
         result._graph = nx.Graph()
@@ -1505,9 +1483,8 @@ class Network(AbstractSection):
         if ties.empty:
             empty = self.copy()
             for attr_name, df in empty.__dict__.items():
-                if isinstance(df, pd.DataFrame) and 'bus_cols' in getattr(df, '_metadata', {}):
+                if isinstance(df, pd.DataFrame) and empty.bus_cols(attr_name):
                     empty_df = df.iloc[0:0].copy()
-                    empty_df._metadata = df._metadata
                     setattr(empty, attr_name, empty_df)
             if output == 'network':
                 return empty
@@ -2405,12 +2382,6 @@ class Model:
         for attr_name, attr_value in self.__dict__.items():
             if isinstance(attr_value, pd.DataFrame):
                 # For DataFrames, use pandas copy method
-                new_df = copy.deepcopy(attr_value)
-                new_df = getattr(new_model, attr_name)
-                if deep:
-                    new_df._metadata = copy.deepcopy(attr_value._metadata)
-                else:
-                    new_df._metadata = attr_value._metadata
                 setattr(new_model, attr_name, copy.deepcopy(attr_value))
             elif isinstance(attr_value, nx.Graph):
                 # For networkx Graph, use its copy method

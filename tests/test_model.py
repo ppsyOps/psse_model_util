@@ -186,17 +186,9 @@ def test_append_bus_info_to_dfs(filtered_model):
     net = filtered_model.network
     net.append_bus_info_to_dfs()
     for df_name, df in net.model_dfs().items():
-        if df_name != "bus":
-            # Only assert on sections where the registry records bus_cols AND
-            # append_bus_info_to_dfs() actually processed the section (which it
-            # does when _metadata['bus_cols'] is non-empty — the src predicate
-            # during this coexistence period).
-            reg_bus_cols = net.bus_cols(df_name)
-            meta = getattr(df, "_metadata", {})
-            meta_bus_cols = meta.get("bus_cols", []) if isinstance(meta, dict) else []
-            for bus_col in reg_bus_cols:
-                if bus_col in meta_bus_cols:
-                    assert f"{bus_col}_name" in df.columns
+        if df_name != "bus" and not df.empty:
+            for bus_col in net.bus_cols(df_name):
+                assert f"{bus_col}_name" in df.columns
 
 
 def test_to_pickle(filtered_model, tmp_path):
@@ -513,13 +505,12 @@ def test_filter_by_area_graph_effect_leave(model1_network):
 
 
 def test_filter_by_area_no_matching_bus_cols_warns(model1_network):
-    """filter_by_area warns (and keeps all rows) when bus_cols declared in metadata
-    but none of those columns appear in the DataFrame's index or columns."""
+    """filter_by_area warns (and keeps all rows) when bus_cols are declared for a
+    section but none of those columns appear in the DataFrame's index or columns."""
     import copy as copy_mod
-    phantom_df = pd.DataFrame({'col_a': [1, 2]})
-    phantom_df._metadata = {'bus_cols': ['phantom_col']}
     net = copy_mod.deepcopy(model1_network)
-    net.phantom = phantom_df
+    net.phantom = pd.DataFrame({'col_a': [1, 2]})
+    net._section_schemas['phantom'] = SectionSchema(bus_cols=['phantom_col'])
     with pytest.warns(UserWarning, match="no bus columns found"):
         net.filter_by_area({1: 'AREA'}, graph_effect='clear')
 
