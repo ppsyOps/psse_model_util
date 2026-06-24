@@ -515,6 +515,25 @@ def test_filter_by_area_no_matching_bus_cols_warns(model1_network):
         net.filter_by_area({1: 'AREA'}, graph_effect='clear')
 
 
+def test_filter_by_area_filters_no_data_type_section():
+    """A bus-bearing section WITHOUT data_type (e.g. swshunt) is filtered by bus
+    connection just like data_type sections. This is an intentional widening of
+    the legacy behavior (which left such sections untouched)."""
+    net = Network.__new__(Network)
+    net.bus = pd.DataFrame({"area": [1, 2]}, index=pd.Index([101, 202], name="ibus"))
+    net.swshunt = pd.DataFrame({"ibus": [101, 202], "bl": [1.0, 2.0]})
+    net._section_schemas = {
+        "bus": SectionSchema(bus_cols=["ibus"], id_cols=["ibus"]),
+        "swshunt": SectionSchema(bus_cols=["ibus"]),  # no data_type
+    }
+    net._orig_dfs_cache = {"bus": net.bus.copy()}
+    net._graph = nx.Graph()
+    net.filter_by_area({1: "AREA"}, inplace=True, graph_effect="leave")
+    # bus 202 (area 2) is removed; the swshunt row referencing bus 202 is removed too.
+    assert list(net.bus.index) == [101]
+    assert list(net.swshunt["ibus"]) == [101]
+
+
 # ---------------------------------------------------------------------------
 # Network.copy(deep=False) — shallow-copy path
 # ---------------------------------------------------------------------------
