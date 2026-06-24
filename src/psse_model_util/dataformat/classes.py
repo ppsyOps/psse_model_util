@@ -1,3 +1,20 @@
+"""Domain data types, dict/dataclass helpers, and the metadata-carrying DataFrame.
+
+This module provides the building blocks used to give RAWX/RAW model data a typed,
+self-describing shape:
+
+* A family of small "newtype" domain classes (``Voltage``, ``Reactance``,
+  ``Status``, ``Admittance``, etc.) that subclass a Python builtin and tag a value
+  with its power-system meaning.
+* Helper utilities for reflecting over and constructing objects from plain
+  dictionaries: :func:`get_builtin_base_type`, :func:`infer_type`,
+  :func:`dict_to_dataclass`, and :class:`DictToClassConverter`.
+* :class:`ModelDF`, a :class:`pandas.DataFrame` subclass that carries a ``meta``
+  dictionary (``fields``, ``data_type``, ``bus_cols``, ``id_cols``) and propagates
+  it across common DataFrame operations.
+"""
+from __future__ import annotations
+
 import copy
 from collections import namedtuple
 from dataclasses import field, make_dataclass
@@ -11,6 +28,19 @@ Node = namedtuple('Node', ['i'])
 
 
 class ModelDF(pd.DataFrame):
+    """A :class:`pandas.DataFrame` subclass that carries and propagates ``meta``.
+
+    ``ModelDF`` augments a DataFrame with a ``meta`` dictionary holding schema
+    metadata (``fields``, ``data_type``, ``bus_cols``, ``id_cols``). Common
+    DataFrame operations are overridden so the metadata is preserved on the
+    result.
+
+    Note:
+        ``__init__`` currently raises :class:`NotImplementedError`; subclassing
+        :class:`pandas.DataFrame` did not work well and a "wrap a df" approach is
+        being considered instead.
+    """
+
     def __init__(self, *args, meta: dict = None, **kwargs):
         raise NotImplementedError
         # TODO: Inherting from pd.DataFrame did not work well.
@@ -20,6 +50,7 @@ class ModelDF(pd.DataFrame):
 
     @property
     def meta(self):
+        """The metadata dictionary backing this DataFrame's schema."""
         return self._metadata
 
     @meta.setter
@@ -37,6 +68,7 @@ class ModelDF(pd.DataFrame):
 
     @property
     def bus_cols(self) -> List[str]:
+        """Columns holding bus numbers (from ``meta['bus_cols']``)."""
         self.meta.setdefault('bus_cols', [])
         return self.meta['bus_cols']
 
@@ -46,6 +78,7 @@ class ModelDF(pd.DataFrame):
 
     @property
     def id_cols(self) -> List[str]:
+        """Columns used as the unique equipment id / index (from ``meta['id_cols']``)."""
         self.meta.setdefault('id_cols', [])
         return self.meta['id_cols']
 
@@ -55,6 +88,7 @@ class ModelDF(pd.DataFrame):
 
     @property
     def data_type(self) -> dict[str, Any]:
+        """Per-column dtype hints keyed by field name (from ``meta['data_type']``)."""
         self.meta.setdefault('data_type', {})
         return self.meta['data_type']
 
@@ -85,107 +119,124 @@ class ModelDF(pd.DataFrame):
         return self
 
     def merge(self, *args, **kwargs):
+        """Merge like :meth:`pandas.DataFrame.merge`, preserving ``meta``."""
         result = super().merge(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def query(self, expr, *args, **kwargs):
+        """Query like :meth:`pandas.DataFrame.query`, preserving ``meta``."""
         result = super().query(expr, *args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def loc(self, *args, **kwargs):
+        """Label-based selection, preserving ``meta`` on DataFrame results."""
         result = super().loc(*args, **kwargs)
         if isinstance(result, pd.DataFrame):
             result = self._constructor(result).__finalize__(self)
         return result
 
     def iloc(self, *args, **kwargs):
+        """Position-based selection, preserving ``meta`` on DataFrame results."""
         result = super().iloc(*args, **kwargs)
         if isinstance(result, pd.DataFrame):
             result = self._constructor(result).__finalize__(self)
         return result
 
     def head(self, *args, **kwargs):
+        """Return the first rows like :meth:`pandas.DataFrame.head`, preserving ``meta``."""
         result = super().head(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def tail(self, *args, **kwargs):
+        """Return the last rows like :meth:`pandas.DataFrame.tail`, preserving ``meta``."""
         result = super().tail(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def sample(self, *args, **kwargs):
+        """Sample rows like :meth:`pandas.DataFrame.sample`, preserving ``meta``."""
         result = super().sample(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def drop(self, *args, **kwargs):
+        """Drop rows/columns like :meth:`pandas.DataFrame.drop`, preserving ``meta``."""
         result = super().drop(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def reset_index(self, *args, **kwargs):
+        """Reset the index like :meth:`pandas.DataFrame.reset_index`, preserving ``meta``."""
         result = super().reset_index(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def sort_values(self, *args, **kwargs):
+        """Sort by values like :meth:`pandas.DataFrame.sort_values`, preserving ``meta``."""
         result = super().sort_values(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def sort_index(self, *args, **kwargs):
+        """Sort by index like :meth:`pandas.DataFrame.sort_index`, preserving ``meta``."""
         result = super().sort_index(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def filter(self, *args, **kwargs):
+        """Filter labels like :meth:`pandas.DataFrame.filter`, preserving ``meta``."""
         result = super().filter(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def rename(self, *args, **kwargs):
+        """Rename labels like :meth:`pandas.DataFrame.rename`, preserving ``meta``."""
         result = super().rename(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def join(self, *args, **kwargs):
+        """Join like :meth:`pandas.DataFrame.join`, preserving ``meta``."""
         result = super().join(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def combine_first(self, other):
+        """Combine like :meth:`pandas.DataFrame.combine_first`, preserving ``meta``."""
         result = super().combine_first(other)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def update(self, other, *args, **kwargs):
+        """Update in place like :meth:`pandas.DataFrame.update`, merging ``other``'s ``meta``."""
         super().update(other, *args, **kwargs)
         self.meta.update(other.meta if isinstance(other, ModelDF) else {})
         return self
 
     def set_index(self, *args, **kwargs):
+        """Set the index like :meth:`pandas.DataFrame.set_index`, preserving ``meta``."""
         result = super().set_index(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
     def reindex(self, *args, **kwargs):
+        """Reindex like :meth:`pandas.DataFrame.reindex`, preserving ``meta``."""
         result = super().reindex(*args, **kwargs)
         result = self._constructor(result).__finalize__(self)
         return result
 
 
 def get_builtin_base_type(cls):
-    """
-    Recursively determine the built-in Python type that a custom class inherits from.
+    """Recursively determine the builtin Python type that a class inherits from.
 
     Args:
-    cls: The class to check.
+        cls: The class to check.
 
     Returns:
-    The built-in base type, or None if no built-in base type is found.
+        The builtin base type, or ``None`` if no builtin base type is found.
     """
     # Check if the class is already a built-in type
     if cls.__module__ == 'builtins':
@@ -210,54 +261,48 @@ def get_builtin_base_type(cls):
 
 
 class DictToClassConverter:
-    """
-    A converter class that initializes itself with attributes based on a provided dictionary.
-    """
+    """A converter that sets instance attributes from a provided dictionary."""
 
     def __init__(self, input_dict: dict):
-        """
-        Initializes a new instance with attributes corresponding to the input dictionary's keys and values.
+        """Initialize an instance with attributes from the input dictionary.
 
-        :param input_dict: A dictionary where keys represent attribute names and values represent attribute values.
+        Args:
+            input_dict: A dictionary whose keys become attribute names and whose
+                values become the corresponding attribute values.
         """
         for key, value in input_dict.items():
             setattr(self, key, value)
 
 
 def infer_type(value):
-    """
-    Infers the Python type for a given value, with specific handling for collections.
+    """Infer the Python type for a given value, with handling for collections.
 
-    This function examines the input value to determine its Python type. For collections
-    such as lists, sets, and tuples, the function attempts to infer a more specific type
-    based on the types of the elements contained within the collection. For example,
-    a list containing only integers would result in the type `List[int]`. The function
-    handles sets and tuples in a similar manner.
+    For collections such as lists, sets, and tuples, the function attempts to infer a
+    more specific type based on the types of the contained elements; for example, a
+    list containing only integers yields ``list[int]``. For simple types (int, float,
+    str, bool) and other objects it returns the value's type directly. For ``None`` or
+    when a specific type cannot be confidently inferred, it defaults to ``typing.Any``.
 
-    For simple types (int, float, str, bool) and datetime objects, the function directly
-    returns the type of the value. For more complex types or when a specific type cannot
-    be confidently inferred, the function defaults to returning `typing.Any`.
+    Args:
+        value: The value for which the type is to be inferred.
 
-    :param value: The value for which the type is to be inferred.
-    :return: The inferred Python type of the input value. For collections with uniform
-             element types, returns a generic type (e.g., `List[int]`). Defaults to
-             `typing.Any` for complex types or mixed-element collections.
-    :rtype: Type
-
-    Example usage:
-
-    .. code-block:: python
-
-        print(infer_type([1, 2, 3]))  # Output: typing.List[int]
-        print(infer_type({"a", "b"}))  # Output: typing.Set[str]
-        print(infer_type((1, 2)))  # Output: typing.Tuple[int, ...]
-        print(infer_type(123))  # Output: <class 'int'>
-        print(infer_type(datetime.datetime.now()))  # Output: <class 'datetime.datetime'>
+    Returns:
+        The inferred Python type of the input value. For collections with uniform
+        element types, returns a parametrized generic (e.g. ``list[int]``). Defaults
+        to ``typing.Any`` for ``None`` or mixed-element collections.
 
     Note:
-    The function assumes uniformity in the types of elements within collections. For
-    mixed-type collections, the specific collection type (List, Set, Tuple) without
-    element type information is returned.
+        The function assumes uniformity in the element types within collections. For
+        mixed-type collections, ``list[Any]`` is returned.
+
+    Examples:
+        .. code-block:: python
+
+            print(infer_type([1, 2, 3]))  # Output: typing.List[int]
+            print(infer_type({"a", "b"}))  # Output: typing.Set[str]
+            print(infer_type((1, 2)))  # Output: typing.Tuple[int, ...]
+            print(infer_type(123))  # Output: <class 'int'>
+            print(infer_type(datetime.datetime.now()))  # Output: <class 'datetime.datetime'>
     """
     def none_to_any(value):
         if value is None or value is NoneType or isinstance(value, type(None)):
@@ -289,43 +334,35 @@ def infer_type(value):
 
 
 def dict_to_dataclass(input_dict: dict) -> Any:
-    """
-    Converts a dictionary into a dynamically created dataclass instance.
+    """Convert a dictionary into a dynamically created dataclass instance.
 
-    This function dynamically creates a dataclass with fields corresponding to the keys
-    of the input dictionary. Field types are inferred based on the values associated
-    with each key. For mutable types (lists, sets, tuples, and dicts), a `default_factory`
-    is used to ensure unique default values for each instance. For immutable types and
-    complex types where inference defaults to `typing.Any`, the `default` parameter is
-    used.
+    A dataclass is created with one field per key of the input dictionary. Field types
+    are taken from the type of each value. For mutable types (lists, sets, and dicts) a
+    ``default_factory`` is used so each instance gets a unique deep copy of the default;
+    immutable types use the ``default`` parameter.
 
-    :param input_dict: A dictionary where each key-value pair represents the name and value
-                       of an attribute in the resulting dataclass. The key is a string
-                       representing the attribute name, and the value is used to infer
-                       the attribute's type and initialize the attribute.
-    :type input_dict: dict
-    :return: An instance of the dynamically created dataclass, with attributes corresponding
-             to the input dictionary's key-value pairs.
-    :rtype: dataclasses.dataclass
+    Args:
+        input_dict: A dictionary where each key-value pair becomes the name and default
+            value of an attribute on the resulting dataclass. The key is the attribute
+            name and the value provides both the field type and its default.
 
-    Example usage:
+    Returns:
+        An instance of the dynamically created dataclass, with attributes corresponding
+        to the input dictionary's key-value pairs.
 
-    .. code-block:: python
+    Examples:
+        .. code-block:: python
 
-        my_dict = {
-            "a": 123,
-            "prop2": 456,
-            "list_example": [1, 2, 3],
-        }
+            my_dict = {
+                "a": 123,
+                "prop2": 456,
+                "list_example": [1, 2, 3],
+            }
 
-        dataclass_obj = dict_to_dataclass(my_dict)
-        print(dataclass_obj.a)  # Output: 123
-        print(dataclass_obj.prop2)  # Output: 456
-        print(dataclass_obj.list_example)  # Output: [1, 2, 3]
-
-    Note:
-    The function uses type inference for setting up dataclass fields. It defaults to `typing.Any`
-    for complex types or where type inference is not feasible.
+            dataclass_obj = dict_to_dataclass(my_dict)
+            print(dataclass_obj.a)  # Output: 123
+            print(dataclass_obj.prop2)  # Output: 456
+            print(dataclass_obj.list_example)  # Output: [1, 2, 3]
     """
     fields = []
     for key, value in input_dict.items():
@@ -341,10 +378,12 @@ def dict_to_dataclass(input_dict: dict) -> Any:
 
 
 class ActivePower(float):
-    pass
+    """Active (real) power, P, in MW."""
 
 
 class Admittance(complex):
+    """Complex admittance, Y = G + jB, in per-unit."""
+
     def __new__(cls, real, imag=0.0):
         return super().__new__(cls, real, imag)
 
@@ -359,6 +398,8 @@ class Admittance(complex):
 
 
 class Impedance(complex):
+    """Complex impedance, Z = R + jX, in per-unit."""
+
     def __new__(cls, real, imag=0.0):
         return super().__new__(cls, real, imag)
 
@@ -373,6 +414,8 @@ class Impedance(complex):
 
 
 class Status(int):
+    """In-service status flag: 0 (out of service) or 1 (in service)."""
+
     def __new__(cls, value):
         if value not in (0, 1):
             raise ValueError("Status must be either 0 or 1")
@@ -385,88 +428,88 @@ class Status(int):
         raise TypeError("Cannot perform arithmetic operations on Status objects")
 
 
-class Angle(float):  # theta
-    pass
+class Angle(float):
+    """Angle, theta, in degrees."""
 
 
 class AreaId(int):
-    pass
+    """Area identifier (area number)."""
 
 
 class SwShID(int):
-    pass
+    """Switched shunt identifier."""
 
 
-class BusId(int):  # fields: I, J, K, IBUS, JBUS
-    pass
+class BusId(int):
+    """Bus number identifier (e.g. the I, J, K, IBUS, JBUS fields)."""
 
 
-class Capacitance(float):  # C
-    pass
+class Capacitance(float):
+    """Capacitance, C, in farads."""
 
 
-class Current(float):  # I
-    pass
+class Current(float):
+    """Current, I, in amperes."""
 
 
 class IdInt(int):
-    pass
+    """Generic integer identifier."""
 
 
 class IdStr(str):
-    pass
+    """Generic string identifier (e.g. a circuit or equipment id)."""
 
 
-class Inductance(float):  # L
-    pass
+class Inductance(float):
+    """Inductance, L, in henries."""
 
 
 class Name(str):
-    pass
+    """Equipment or entity name."""
 
 
-class PowerFactor(float):  # PF
-    pass
+class PowerFactor(float):
+    """Power factor, PF, dimensionless."""
 
 
-class Resistance(float):  # R
-    pass
+class Resistance(float):
+    """Resistance, R, in per-unit."""
 
 
-class Reactance(float):  # X
-    pass
+class Reactance(float):
+    """Reactance, X, in per-unit."""
 
 
 class OwnerFraction(float):
-    pass
+    """Ownership fraction, dimensionless (0.0-1.0)."""
 
 
 class OwnerId(int):
-    pass
+    """Owner identifier (owner number)."""
 
 
 class PerUnit(int):
-    pass
+    """A per-unit quantity (normalized to a base)."""
 
 
 class Rating(float):
-    pass
+    """Equipment rating, in MVA."""
 
 
 class ReactivePower(float):
-    pass
+    """Reactive power, Q, in MVAr."""
 
 
-class Susceptance(float):  # B
-    pass
+class Susceptance(float):
+    """Susceptance, B, in per-unit."""
 
 
-class Voltage(float):  # V
-    pass
+class Voltage(float):
+    """Voltage, V, in kV or per-unit depending on the field."""
 
 
 class ZoneId(int):
-    pass
+    """Zone identifier (zone number)."""
 
 
 if __name__ == '__main__':

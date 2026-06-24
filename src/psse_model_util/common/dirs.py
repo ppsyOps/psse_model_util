@@ -7,6 +7,8 @@ data, logs, config, cache, and temp storage using platformdirs.
 All paths are packaging-safe: no references to the source tree.
 """
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 
@@ -33,15 +35,15 @@ site_temp_dir: Path = __site_root / 'temp'
 
 
 def delete_all_items_in_directory(directory: str | Path) -> None:
-    """
-    Delete all items (files and subdirectories) in the specified directory.
+    """Delete all items (files and subdirectories) in the specified directory.
+
     The directory itself is preserved.
 
-    Parameters:
+    Args:
         directory: Path to the directory to clear.
 
     Raises:
-        ValueError: If the path is not a directory.
+        ValueError: If the path exists but is not a directory.
     """
     target_dir = Path(directory)
 

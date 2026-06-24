@@ -1,36 +1,36 @@
+"""Compare two PSS/E power flow models (RAW or RAWX).
+
+The main class, :class:`ModelComparison`, loads two :class:`~psse_model_util.model.Model`
+instances and compares them, surfacing network dataframe differences, topology
+changes, alternate-path analysis, and bus renumbering between the two models.
+
+Key features:
+    - Comparison of large power system models.
+    - Analysis of network topology changes.
+    - Identification of added, removed, and modified equipment.
+    - Path analysis for changes in network connectivity (sectionalizations and bypasses).
+    - Export of comparison results to CSV.
+
+The implementation uses pandas for dataframe manipulation, networkx for graph
+operations, and pickle caching to avoid redundant recalculation of expensive
+comparisons.
+
+Examples:
+    Compare two models and export the results to CSV::
+
+        from psse_model_util.compare import ModelComparison
+        from psse_model_util.model import Model
+
+        model1 = Model('path/to/model1.raw')
+        model2 = Model('path/to/model2.raw')
+
+        comparison = ModelComparison(model1, model2)
+        comparison.compare_network_dfs()
+        comparison.compare_graph()
+        comparison.to_csv(df_comparison_to_csv=True)
 """
-This module provides functionality to compare two PSSE v35 RAWX models.
-It uses the Model class from model.py to load and process the models.
 
-The main class, ModelComparison, handles the comparison of two models,
-including network differences, path changes, and equipment variations.
-
-Key Features:
-1. Efficient comparison of large power system models
-2. Detailed analysis of network topology changes
-3. Identification of added, removed, and modified equipment
-4. Path analysis for changes in network connectivity
-5. Export capabilities for comparison results (CSV)
-
-Performance Considerations:
-- Uses pandas for efficient data manipulation
-- Employs networkx for graph operations
-- Implements caching to avoid redundant calculations
-
-Usage:
-    from psse_model_util.rawx.compare import ModelComparison
-    from psse_model_util.rawx.model import Model
-
-    model1 = Model('path/to/model1.raw')
-    model2 = Model('path/to/model2.raw')
-
-    comparison = ModelComparison(model1, model2)
-    comparison.compare_network_dfs()
-    comparison.compare_graph()
-    comparison.to_csv('comparison_results.csv')
-
-Note: This module is designed to handle large power system models efficiently.
-"""
+from __future__ import annotations
 
 import argparse
 import pickle
@@ -108,55 +108,44 @@ results to CSV, adds bus information to branches, and includes only areas 101,
 
 
 class ModelComparison:
-    """
-    A class to compare two PSSE v35 models (psse_util.model.ModelRawx).
+    """Compare two PSS/E power flow models.
 
-    This class provides methods to compare network dataframes, graph structures,
-    and export comparison results.
+    Loads two :class:`~psse_model_util.model.Model` instances and compares them.
+    Call :meth:`compare_network_dfs` for a column-by-column comparison of the
+    per-section network dataframes, :meth:`compare_graph` for topology
+    differences (added/removed edges and nodes, sectionalizations, and bypasses),
+    and :meth:`to_csv` to export the results. Results are cached to a pickle
+    (``.modcomp``) file via :meth:`to_pickle` / :meth:`read_pickle`.
 
     Attributes:
         model1 (Model): The first model for comparison.
         model2 (Model): The second model for comparison.
-        network_df_comparison (dict): Stores the results of dataframe comparisons.
-        graph_comparison (GraphComparison): Stores the results of graph comparisons.
-        max_path_length (int): Maximum path length for alternative path search.
-        pickle_path (Path): Path to save/load the comparison results.
-
-    Methods:
-        compare_network_dfs: Compare network dataframes between the two models.
-        compare_graph: Compare graph structures between the two models.
-        to_pickle: Save comparison results to a pickle file.
-        read_pickle: Load comparison results from a pickle file.
-        to_csv: Export comparison results to CSV files.
+        network_df_comparison (dict): Results of the dataframe comparison, keyed
+            by network section name.
+        graph_comparison (GraphComparison): Results of the graph comparison.
+        max_path_length (int): Maximum path length for alternate-path search.
     """
 
     def __init__(self, model1: Model = None,
                  model2: Model = None,
                  model_comp_file: Path | str = None,
                  max_path_length: int = ALT_PATH_MAX_PATH_LENGTH):
-        """
-        Initialize the ModelComparison instance.
+        """Initialize the comparison from two models or a cached comparison file.
+
+        Provide either both ``model1`` and ``model2``, or ``model_comp_file``
+        pointing at a previously cached ``.modcomp`` pickle.
 
         Args:
-            model1 (Model, optional): The first model for comparison.
-            model2 (Model, optional): The second model for comparison.
-            model_comp_file (Path or str, optional): Path to a pre-existing comparison file.
-            max_path_length (int): Maximum path length for alternative path search.
-
-        Usage:
-            from psse_model_util.rawx.compare import ModelComparison
-            from psse_model_util.rawx.model import Model
-
-            model1 = Model('path/to/model1.raw')
-            model2 = Model('path/to/model2.raw')
-
-            comparison = ModelComparison(model1, model2)
-            comparison.compare_network_dfs()
-            comparison.compare_graph()
-            comparison.to_csv('comparison_results.csv')
+            model1: The first model for comparison.
+            model2: The second model for comparison.
+            model_comp_file: Path to a pre-existing ``.modcomp`` comparison file.
+                When given, ``model1`` and ``model2`` must both be ``None``.
+            max_path_length: Maximum path length for alternate-path search.
 
         Raises:
-            AssertionError: If neither models nor comparison file is provided.
+            AssertionError: If a comparison file is given alongside models, or if
+                the supplied models are not :class:`~psse_model_util.model.Model`
+                instances.
         """
         if model_comp_file:
             assert model1 is None and model2 is None
@@ -192,34 +181,29 @@ class ModelComparison:
 
     def bus_num_changes(self, join_columns: list = ['name', 'area', 'baskv']) \
             -> Optional[pd.DataFrame]:
-        """
-        Find buses that are the same in both models but for which the bus number
-        Changed.
+        """Find buses common to both models whose bus number changed.
 
-        This function performs the following steps:
-        1. Inner joins the bus dataframes from model1 and model2 on join_columns,
-            (default: ['name', 'area', 'baskv']).
-        2. Filters the result to show only records where the bus numbers (ibus)
-            differ.
-        3. Remembers (caches to memory) the results to self._bus_num_changes.
-        4. Returns a DataFrame with values (including bus numbers) from each
-            model, with prefixed column names.
+        Inner-joins the bus dataframes from ``model1`` and ``model2`` on
+        ``join_columns``, then keeps only the rows where the bus number (``ibus``)
+        differs between the two models. The result is cached in memory; a repeat
+        call with the same ``join_columns`` returns the cached frame.
+
+        Args:
+            join_columns: Bus columns to match buses on across the two models.
+                Must not include the index column ``ibus``.
 
         Returns:
-            Optional[pd.DataFrame]: A DataFrame containing the bus number changes,
-                                    or None if no changes are found.
-            Columns are prefixed with 'model1_' or 'model2_' as applicable.
+            A DataFrame of the bus number changes, with columns suffixed
+            ``_model1`` / ``_model2`` as applicable, or ``None`` if no changes
+            are found.
 
-        Performance Considerations:
-            - Uses pandas bypass for efficient joining of DataFrames.
-            - Applies filtering after merging to reduce data processing.
-            - Renames columns in a single operation for efficiency.
-
-        Notes:
-            - Assumes that 'ibus', 'name', and 'area' columns exist in both bus
+        Raises:
+            AssertionError: If ``ibus`` is present in ``join_columns``.
+            ValueError: If any ``join_columns`` entry is not present in both bus
                 dataframes.
-            - The resulting DataFrame will only include buses that exist in both
-                models (inner join).
+
+        Note:
+            The result includes only buses present in both models (inner join).
         """
         # If cached results exist and join columns haven't changed, return
         # cached results.
@@ -276,16 +260,16 @@ class ModelComparison:
         # Note: The 'presence' column is not added here as it's not relevant for bus number changes
 
     def compare_network_dfs(self) -> Dict[str, pd.DataFrame]:
-        """
-        Create column-by-column comparison of network dataframes between the two
-        models.  Saves results to self.network_df_comparison.
+        """Compare the per-section network dataframes column by column.
 
-        This method compares corresponding dataframes from both models,
-        identifying changes, additions, and removals.
+        Compares corresponding dataframes from both models, identifying changed
+        values, added rows, and removed rows. Each merged frame gains
+        ``<column>_delta`` columns and a ``presence`` indicator column. Results
+        are stored in :attr:`network_df_comparison`.
 
         Returns:
-            Dict[str, pd.DataFrame]: A dictionary containing comparison results
-                                     for each network component.
+            A dictionary mapping each network section name to its comparison
+            DataFrame.
         """
 
         def _column_delta(column1, column2):
@@ -418,24 +402,30 @@ class ModelComparison:
 
     def compare_graph(self, max_path_length: int = None, sort: bool = True,
                       regenerate=False) -> dict:
-        """
-        Compare graph structures between the two models.
+        """Compare the network topology (graph) of the two models.
 
-        This method identifies changes in network topology, including added and
-        removed edges and nodes, as well as path sectionalizes and bypass.
+        Identifies changes in network topology, including added and removed edges
+        and nodes, plus path sectionalizations (a branch split, e.g. A-C becomes
+        A-B-C) and path bypasses (a branch merge, e.g. A-B-C becomes A-C).
+        Results are stored in :attr:`graph_comparison`.
 
         Args:
-            max_path_length (int, optional): Maximum path length for alternative path search.
-            sort (bool): Whether to sort the alternative paths by length.
-            regenerate (bool): Whether to regenerate the graphs before comparison.
+            max_path_length: Maximum path length for alternate-path search.
+                Defaults to :attr:`max_path_length` when ``None``.
+            sort: Whether to sort the alternate paths by length.
+            regenerate: Whether to rebuild each model's graph before comparison.
 
         Returns:
-            dict: A dictionary containing graph comparison results.
+            A dictionary of graph comparison results, with keys
+            ``removed_edges``, ``removed_nodes``, ``added_edges``,
+            ``added_nodes``, ``path_sectionalizations``, and ``path_bypasses``.
 
-        Example:
-            comparison = ModelComparison(model1, model2)
-            graph_changes = comparison.compare_graph(max_path_length=5)
-            added_edges = graph_changes['added_edges']
+        Examples:
+            ::
+
+                comparison = ModelComparison(model1, model2)
+                graph_changes = comparison.compare_graph(max_path_length=5)
+                added_edges = graph_changes['added_edges']
         """
 
         def _get_removed_edges() -> list:
@@ -586,16 +576,14 @@ class ModelComparison:
 
     @property
     def pickle_path(self) -> Path:
-        """
-        Get or set the pickle file path for the model comparison.
+        """Path to the comparison pickle (``.modcomp``) cache file.
+
+        On first access, derives a default path under the site cache directory
+        from the two model names. The setter requires a ``.modcomp`` suffix and
+        creates the parent directory.
 
         Returns:
-            Path: The path to the pickle file.
-
-        Example:
-            comparison = ModelComparison(model1, model2)
-            print(comparison.pickle_path)
-            comparison.pickle_path = Path('/new/path/to/comparison.pickle')
+            The path to the pickle file.
         """
 
         if not hasattr(self, '_pickle_path') or not self._pickle_path:
@@ -613,20 +601,14 @@ class ModelComparison:
         self._pickle_path.parent.mkdir(parents=True, exist_ok=True)
 
     def to_pickle(self, resilient: bool = True) -> bool:
-        """
-        Cache the ModelComparison to a pickle file.
+        """Cache this comparison to its pickle (``.modcomp``) file.
 
         Args:
-            resilient (bool): If True, return False if pickling fails instead of raising an exception
+            resilient: If ``True``, suppress (warn on) pickling failures instead
+                of raising.
 
         Returns:
-            bool: True if caching was successful, False otherwise
-
-        Example:
-            comparison = ModelComparison(model1, model2)
-            success = comparison.to_pickle()
-            if success:
-                print("Comparison saved successfully")
+            The path the comparison was written to.
         """
         to_pickle(pickle_path=self.pickle_path, data=self, resilient=resilient)
         print('Saved: ', self.pickle_path)
@@ -634,25 +616,22 @@ class ModelComparison:
 
     def read_pickle(self, pickle_path: Path | str = None,
                     mode: str = 'rb', resilient: bool = True) -> FpPickleType:
-        """
-        Read the ModelComparison from a pickle file.
+        """Load a cached comparison from a pickle file into this instance.
+
+        Reads the pickled object and copies its attributes onto ``self``.
 
         Args:
-            pickle_path (Path or str, optional): Path to the pickle file.
-            mode (str): File open mode, should always be 'rb'.
-            resilient (bool): If True, warn instead of raising an exception on failure.
+            pickle_path: Path to the pickle file. Defaults to :attr:`pickle_path`.
+            mode: File open mode; should always be ``'rb'``.
+            resilient: If ``True``, warn instead of raising on load failure.
 
         Returns:
-            FpPickleType: A named tuple containing the file path and loaded object.
+            A named tuple of ``(file_path, object)``. Both are ``None`` when the
+            file is missing or unreadable and ``resilient`` is ``True``.
 
         Raises:
-            FileNotFoundError: If the pickle file is not found and resilient is False.
-
-        Example:
-            comparison = ModelComparison()
-            loaded_data = comparison.read_pickle('path/to/comparison.pickle')
-            if loaded_data.object:
-                print(f"Loaded comparison from {loaded_data.file_path}")
+            FileNotFoundError: If the pickle file is not found and ``resilient``
+                is ``False``.
         """
         self.pickle_path = pickle_path or self.pickle_path
         if not self.pickle_path.exists():
@@ -683,16 +662,13 @@ class ModelComparison:
 
     @property
     def csv_folder(self) -> Path:
-        """
-        Get the folder path for CSV exports.
+        """Folder where CSV exports are written.
+
+        On first access, derives a default folder under the site data directory
+        from the pickle path stem. The setter creates the folder.
 
         Returns:
-            Path: The path to the folder where CSV files will be exported.
-
-        Example:
-            comparison = ModelComparison(model1, model2)
-            csv_path = comparison.csv_folder()
-            print(f"CSV files will be exported to: {csv_path}")
+            The path to the CSV export folder.
         """
 
         if not hasattr(self, '_csv_folder') or not self._csv_folder:
@@ -724,17 +700,19 @@ class ModelComparison:
     def to_csv(self, models_to_csv: bool = False,
                df_comparison_to_csv: bool = False,
                graph_comparison_to_csv: bool = False):
-        """
-        Export comparison results to CSV files.
+        """Export comparison results to CSV files.
 
         Args:
-            models_to_csv (bool): Whether to export individual model data to CSV.
-            df_comparison_to_csv (bool): Whether to export dataframe comparison data to CSV.
-            graph_comparison_to_csv (bool): Whether to export graph comparison data to CSV.
+            models_to_csv: Whether to export each individual model's data to CSV.
+            df_comparison_to_csv: Whether to export the dataframe comparison.
+            graph_comparison_to_csv: Whether to export the graph comparison.
 
-        Example:
-            comparison = ModelComparison(model1, model2)
-            comparison.to_csv(df_comparison_to_csv=True, graph_comparison_to_csv=True)
+        Examples:
+            ::
+
+                comparison = ModelComparison(model1, model2)
+                comparison.to_csv(df_comparison_to_csv=True,
+                                  graph_comparison_to_csv=True)
         """
         self.csv_folder.mkdir(parents=True, exist_ok=True)
 
@@ -846,15 +824,32 @@ class ModelComparison:
                 warnings.warn("Dataframe not found: " + section)
 
     def flatten_and_stringify(self, item):
-        """Recursively flatten a (possibly nested) list/tuple into a single
-        comma-separated string; stringify scalars as-is."""
+        """Flatten a nested list/tuple into a comma-separated string.
+
+        Recurses through nested lists and tuples; scalars are stringified as-is.
+
+        Args:
+            item: The value to flatten and stringify.
+
+        Returns:
+            The flattened, comma-separated string representation.
+        """
         if isinstance(item, (list, tuple)):
             return ', '.join(self.flatten_and_stringify(i) for i in item)
         return str(item)
 
     def process_graph_data(self, data):
-        """Process graph comparison data for CSV export.
-        Used by _graph_comparison_to_csv"""
+        """Flatten the keys and values of a graph-comparison mapping for CSV export.
+
+        Used by :meth:`_graph_comparison_to_csv`.
+
+        Args:
+            data: A mapping whose keys and values may be nested lists/tuples.
+
+        Returns:
+            A dict with both keys and values flattened to strings via
+            :meth:`flatten_and_stringify`.
+        """
         return {self.flatten_and_stringify(key): self.flatten_and_stringify(value)
                 for key, value in data.items()}
 
@@ -877,13 +872,15 @@ class ModelComparison:
             self._write_csv(csv_path, df)
 
     def bus_kv_filter(self) -> List[int]:
-        """
-        Identify buses meeting specific voltage criteria for generators and loads.
+        """Identify generator/load buses meeting the voltage filter criteria.
+
+        Selects buses that carry a generator or load and whose nominal voltage
+        (``baskv``) in either model falls within ``DEFAULT_KV_FILTER``.
 
         Returns:
-            List[int]: List of bus_id values meeting the criteria.
+            The bus numbers meeting the criteria.
 
-        Example:
+        Examples:
             >>> model_comp = ModelComparison(model1, model2)
             >>> filtered_buses = model_comp.bus_kv_filter()
             >>> print(len(filtered_buses))
@@ -914,51 +911,46 @@ class ModelComparison:
     def query_network_df_comparison(self, inplace: bool = True,
                                     queries: dict = NETWORK_DF_COMPARISON_QUERIES
                                     ) -> Dict[str, pd.DataFrame]:
-        """Filter and return network dataframes using voltage criteria and
-        custom queries.
+        """Filter the network comparison dataframes by voltage and custom queries.
 
-        You may want to filter in place to only records we care about for INCH
-        or IDEV file creation.  INCH/IDEV functionality is not yet finished.
-
-
-        This method performs two-step filtering:
-        1. Automatically filters buses by voltage criteria using bus_kv_filter()
-        2. Filters equipment based on connections to voltage-filtered buses
-        3. Applies additional custom queries from the queries parameter
+        Filtering proceeds in stages: buses are first filtered by voltage via
+        :meth:`bus_kv_filter`, equipment dataframes are then filtered to those
+        connected to the surviving buses, and finally any custom pandas query
+        strings in ``queries`` are applied. Intended for narrowing results down
+        to the records needed for INCH/IDEV file creation (not yet finished).
 
         Args:
-            inplace (bool): If True, update the network_df_comparison with the
-                filtered dataframes. Defaults to True.
-            queries (dict): Dictionary mapping dataframe names to pandas query
-                strings for additional filtering. Defaults to NETWORK_DF_COMPARISON_QUERIES.
+            inplace: If ``True``, update :attr:`network_df_comparison` with the
+                filtered dataframes.
+            queries: Mapping of dataframe name to a pandas query string for
+                additional filtering. Defaults to
+                ``NETWORK_DF_COMPARISON_QUERIES``.
 
         Returns:
-            Dict[str, pd.DataFrame]: Dictionary of filtered dataframes.
+            The filtered dataframes, keyed by section name.
 
-        Example:
-            ```
-            modelcomp = ModelComparison(model1, model2)
+        Examples:
+            ::
 
-            # Use default queries
-            filtered_dfs = modelcomp.query_network_df_comparison()
+                modelcomp = ModelComparison(model1, model2)
 
-            # Use custom queries
-            custom_queries = {
-                'bus': 'baskv >= 345',
-                'generator': 'pg > 100',
-                'load': 'pl > 50'
-            }
-            filtered_dfs = modelcomp.query_network_df_comparison(
-                queries=custom_queries
-            )
-            print(filtered_dfs.keys())  # dict_keys(['bus', 'generator', 'load', 'acline', 'transformer'])
-            ```
+                # Use default queries
+                filtered_dfs = modelcomp.query_network_df_comparison()
 
-        Notes:
-            - Voltage filtering is always applied first using bus_kv_filter()
-            - Custom queries are applied after voltage filtering
-            - Equipment dataframes are filtered based on bus connectivity
-            - Failed queries generate warnings but don't stop execution
+                # Use custom queries
+                custom_queries = {
+                    'bus': 'baskv >= 345',
+                    'generator': 'pg > 100',
+                    'load': 'pl > 50',
+                }
+                filtered_dfs = modelcomp.query_network_df_comparison(
+                    queries=custom_queries
+                )
+
+        Note:
+            Voltage filtering is always applied first; custom queries run after.
+            Equipment dataframes are filtered by bus connectivity, and a failed
+            query generates a warning but does not stop execution.
         """
         # Get a list of bus IDs where bus voltage (baskv) is between
         # DEFAULT_KV_FILTER.min & DEFAULT_KV_FILTER.max)
@@ -1014,27 +1006,26 @@ def main(raw1_path: Path | str,
          export_format: str | None = 'csv',
          add_bus_info_to_branches: bool = True,
          areas=None):
-    """
-    Main function to compare two PSSE RAW or RAWX models.
+    """Compare two PSS/E RAW or RAWX models end to end.
 
-    This function loads two models, filters them by area, optionally adds bus information
-    to branches, performs a comparison, and exports the results.  Exports results to
-    pickle file (as cached python object) and to disk in a text format (export_format).
+    Loads both models, filters them by area, optionally appends bus information
+    to branch dataframes, runs the dataframe and graph comparisons, caches the
+    result to a ``.modcomp`` pickle, and optionally exports to CSV.
 
     Args:
-        raw1_path (Path | str): Path to the first RAW or RAWX file.
-        raw2_path (Path | str): Path to the second RAW or RAWX file.
-        force_recalculation (bool): If True, forces recalculation even if cached results exist.
-        export_format (str | None): Format to export results. Use 'csv' for CSV export or None for no export.
-        add_bus_info_to_branches (bool): If True, adds bus information to branch DataFrames.
-        include_areas (str): Comma-separated list of area numbers to include in the comparison.
+        raw1_path: Path to the first RAW or RAWX file.
+        raw2_path: Path to the second RAW or RAWX file.
+        force_recalculation: If ``True``, recompute even if cached results exist.
+        export_format: Result export format; ``'csv'`` to export CSV or ``None``
+            for no export.
+        add_bus_info_to_branches: If ``True``, append bus information to branch
+            dataframes.
+        areas: Area numbers to include in the comparison.
 
-    Returns:
-        None
-
-    Example:
-        >>> main("path/to/model1.rawx", "path/to/model2.rawx", force_recalculation=True, export_format='csv', areas=[101, 102, 103])
-
+    Examples:
+        >>> main("path/to/model1.rawx", "path/to/model2.rawx",
+        ...      force_recalculation=True, export_format='csv',
+        ...      areas=[101, 102, 103])
     """
     if areas is None:
         areas = []

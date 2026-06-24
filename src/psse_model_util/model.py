@@ -1,61 +1,50 @@
-"""
-model.py - PSSE v33-35 Model Parser and Processor
+"""PSS/E v33-35 model parser and processor.
 
-This module provides functionality to read and process PSSE RAW and RAWX files,
-converting them into a structured model representation (Model class) for easy
-manipulation and analysis.
+This module reads and processes PSS/E RAW and RAWX files, converting them into a
+structured model representation (the :class:`Model` class) for easy manipulation
+and analysis. It parses RAW and RAWX files into a comprehensive model object that
+encapsulates all the data and provides methods for filtering, analysis, and graph
+creation.
 
-The primary purpose of this module is to parse RAW and RAWX files and create a
-comprehensive model object that encapsulates all the data and provides methods
-for filtering, analysis, and graph creation.
+The module exposes one central class plus several section classes used to populate
+its attributes:
 
-Main Components:
----------------
-Model : class
-    The central class of the module. It reads a RAW or RAWX file, creates objects for each
-    section of the file, and provides methods for data manipulation and analysis.
-    The 'network' section receives special attention, with data parsed into pandas
-    DataFrames and used to create a NetworkX graph for topological analysis.
+* :class:`Model` -- the central class. It reads a RAW or RAWX file, creates objects
+  for each section of the file, and provides methods for data manipulation and
+  analysis. The ``network`` section receives special attention: its data is parsed
+  into pandas DataFrames and used to create a NetworkX graph for topological
+  analysis.
+* :class:`General` -- the ``general`` section of the RAW/RAWX file, containing
+  overall model information.
+* :class:`Network` -- the ``network`` section, the core of the power system model.
+  It holds one pandas DataFrame per network component (buses, branches, generators,
+  etc.) and methods to create and manipulate a NetworkX graph of the system.
+* :class:`Harmonics` -- the ``harmonics`` section of a RAWX file (harmonic
+  analysis data).
+* :class:`TimeSeries` -- the ``timeseries`` section of a RAWX file (time-dependent
+  data).
 
-The following classes are used to represent specific sections of the RAW/RAWX file.  They
-are used to set attributes of the Model object, such as Model.general
-and Model.network.
+These section classes set attributes of the :class:`Model` object, such as
+``Model.general`` and ``Model.network``.
 
-    General : class
-        Represents the 'general' section of the RAW/RAWX file, containing overall model information.
+The module is memory-efficient and performant, suitable for handling large
+bulk-electric-system (BES) power-flow models. Loading a model once lets you save
+the :class:`Model` object to disk as a pickle, making future loads much cheaper
+and faster.
 
-    Network : class
-        Represents the 'network' section, the core of the power system model. It contains
-        multiple pandas DataFrames for different network components (buses, branches, generators, etc.)
-        and methods to create and manipulate a NetworkX graph of the system.
+Examples:
+    Create a :class:`Model` from a RAW or RAWX file, then access sections,
+    manipulate data, filter, or perform graph analysis::
 
-    Harmonics : class
-        Represents the 'harmonics' section of a RAWX file, containing harmonic analysis data.
+        from psse_model_util.model import Model
 
-    TimeSeries : class
-        Represents the 'timeseries' section of a RAWX file, containing time-dependent data.
-
-Usage:
-------
-To use this module, create an instance of Model by providing a path to a RAW or RAWX file:
-
-    from psse_model_util.model import Model
-    model = Model('path/to/rawx/file.rawx')
-
-You can then access different sections of the model, manipulate data, filter the model,
-or perform graph analysis:
-
-    network_graph = model.network.graph()
-    filtered_model = model.filter_by_area(areas=['AREA1', 'AREA2'])
-
-This module is designed to be memory-efficient and performant, suitable for handling
-large bulk-electric-system (BES) power-flow models.
-
-If you load a model once, you can save the Model object to disk directly as a
-pickle, to make loading it in the future much cheaper and much faster!
+        model = Model('path/to/rawx/file.rawx')
+        network_graph = model.network.graph()
+        filtered_model = model.filter_by_area(areas=['AREA1', 'AREA2'])
 """
 
-# Rest of the module code follows...
+from __future__ import annotations
+
 import copy
 import json
 import pickle
@@ -109,19 +98,24 @@ def _fmt_kv(v) -> str:
 
 
 class ModelEncoder(json.JSONEncoder):
-    """
-    Custom JSON encoder for Model class data.
+    """Custom JSON encoder for Model data.
 
-    Handles serialization of:
-    - NumPy types (integer, floating, arrays)
-    - Pandas DataFrames
-    - None/NaN values
-    - Other objects via string representation
-
-    This encoder is used for both saving models to JSON and internal JSON conversion.
+    Handles serialization of NumPy types (integer, floating, arrays), pandas
+    DataFrames, ``None``/NaN values, and other objects (via their string
+    representation). Used both for saving models to JSON and for internal JSON
+    conversion.
     """
 
     def default(self, obj):
+        """Encode numpy scalars, arrays, DataFrames, and NaN to JSON-safe values.
+
+        Args:
+            obj: The object the base encoder could not serialize natively.
+
+        Returns:
+            A JSON-serializable representation of ``obj``; falls back to ``str(obj)``
+            for types the base encoder still cannot handle.
+        """
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
@@ -139,35 +133,43 @@ class ModelEncoder(json.JSONEncoder):
 
 
 class ModelDecoder(json.JSONDecoder):
-    """
-    Custom JSON decoder for Model class data.
+    """Custom JSON decoder for Model data.
 
-    Handles deserialization of specially formatted model data, converting
-    back from the JSON-safe format produced by ModelEncoder.
+    Handles deserialization of specially formatted model data, converting back
+    from the JSON-safe format produced by :class:`ModelEncoder`.
     """
 
     def __init__(self, *args, **kwargs):
         super().__init__(object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, dct):
-        # Handle DataFrame reconstruction if the dict has the pandas split-format structure
+        """Reconstruct DataFrames from the pandas split-format dicts during decode.
+
+        Args:
+            dct: A decoded JSON object.
+
+        Returns:
+            A :class:`pandas.DataFrame` if ``dct`` has the pandas ``split``-format
+            keys (``index``, ``columns``, ``data``); otherwise ``dct`` unchanged.
+        """
         if all(key in dct for key in ('index', 'columns', 'data')):
             return pd.DataFrame(**dct)
         return dct
 
 
 class General:
-    """
-    Represents the 'general' section of the PSSE v35 RAWX (JSON) file or
-    the version comment of a RAW file.
+    """Represents the ``general`` section of a model.
+
+    Sourced from the ``general`` section of a PSS/E v35 RAWX (JSON) file or from
+    the version comment of a RAW file. Each key/value pair in the section data
+    becomes an attribute of the instance, with the value coerced to an
+    appropriate dtype.
+
+    Args:
+        data: The ``general`` section data, keyed by field name.
     """
 
     def __init__(self, data: Dict[str, Any]):
-        """
-        Initialize the General class with data from the 'general' section.
-
-        :param data: Dictionary containing the 'general' section data
-        """
         # The general section is a dict.  Turn the key/value pairs into
         # attributes and values.
         for key, value in data.items():
@@ -178,8 +180,19 @@ class General:
                     try_dtypes: List[Union[Callable[[Any], Any], type]]
                     = (float, int, str),
                     ):
-        """Try to convert a single value to specified types, otherwise
-        keep as original."""
+        """Coerce a single value to the first dtype that accepts it.
+
+        Tries each callable/type in ``try_dtypes`` in order. ``int`` conversion
+        is only applied when it would not lose data (the float form must be a
+        whole number). Values that no dtype accepts are returned unchanged.
+
+        Args:
+            value: The value to coerce.
+            try_dtypes: Conversion callables/types to attempt, in priority order.
+
+        Returns:
+            The converted value, or the original value if no conversion succeeded.
+        """
         for dtype in try_dtypes:
             try:
                 if dtype == dtdt:
@@ -200,36 +213,42 @@ class General:
 
 
 class AbstractSection:
-    """
-    Base class for the Network, Timeseries and Harmonics classes, each
-    specific to a particular section of the PSSE v35 rawx file.  RAW files
-    do not contain time series or harmonics data.
+    """Base class for the :class:`Network`, :class:`TimeSeries` and
+    :class:`Harmonics` section classes.
+
+    Each subclass corresponds to a particular section of a PSS/E v35 RAWX file.
+    RAW files do not contain time series or harmonics data. A RAWX file is JSON,
+    which is read into Python dicts; each subsection in the section data becomes
+    an attribute holding a pandas DataFrame.
+
+    Args:
+        section: The section data, keyed by subsection name.
+        generate_graph: Accepted for signature compatibility with subclasses;
+            not used by the base class.
     """
 
     def __init__(self, section: Dict[str, Any], generate_graph: bool = False):
-        """
-        Initialize the class with data from a section of a rawx file.
-        A rawx file is in json format, which, when read is converted to python
-        dict objects.  In this __init__ we will create attributes (and their
-        values) from the key/value pairs found section.
-
-        :param section: Dictionary containing the section data
-        """
-
         for subsection, data in section.items():
             self.subsection = subsection  # Added to aid in debugging
             df = self._create_dataframe(data)
             setattr(self, subsection, df)
 
     def _create_dataframe(self, data: Dict[str, Union[List[str], List[Any]]]) -> pd.DataFrame:
-        """
-        Create a pandas DataFrame from the given data.  Specific subsections are
-        expected in a section, such as 'fields' and 'data'.  More information
-        on each section can be found in rawx_json_template.rawx_json_template,
-        such as 'data_type', 'bus_cols' and 'id_cols'.
+        """Create a pandas DataFrame from subsection data.
 
-        :param data: Dictionary containing 'fields' and 'data' keys
-        :return: pandas DataFrame
+        The subsection data is expected to provide ``fields`` (column names) and
+        ``data`` (row values). Additional per-section metadata such as
+        ``data_type``, ``bus_cols`` and ``id_cols`` is described in
+        ``rawx_json_template.rawx_json_template``. Rows shorter than the field
+        list are padded with ``None``; an empty ``data`` yields an empty
+        DataFrame with the correct columns.
+
+        Args:
+            data: Subsection data containing ``fields`` and ``data`` keys (plus
+                any extra metadata).
+
+        Returns:
+            The constructed DataFrame.
         """
         fields: list = data.pop('fields')
         values: list = data.pop('data')
@@ -269,14 +288,15 @@ class AbstractSection:
         return df
 
     def copy(self, deep: bool = True):
-        """
-        Create a copy of the AbstractSection instance.
+        """Create a copy of the instance with all attributes copied.
 
-        This method creates a new AbstractSection instance and copies all attributes.
-        If deep is True, it performs a deep copy; otherwise, it performs a shallow copy.
+        DataFrame attributes are copied along with their ``_metadata``.
 
-        :param deep: If True, create a deep copy. If False, create a shallow copy. Defaults to True.
-        :return: A new AbstractSection instance with copied attributes.
+        Args:
+            deep: If True, perform a deep copy; otherwise a shallow copy.
+
+        Returns:
+            A new ``AbstractSection`` instance with copied attributes.
         """
         # Create a new Network instance
         new_abstract_section = AbstractSection.__new__(AbstractSection)
@@ -312,52 +332,34 @@ class Network(AbstractSection):
     network data within a Model instance.
 
     Args:
-        section (Dict[str, Any]): Raw network data from RAWX/JSON format
-        generate_graph (bool, optional): Pre-generate network topology graph
+        section: Raw network data from RAWX/JSON format.
+        generate_graph: If True, pre-generate the network topology graph.
 
     Attributes:
-        acline (pd.DataFrame): AC transmission line data
-        bus (pd.DataFrame): Bus data and properties
-        generator (pd.DataFrame): Generator unit data
-        load (pd.DataFrame): Load data
-        transformer (pd.DataFrame): Transformer data
-        swshunt (pd.DataFrame): Switched shunt data
-        fixshunt (pd.DataFrame): Fixed shunt data
-        area (pd.DataFrame): Area definitions
-        zone (pd.DataFrame): Zone definitions
-        owner (pd.DataFrame): Equipment ownership data
-        _graph (nx.Graph): Network topology representation
+        acline: AC transmission line data.
+        bus: Bus data and properties.
+        generator: Generator unit data.
+        load: Load data.
+        transformer: Transformer data.
+        swshunt: Switched shunt data.
+        fixshunt: Fixed shunt data.
+        area: Area definitions.
+        zone: Zone definitions.
+        owner: Equipment ownership data.
 
-    Methods:
-        filter_by_area: Filter network to specified areas
-        graph: Generate/retrieve network topology graph
-        append_bus_info_to_dfs: Add bus data to related equipment
-        section_with_bus: Join equipment data with associated bus info
-        copy: Create independent copy of network data
+    Examples:
+        Load a model, access equipment data, filter, and analyze topology::
 
-    Example:
-        # >>> from model import Model
-        >>> fp = r"path/to/Model_1.raw"
-        >>> model = Model(fp, name="Summer_Peak")
-        >>> network = model.network
-        >>>
-        >>> # Access equipment data
-        >>> critical_buses = network.bus[network.bus['baskv'] >= 345]
-        >>>
-        >>> # Filter network
-        >>> filtered = network.filter_by_area(['AREA1', 'AREA2'])
-        >>>
-        >>> # Analyze topology
-        >>> g = network.graph()
-        >>> paths = nx.all_pairs_shortest_path(g)
+            >>> fp = r"path/to/Model_1.raw"
+            >>> model = Model(fp, name="Summer_Peak")
+            >>> network = model.network
+            >>> critical_buses = network.bus[network.bus['baskv'] >= 345]
+            >>> filtered = network.filter_by_area(['AREA1', 'AREA2'])
+            >>> g = network.graph()
+            >>> paths = nx.all_pairs_shortest_path(g)
     """
 
     def __init__(self, section: Dict[str, Any], generate_graph: bool = False):
-        """
-        Initialize the Network class with data from the 'network' section.
-
-        :param section: Dictionary containing the 'network' section data
-        """
         start_time = perf_counter_ns()
 
         # These initializations are not needed as they are set in the loop below,
@@ -403,56 +405,45 @@ class Network(AbstractSection):
                     f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
 
     def _create_dataframe(self, data: Dict[str, Union[List[str], List[Any]]]) -> pd.DataFrame:
-        """
-        Create a pandas DataFrame from the given RAWX section data (RAW files must be
-        converted to a rawx-like dict structure using the raw_to_rawxraw_file_to_rawx_dict
-        function) with appropriate metadata.
+        """Create a metadata-aware DataFrame from RAWX network section data.
 
-        This method is a crucial part of the RAWX parsing process. It takes raw data from a
-        section of the RAWX file and converts it into a structured pandas DataFrame, applying
-        metadata from the rawx_json_template to ensure correct data types and indexing.
+        Takes data from a section of the RAWX file and converts it into a
+        structured pandas DataFrame, applying metadata from ``rawx_json_template``
+        to ensure correct data types and indexing. (RAW files must first be
+        converted to a RAWX-like dict via ``raw_to_rawx.raw_file_to_rawx_dict``.)
 
-        The method performs the following key operations:
-        1. Extracts 'fields' and 'data' from the input dictionary (extracted beforehand
-           from the RAWX file)
-        2. Retrieves metadata (data_type, bus_cols, id_cols) from rawx_json_template.
-        3. Pads data rows if they're shorter than the number of fields. (More relevant
-           to .raw files than .rawx files)
-        4. Creates a pandas DataFrame with the correct column names.
+        The method:
+
+        1. Extracts ``fields`` and ``data`` from the input dict.
+        2. Retrieves metadata (``data_type``, ``bus_cols``, ``id_cols``) from
+           ``rawx_json_template``.
+        3. Pads data rows shorter than the field count (more relevant to RAW
+           than RAWX files).
+        4. Builds the DataFrame with the correct column names.
         5. Applies the specified data types to each column.
-        6. Sets the DataFrame index using the specified id_cols, columns that uniquely
-           identify the equipment (like ibus, jbus and ckt for an AC line).
-        7. Attaches metadata to the DataFrame for use in other methods.
+        6. Sets the index from ``id_cols`` -- the columns that uniquely identify
+           the equipment (e.g. ``ibus``, ``jbus`` and ``ckt`` for an AC line).
+        7. Attaches metadata to the DataFrame for use by other methods.
 
-        Parameters:
-        -----------
-        data : Dict[str, Union[List[str], List[Any]]]
-            A dictionary containing 'fields' (column names) and 'data' (row values),
-            along with any additional metadata.
+        Args:
+            data: A dict containing ``fields`` (column names) and ``data`` (row
+                values), along with any additional metadata.
 
         Returns:
-        --------
-        pd.DataFrame
-            A pandas DataFrame structured according to the RAWX section specifications,
-            with correct data types, index, and attached metadata.
+            A DataFrame structured per the RAWX section specification, with
+            correct data types, index, and attached ``_metadata``. An empty
+            section yields an empty DataFrame with the correct columns.
 
-        Notes:
-        ------
-        - This method is called for each section in the RAWX file during the parsing process.
-        - The resulting DataFrames are stored as attributes of the Network object, which is
-          in turn an attribute of the Model instance.
-        - The metadata attached to each DataFrame (especially 'bus_cols' and 'id_cols') is
-          used in other methods like filter_by_area and section_with_bus for efficient
-          data manipulation and analysis.
-        - If a section in the RAWX file is empty, this method returns an empty DataFrame
-          with the correct column structure.
+        Raises:
+            ValueError: If ``data`` does not contain ``fields``, or if the
+                DataFrame cannot be constructed from the padded values.
 
-        Example:
-        --------
-        # Inside Model.__init__
-        for section_name, section_data in self.json_data['network'].items():
-            df = self._create_dataframe(section_data)
-            setattr(self.network, section_name, df)
+        Note:
+            Called for each network section during parsing. The resulting
+            DataFrames are stored as attributes of the :class:`Network` object
+            (itself an attribute of the :class:`Model`). The attached metadata --
+            especially ``bus_cols`` and ``id_cols`` -- drives other methods such
+            as :meth:`filter_by_area` and :meth:`section_with_bus`.
         """
         orig_keys = tuple(data.keys())
         if 'fields' not in data.keys():
@@ -546,29 +537,29 @@ class Network(AbstractSection):
     def section_with_bus(self, section: str,
                          filter_condition: str = None,
                          inplace: bool = False) -> pd.DataFrame:
-        """
-        Used in the append_bus_info_to_dfs method to join the specified section's
-        DataFrame with the bus DataFrame for each bus column.
+        """Join a section's DataFrame with bus data for each of its bus columns.
 
-        This method enhances the specified section's DataFrame by adding bus information
-        for each bus column. It uses pd.concat to efficiently add bus data columns.
+        Used by :meth:`append_bus_info_to_dfs` to enrich the specified section's
+        DataFrame with bus information for every bus column. For each bus column
+        the bus DataFrame is merged in (left outer join), prefixing the joined
+        columns with the bus column name; a ``{bus_col}_area_name`` column is
+        added by mapping the joined area number through the ``area`` DataFrame
+        (when available). Finally a human-readable ``derived_name`` column is
+        built from the bus name(s), base kV, and the equipment's own identifier(s).
 
         Args:
-            section (str): Name of the attribute (DataFrame) in the Network class.
-            filter_condition (str, optional): SQL-like query string to filter the DataFrame.
-            inplace (bool, optional): If True, modify the original DataFrame. If False,
-                                      return a new DataFrame. Defaults to False.
+            section: Name of the attribute (DataFrame) on the Network instance.
+            filter_condition: SQL-like query string to filter the DataFrame before
+                joining.
+            inplace: If True, replace the section attribute with the result. If
+                False, leave it unchanged.
 
         Returns:
-            pd.DataFrame: DataFrame with bus information joined for each bus column.
+            The DataFrame with bus information joined for each bus column.
 
         Raises:
-            ValueError: If the specified section is not a DataFrame attribute of Network
-                        or if no bus columns are found in the section's metadata.
-
-        Performance Note:
-            This method uses pd.concat which is generally more memory-efficient than pd.merge
-            for adding multiple columns to a DataFrame.
+            ValueError: If ``section`` is not a DataFrame attribute of Network, or
+                if no bus columns are found in the section's metadata.
         """
         start_time = perf_counter_ns()
         logger.info(f'Adding bus information to {section} starting...')
@@ -711,33 +702,28 @@ class Network(AbstractSection):
     def filter_by_area(self, areas: dict | list[str] = INCLUDE_AREAS,
                        inplace: bool = False,
                        graph_effect: str = 'clear') -> 'Network':
-        """
-        Filter the network data by the specified areas, removing all equipment
-        (not) in or connected to equipment in those areas.
+        """Filter the network to the specified areas.
 
-        How? Filters the `bus` DataFrame based on the provided areas,
-        then filters network component dfs by their bus references
-        (as defined in each DataFrame's `_metadata['bus_cols']`).
-
-        Graph: Updates the network graph according to the `graph_effect` option.
+        Filters the ``bus`` DataFrame to buses in ``areas``, then filters every
+        network component DataFrame by its bus references (as defined in each
+        DataFrame's ``_metadata['bus_cols']``), keeping rows that reference any
+        retained bus. The network graph is updated per ``graph_effect``.
 
         Args:
-            areas (dict | list[str], optional): Areas to retain in the filtered
-                network. Defaults to INCLUDE_AREAS
-            inplace (bool, optional): If True, modifies the current Network object
-                If False, returns a new filtered copy. Defaults to Falsem
-            graph_effect (str, optional): Determines how the network graph should
-                be handled after filtering:
-                    - 'clear': resets the graph to empty
-                    - 'regenerate': rebuilds the graph
-                    - 'leave': leaves the current graph unchanged
-                Defaults to 'clear'
+            areas: Areas to retain in the filtered network. A dict is reduced to
+                its keys. Defaults to ``INCLUDE_AREAS``.
+            inplace: If True, modify the current Network in place and return it.
+                If False, return a new filtered copy.
+            graph_effect: How to handle the network graph after filtering:
+                ``'clear'`` resets the graph to empty, ``'regenerate'`` rebuilds
+                it, ``'leave'`` leaves it unchanged.
 
         Returns:
-            Network: Filtered network instance (same instance if inplace=True)
+            The filtered Network (the same instance when ``inplace`` is True).
 
         Raises:
-            ValueError: If the areas list is empty after preprocessing.
+            ValueError: If the areas list is empty after preprocessing, or if
+                ``graph_effect`` is not one of the allowed values.
         """
         logger.info("Network.filter_by_area: starting area filtering...")
 
@@ -807,48 +793,47 @@ class Network(AbstractSection):
     def filter_section(self, section: str, where_clause: str,
                        inplace: bool = False,
                        graph_effect: str = 'clear') -> Union['Network', pd.DataFrame]:
-        """
-        Filter a specific section's DataFrame using a where clause.
+        """Filter a specific section's DataFrame using a where clause.
 
-        This method allows SQL-like filtering of any section DataFrame in the Network object.
-        It can either modify the Network in place or return a filtered copy of just the
-        section DataFrame or the entire Network.
+        Allows SQL-like filtering of any section DataFrame in the Network object.
+        Can either modify the Network in place (returning the filtered DataFrame)
+        or return a new Network instance with the filtered section.
 
         Args:
-            section (str): Name of the section/DataFrame to filter (e.g., 'bus', 'acline')
-            where_clause (str): SQL-like where clause to filter the DataFrame (e.g., 'baskv >= 345')
-            inplace (bool): If True, modify Network in place. If False, return filtered copy.
-                Defaults to False.
-            graph_effect (str): How to handle the network graph after filtering:
-                - 'clear': Clear the graph (must be regenerated when needed)
-                - 'regenerate': Regenerate the graph immediately
-                - 'leave': Leave the graph unchanged
-                Defaults to 'clear'.
+            section: Name of the section/DataFrame to filter (e.g. ``'bus'``,
+                ``'acline'``).
+            where_clause: SQL-like where clause passed to
+                ``pandas.DataFrame.query`` (e.g. ``'baskv >= 345'``).
+            inplace: If True, modify the Network in place. If False, return a
+                filtered copy.
+            graph_effect: How to handle the network graph after filtering:
+                ``'clear'`` clears the graph (regenerate when needed),
+                ``'regenerate'`` regenerates it immediately, ``'leave'`` leaves
+                it unchanged.
 
         Returns:
-            Union[Network, pd.DataFrame]: If inplace=True, returns filtered DataFrame.
-            If inplace=False, returns new Network instance with filtered data.
+            If ``inplace`` is True, the filtered DataFrame. If ``inplace`` is
+            False, a new Network instance with the filtered section.
 
         Raises:
-            ValueError: If section doesn't exist or where_clause is invalid
-            AttributeError: If section exists but is not a DataFrame
+            ValueError: If ``section`` does not exist or ``where_clause`` is
+                invalid.
+            AttributeError: If ``section`` exists but is not a DataFrame.
 
         Examples:
-            >>> # Filter buses to voltage >= 345 kV
-            >>> filtered_buses = network.filter_by_section('bus', 'baskv >= 345')
-            >>>
-            >>> # Filter generators to certain statuses in place
-            >>> network.filter_by_section('generator', 'stat == 1', inplace=True)
-            >>>
-            >>> # Create new Network with only large transformers
-            >>> new_net = network.filter_by_section('transformer', 'mbase > 1000',
-            ...                                     inplace=False)
+            ::
 
-        Notes:
-            - The where_clause is passed directly to pandas.DataFrame.query()
-            - For complex conditions, use parentheses: '(col1 > 0) & (col2 < 100)'
-            - Column names in where_clause must exist in the section DataFrame
-            - The method preserves the DataFrame's metadata
+                >>> # Filter buses to voltage >= 345 kV
+                >>> filtered_buses = network.filter_section('bus', 'baskv >= 345')
+                >>> # Filter generators to certain statuses in place
+                >>> network.filter_section('generator', 'stat == 1', inplace=True)
+                >>> # New Network with only large transformers
+                >>> new_net = network.filter_section('transformer', 'mbase > 1000')
+
+        Note:
+            For complex conditions, use parentheses: ``'(col1 > 0) & (col2 <
+            100)'``. Column names in ``where_clause`` must exist in the section
+            DataFrame. The DataFrame's metadata is preserved.
         """
         logger.info(f"Network.filter_by_section: starting filtering on section '{section}' "
                     f"with where_clause='{where_clause}' (inplace={inplace}, graph_effect='{graph_effect}')")
@@ -897,46 +882,41 @@ class Network(AbstractSection):
                      high_value: float = float('inf'),
                      inplace: bool = False,
                      graph_effect: str = 'clear') -> 'Network':
-        """
-        Filter network equipment based on voltage level criteria.
+        """Filter network equipment by base-kV voltage range.
 
-        This method filters buses and related equipment based on a voltage range.
-        For buses, it uses their base kV. For branches and transformers, it uses
-        the highest voltage level of connected buses.
+        Filters buses by their base kV (the ``baskv`` column), then filters
+        related equipment: equipment is retained if any connected bus falls
+        within the voltage range and survives the bus filter.
 
         Args:
-            low_value (float): Minimum voltage in kV (inclusive). Defaults to 0.0.
-            high_value (float): Maximum voltage in kV (exclusive). Defaults to infinity.
-            inplace (bool): If True, modify Network in place. If False, return filtered copy.
-                Defaults to False.
-            graph_effect (str): How to handle the network graph after filtering:
-                - 'clear': Clear the graph (must be regenerated when needed)
-                - 'regenerate': Regenerate the graph immediately
-                - 'leave': Leave the graph unchanged
-                Defaults to 'clear'.
+            low_value: Minimum voltage in kV (inclusive).
+            high_value: Maximum voltage in kV (exclusive).
+            inplace: If True, modify the Network in place. If False, return a
+                filtered copy.
+            graph_effect: How to handle the network graph after filtering:
+                ``'clear'`` clears the graph (regenerate when needed),
+                ``'regenerate'`` regenerates it immediately, ``'leave'`` leaves
+                it unchanged.
 
         Returns:
-            Network: Filtered Network instance (same instance if inplace=True)
+            The filtered Network (the same instance when ``inplace`` is True).
 
         Raises:
-            ValueError: If low_value >= high_value or if values are negative
+            ValueError: If ``low_value`` is negative or ``high_value`` is not
+                greater than ``low_value``.
 
         Examples:
-            >>> # Get network with only 230-500 kV equipment
-            >>> high_voltage = network.filter_by_kv(230, 500)
-            >>>
-            >>> # Filter network to sub-transmission (69-230 kV)
-            >>> network.filter_by_kv(69, 230, inplace=True)
-            >>>
-            >>> # Get EHV network (345+ kV)
-            >>> ehv = network.filter_by_kv(345)
+            ::
 
-        Notes:
-            - Buses are filtered based on their base kV (baskv column)
-            - Equipment connected to multiple buses (e.g., branches) are kept if any
-              connected bus is within the voltage range and exists in filtered network
-            - Filtering is done efficiently using vectorized operations
-            - The method preserves DataFrame metadata
+                >>> # Only 230-500 kV equipment
+                >>> high_voltage = network.filter_by_kv(230, 500)
+                >>> # Sub-transmission (69-230 kV), in place
+                >>> network.filter_by_kv(69, 230, inplace=True)
+                >>> # EHV network (345+ kV)
+                >>> ehv = network.filter_by_kv(345)
+
+        Note:
+            Filtering uses vectorized operations and preserves DataFrame metadata.
         """
         # Input validation
         if low_value < 0:
@@ -1027,14 +1007,15 @@ class Network(AbstractSection):
                              f"Must be 'clear', 'regenerate', or 'leave'")
 
     def copy(self, deep: bool = True):
-        """
-        Create a copy of the Network instance.
+        """Create a copy of the Network instance with all attributes copied.
 
-        This method creates a new Network instance and copies all attributes.
-        If deep is True, it performs a deep copy; otherwise, it performs a shallow copy.
+        DataFrame attributes are copied along with their ``_metadata``.
 
-        :param deep: If True, create a deep copy. If False, create a shallow copy. Defaults to True.
-        :return: A new Network instance with copied attributes.
+        Args:
+            deep: If True, perform a deep copy; otherwise a shallow copy.
+
+        Returns:
+            A new Network instance with copied attributes.
         """
         # Create a new Network instance
         new_network = Network.__new__(Network)
@@ -1059,133 +1040,69 @@ class Network(AbstractSection):
         return new_network
 
     def model_dfs(self) -> Dict[str, pd.DataFrame]:
-        """
-        Retrieve all pandas DataFrames stored as attributes in the Network instance.
+        """Collect every DataFrame attribute of the Network instance.
 
-        This method is a used for accessing and managing the various power system
-        component DataFrames within the Network object. It dynamically collects all attributes
-        of the Network instance that are pandas DataFrames, providing a comprehensive view of
-        the network model's data.  This is important, since the structure of the "network"
-        section of a RAWX file may change in future PSS/e releases.
-
-        The method performs the following operations:
-        1. Iterates through all attributes of the Network instance.
-        2. Identifies attributes that are pandas DataFrames.
-        3. Creates a dictionary with attribute names as keys and the corresponding
-           DataFrames as values.
+        Dynamically discovers all attributes that are pandas DataFrames, giving a
+        comprehensive view of the network model's data. Discovery is dynamic
+        because the structure of the ``network`` section of a RAWX file may change
+        in future PSS/E releases.
 
         Returns:
-        --------
-        Dict[str, pd.DataFrame]
-            A dictionary where each key is the name of a network component (e.g., 'bus',
-            'branch', 'generator'), and each value is the corresponding pandas DataFrame
-            containing that component's data.
+            A dict mapping each network component name (e.g. ``'bus'``,
+            ``'acline'``, ``'generator'``) to its DataFrame. All DataFrames are
+            included regardless of size or content.
 
-        Notes:
-        ------
-        - This method is particularly useful for bulk operations on all network components,
-          such as filtering, data export, or comprehensive network analysis.
-        - The returned dictionary includes all DataFrames, regardless of their size or content,
-          allowing for complete access to the network model's data.
-        - The method relies on the convention that all network component data in the Network
-          class is stored as pandas DataFrames.
-        - This method is often used in conjunction with other Network methods or in the
-          Model class for operations that need to iterate over all network components.
-
-        Example Usage:
-        --------------
-        # Inside a method of Model or Network class
-        def some_operation(self):
-            for df_name, df in self.model_dfs().items():
-                # Perform some operation on each DataFrame
-                print(f"{df_name} has {len(df)} rows")
+        Note:
+            Useful for bulk operations over all network components -- filtering,
+            data export, or comprehensive analysis -- and is relied on by other
+            Network and Model methods that iterate over every component.
         """
         return {_: getattr(self, _) for _ in dir(self)
                 if isinstance(getattr(self, _), pd.DataFrame)}
 
     def graph(self, regenerate: bool = False,
               empty_ok: bool = False):
-        """
-        Create or retrieve a NetworkX Graph representation of the power system network.
+        """Create or retrieve a NetworkX graph of the power system network.
 
-        This method is central to the topological analysis capabilities of the Network class.
-        It constructs a graph where nodes represent buses and other network elements, and edges
-        represent connections between them (like transmission lines and transformers).
+        Central to the Network class's topological analysis. Builds a graph whose
+        nodes represent buses and other network elements and whose edges represent
+        connections between them (transmission lines, transformers, etc.).
 
-        Parameters:
-        -----------
-        regenerate : bool, optional (default=False)
-            If True, forces the method to create a new graph even if one already exists.
-            If False, returns the existing graph if available.
-        empty_ok : bool, optional (default=False)
-            If True, allows the method to return an empty graph if no graph exists and
-            regenerate is False. If False, an empty graph will trigger regeneration.
+        Args:
+            regenerate: If True, build a new graph even if one already exists. If
+                False, return the existing graph when available.
+            empty_ok: If True, an existing empty graph may be returned (when
+                ``regenerate`` is False). If False, an empty graph triggers
+                regeneration.
 
         Returns:
-        --------
-        nx.Graph
-            A NetworkX Graph object representing the power system network topology.
+            A NetworkX graph representing the power system network topology.
 
-        Graph Structure:
-        ----------------
-        1. Nodes:
-            - Bus nodes: Indexed as ('bus', bus_number)
-            - Other single bus equipment nodes (e.g., generators, loads): Indexed as
-              (equipment_type, bus_number, id)
-            - Node attributes: All properties from the corresponding DataFrame are
-              added to the node (using model.add_node(node_id, **kwargs), providing
-              direct access to equipment details.
+        Note:
+            **Graph structure.** Bus nodes are keyed ``('bus', bus_number)``.
+            Single-bus equipment (generators, loads, etc.) are keyed
+            ``(equipment_type, bus_number, id)`` and connected by an edge to their
+            bus. Two-bus equipment (e.g. AC lines) become edges between the two
+            bus nodes ``(('bus', from_bus), ('bus', to_bus))``. Three-winding
+            transformers get a synthetic central node ``('transformer', i, j, k)``
+            connected to all three bus nodes; two-winding transformers use
+            ``('transformer', i, j)``. All properties from the corresponding
+            DataFrame are stored as node or edge attributes.
 
-        2. Edges:
-            - Represent connections between buses (e.g., transmission lines, transformers)
-            - Indexed by the connected bus nodes: (('bus', from_bus_number), ('bus', to_bus_number))
-            - Edge attributes: All properties from the corresponding DataFrame (e.g., 'branch')
-              are added to the edge (using model.add_edge(node_id1, node_id2, **kwargs).
+            Consider running :meth:`append_bus_info_to_dfs` before generating the
+            graph so bus information is available on all equipment. The graph is
+            stored on ``self._graph`` for fast reuse unless regeneration is
+            requested.
 
-        3. Special Cases:
-            - Three-winding transformers: Represented by a central node connected to three bus nodes
-            - Index: ('transformer', primary_bus, secondary_bus, terniary_bus, circuit_id)
+        Examples:
+            ::
 
-        Graph Creation Process:
-        -----------------------
-        1. Adds buses as nodes, with bus properties as node attributes.
-        2. Iterates through each equipment type (e.g., generators, branches, transformers):
-            - For single-bus equipment: Adds as nodes connected to their respective buses.
-            - For two-bus equipment (e.g., lines): Adds as edges between the connected buses.
-            - For three-winding transformers: Creates a central node connected to three buses.
-        3. Adds relevant properties of each equipment as node or edge attributes.
-
-        Notes:
-        ------
-        - Consider running Network.append_bus_info_to_dfs() before generating the graph to
-          ensure that bus information is readily available for all equipment in the graph.
-        - The resulting graph structure allows for efficient querying and analysis. For example:
-            * To get all properties of a bus: graph.nodes[('bus', bus_number)]
-            * To get properties of a line: graph.edges[('bus', from_bus), ('bus', to_bus)]
-        - This detailed graph structure preserves the rich information from the RAWX file,
-          enabling complex analyses directly on the graph without needing to reference
-          the original DataFrames.
-        - The graph is accessed through the "graph" method and privatley stored as
-          self._graph for future access, improving performance for subsequent calls
-          unless regeneration is requested.
-
-        Example Usage:
-        --------------
-        # Ensure bus info is appended to all DataFrames
-        self.append_bus_info_to_dfs()
-
-        # Generate the graph
-        network_graph = self.graph(regenerate=True)
-
-        # Access bus properties
-        bus_properties = network_graph.nodes[('bus', 1001)]
-
-        # Access line properties
-        line_properties = network_graph.edges[('bus', 1001), ('bus', 1002)]
-
-        # Use NetworkX algorithms for analysis
-        import networkx as nx
-        shortest_path = nx.shortest_path(network_graph, ('bus', 1001), ('bus', 2001))
+                >>> self.append_bus_info_to_dfs()
+                >>> network_graph = self.graph(regenerate=True)
+                >>> bus_properties = network_graph.nodes[('bus', 1001)]
+                >>> line_properties = network_graph.edges[('bus', 1001), ('bus', 1002)]
+                >>> import networkx as nx
+                >>> path = nx.shortest_path(network_graph, ('bus', 1001), ('bus', 2001))
         """
         if not regenerate and (empty_ok or self._graph):
             return self._graph
@@ -1385,11 +1302,12 @@ class Network(AbstractSection):
         Args:
             seed_buses: Single ibus int or iterable of ibus integers.
             n: Number of bus hops to traverse.
-            output: Return format.
-                'network' (default) — filtered Network copy.
-                'dict' — dict[str, DataFrame] keyed by section name.
-                'dataframe' — flat DataFrame with 'section' column prepended;
-                    intended for Excel/CSV export, not programmatic use.
+            output: Return format. One of:
+
+                * ``'network'`` (default) — filtered Network copy.
+                * ``'dict'`` — ``dict[str, DataFrame]`` keyed by section name.
+                * ``'dataframe'`` — flat DataFrame with a ``'section'`` column
+                  prepended; intended for Excel/CSV export, not programmatic use.
 
         Returns:
             Filtered network data in the requested format.
@@ -1553,39 +1471,30 @@ class Network(AbstractSection):
 
     def draw_one_line(self, node_id: tuple, distance: int = 2, theme: str = 'light',
                       load_positions: dict = None, save_positions: bool = True) -> None:
-        """
-        Create an interactive visualization of the network graph centered around a specific node.
+        """Display an interactive one-line diagram centered on a node.
 
-        Parameters
-        ----------
-        node_id : tuple
-            The identifier of the central node, e.g. ('bus', 201)
-        distance : int, optional
-            Number of edges to traverse from central node (default=2)
-        theme : str, optional
-            Color theme - 'light' or 'dark' (default='light')
-        load_positions : dict, optional
-            Dictionary of pre-saved node positions {node_id: (x, y)}
-        save_positions : bool, optional
-            Whether to save positions after dragging (default=True)
+        Builds the subgraph of nodes within ``distance`` edges of ``node_id`` and
+        renders it as an interactive Plotly figure, coloring bus nodes by voltage
+        level and styling equipment by type.
 
-        Returns
-        -------
-        None
-            Displays an interactive plotly figure
+        Args:
+            node_id: Identifier of the central node, e.g. ``('bus', 201)``.
+            distance: Number of edges to traverse from the central node.
+            theme: Color theme, ``'light'`` or ``'dark'``.
+            load_positions: Pre-saved node positions, ``{node_id: (x, y)}``.
+            save_positions: If True, save node positions after layout.
 
-        Examples
-        --------
-        >>> model = Model('path/to/model.raw')
-        >>> # Basic draw
-        >>> model.network.draw_one_line(('bus', 201), distance=3)
-        >>>
-        >>> # Dark theme
-        >>> model.network.draw_one_line(('bus', 201), theme='dark')
-        >>>
-        >>> # Load saved positions
-        >>> saved_pos = model.network.load_node_positions()
-        >>> model.network.draw_one_line(('bus', 201), load_positions=saved_pos)
+        Returns:
+            None. Displays an interactive Plotly figure.
+
+        Examples:
+            ::
+
+                >>> model = Model('path/to/model.raw')
+                >>> model.network.draw_one_line(('bus', 201), distance=3)
+                >>> model.network.draw_one_line(('bus', 201), theme='dark')
+                >>> saved_pos = model.network.load_node_positions()
+                >>> model.network.draw_one_line(('bus', 201), load_positions=saved_pos)
         """
 
         # Color themes
@@ -1946,13 +1855,10 @@ class Network(AbstractSection):
         })
 
     def load_node_positions(self) -> dict:
-        """
-        Load previously saved node positions from cache.
+        """Load previously saved node positions from cache.
 
-        Returns
-        -------
-        dict
-            Dictionary of node positions {node_id: (x, y)}
+        Returns:
+            Node positions, ``{node_id: (x, y)}``. Empty if no cache file exists.
         """
         cache_file = Path.home() / '.cache' / 'psse_model_util' / 'node_positions.json'
         if cache_file.exists():
@@ -1962,34 +1868,30 @@ class Network(AbstractSection):
 
 
 class Harmonics(AbstractSection):
-    """
-    Represents the 'harmonics' section of the PSSE v35 RAWX (JSON) file.
-    RAW-sourced .rawx files do not contain harmonics data, so this section
-    has minimal functionality.
+    """Represents the ``harmonics`` section of a PSS/E v35 RAWX (JSON) file.
+
+    RAW-sourced models do not contain harmonics data, so this section has minimal
+    functionality there.
+
+    Args:
+        section: The ``harmonics`` section data, keyed by subsection name.
     """
 
     def __init__(self, section: Dict[str, Any]):
-        """
-        Initialize the Harmonics class with data from the 'harmonics' section.
-
-        :param section: Dictionary containing the 'harmonics' section data
-        """
         super().__init__(section)
 
 
 class TimeSeries(AbstractSection):
-    """
-    Represents the 'timeseries' section of the PSSE v35 RAWX (JSON) file.
-    RAW-sourced .rawx files do not contain timeseries data, so this section
-    has minimal functionality.
+    """Represents the ``timeseries`` section of a PSS/E v35 RAWX (JSON) file.
+
+    RAW-sourced models do not contain timeseries data, so this section has
+    minimal functionality there.
+
+    Args:
+        section: The ``timeseries`` section data, keyed by subsection name.
     """
 
     def __init__(self, section: Dict[str, Any]):
-        """
-        Initialize the TimeSeries class with data from the 'timeseries' section.
-
-        :param section: Dictionary containing the 'timeseries' section data
-        """
         super().__init__(section)
 
 
@@ -2001,133 +1903,83 @@ class Model:
     equipment data, and analysis capabilities.
 
     Attributes:
-        name (str): Identifier for the model, derived from input file or user-specified
-        raw_file_path (Path): Source RAW/RAWX file location
-        json_data (dict): Structured representation of model data
-        general (General): Model metadata and version information
-        network (Network): Power system component data and topology
-        harmonics (Harmonics): Harmonic analysis data if present
-        timeseries (TimeSeries): Time-dependent data if present
-        version (float): PSS/E version number of the model
+        name: Identifier for the model, derived from the input file or
+            user-specified.
+        raw_file_path: Source RAW/RAWX file location.
+        json_data: Structured (RAWX-like) representation of the model data.
+        general: Model metadata and version information.
+        network: Power system component data and topology.
+        harmonics: Harmonic analysis data, if present.
+        timeseries: Time-dependent data, if present.
+        version: PSS/E version number of the model.
 
     Args:
-        file_path_or_json (Union[str, dict, Path]): Input source - either file path or
-            preloaded data
-        name (str, optional): Custom identifier for the model
-        force_recalculate (bool, optional): Force reprocessing even if cache exists
+        file_path_or_json: Input source -- a file path or preloaded data. May be
+            a path string, a Path, a dict of pre-loaded RAWX data, or a string of
+            raw RAWX JSON content.
+        name: Custom identifier for the model. Derived from the file name when
+            omitted.
+        force_recalculate: If True, reprocess even when a cache exists.
 
     Raises:
-        FileNotFoundError: If specified input file does not exist
-        JSONDecodeError: If JSON data is invalid
-        ValueError: If input format is unrecognized
+        FileNotFoundError: If the specified input file does not exist.
+        json.JSONDecodeError: If the JSON data is invalid.
+        ValueError: If the input format is unrecognized.
 
-    Example:
-        >>> # Load from RAW file
-        >>> from model import Model
-        >>> fp = r"path/to/Model_1.raw"
-        >>> model = Model(fp, name="Summer_Peak")
-        >>>
-        >>> # Filter to specific areas
-        >>> filtered = model.filter_by_area({101: 'AREA1', 102: 'AREA2'})
-        >>>
-        >>> # Access network data
-        >>> buses = model.network.bus
-        >>> lines = model.network.acline
-        >>>
-        >>> # Analyze network topology
-        >>> graph = model.network.graph()
-        >>> path = nx.shortest_path(graph, ('bus', 201), ('bus', 205))
+    Examples:
+        ::
+
+            >>> from psse_model_util.model import Model
+            >>> fp = r"path/to/Model_1.raw"
+            >>> model = Model(fp, name="Summer_Peak")
+            >>> filtered = model.filter_by_area({101: 'AREA1', 102: 'AREA2'})
+            >>> buses = model.network.bus
+            >>> lines = model.network.acline
+            >>> graph = model.network.graph()
+            >>> path = nx.shortest_path(graph, ('bus', 201), ('bus', 205))
     """
 
     def __init__(self, file_path_or_json: Union[str, dict, Path],
                  name: str = None,
                  force_recalculate: bool = False):
-        """
-        Initialize a Model instance by loading and processing a PSSE v35 RAWX
-        file or a PSSE v33-35 RAW file.
+        """Load and process a PSS/E RAWX (v35) or RAW (v33-35) file.
 
-        This method is the entry point for creating a Model object. It handles the
-        loading of RAWX data, either from a file or a pre-loaded dictionary, and sets up
-        the entire model structure.
+        Entry point for creating a Model. Loads RAWX data from a file or a
+        pre-loaded dict, then sets up the entire model structure: it parses each
+        section into the appropriate object (:class:`General`, :class:`Network`,
+        :class:`Harmonics`, :class:`TimeSeries`), builds a pandas DataFrame per
+        network component, and caches the result. A cached pickle is loaded
+        instead when available and ``force_recalculate`` is False.
 
-        Parameters:
-        -----------
-        file_path_or_json : Union[str, dict, Path], optional
-            The source of the RAWX data. Can be:
-            - A string path to the RAWX file
-            - A Path object pointing to the RAWX file
-            - A dictionary containing pre-loaded RAWX data
-            - A string containing the raw JSON content of a RAWX file
-            If None, an empty model will be created.
-
-        name : str, optional
-            A custom name for the model. If not provided, the name will be derived from
-            the file name or set to a default value.
-
-        force_recalculate : bool, optional (default=False)
-            If True, forces the method to recalculate and reprocess the entire model,
-            even if a cached version exists. This is useful when you want to ensure
-            you're working with the most up-to-date data.
-
-        Attributes Initialized:
-        -----------------------
-        name : str
-            Name of the model, either provided or derived.
-        raw_file_path : Path
-            Path to the source RAW or RAWX file (if applicable).
-        json_data : dict
-            RAWX-like JSON data loaded from the RAWX file.  Or, loaded from a RAW
-            file with the rawx_to_raw.raw_file_to_rawx_dict function.
-        general : General
-            Object representing the 'general' section of the RAWX data.
-        network : Network
-            Object representing the 'network' section, containing all power system components.
-        harmonics : Harmonics
-            Object representing the 'harmonics' section of the RAWX data.
-        timeseries : TimeSeries
-            Object representing the 'timeseries' section of the RAWX data.
-        version : float
-            Version number of the PSSE model.
-
-        Process:
-        --------
-        1. Loads the RAW or RAWX data from the provided source.
-        2. Attempts to load a cached version of the model if available and not forced to recalculate.
-        3. If no cache is available or recalculation is forced:
-           a. Parses the JSON data into structured Python objects (General, Network, Harmonics, TimeSeries).
-           b. Builds pandas DataFrames for each component in the Network section.
-           c. Generates a NetworkX graph representation of the power system (if specified).
-        4. Caches the processed model for future fast loading.
+        Args:
+            file_path_or_json: Source of the model data. May be a path string, a
+                Path, a dict of pre-loaded RAWX data, or a string of raw RAWX JSON
+                content.
+            name: Custom name for the model. Derived from the file name (or a
+                generated default) when omitted.
+            force_recalculate: If True, recalculate and reprocess the entire model
+                even when a cached version exists.
 
         Raises:
-        -------
-        FileNotFoundError
-            If the specified RAW or RAWX file does not exist.
-        JSONDecodeError
-            If the provided JSON data is invalid.
-        ValueError
-            If the input format is unrecognized or invalid.
+            FileNotFoundError: If the specified RAW or RAWX file does not exist.
+            json.JSONDecodeError: If the provided JSON data is invalid.
+            ValueError: If the input format is unrecognized or invalid.
 
-        Notes:
-        ------
-        - This method can be time-consuming for large models, especially when
-          force_recalculate is True or no cache exists.
-        - The caching mechanism significantly speeds up subsequent loads of the same model.
-        - The NetworkX graph is not generated by default to save time and memory. Use
-          the network.graph() method to generate it when needed.
+        Note:
+            This can be time-consuming for large models, especially when
+            ``force_recalculate`` is True or no cache exists; the cache greatly
+            speeds up subsequent loads. The NetworkX graph is not generated by
+            default -- call ``network.graph()`` when needed.
 
-        Example:
-        --------
-        # Load from a file
-        model = Model("path/to/model.rawx", name="MyModel")
+        Examples:
+            ::
 
-        # Load from pre-loaded JSON data
-        with open("path/to/model.rawx", "r") as f:
-            json_data = json.load(f)
-        model = Model(json_data, name="PreloadedModel")
-
-        # Force recalculation of a previously cached model
-        model = Model("path/to/model.rawx", force_recalculate=True)
+                >>> model = Model("path/to/model.rawx", name="MyModel")
+                >>> import json
+                >>> with open("path/to/model.rawx") as f:
+                ...     json_data = json.load(f)
+                >>> model = Model(json_data, name="PreloadedModel")
+                >>> model = Model("path/to/model.rawx", force_recalculate=True)
         """
 
         # Record the start time for performance tracking
@@ -2264,47 +2116,32 @@ class Model:
         return json_str
 
     def _read_json(self, file_path_or_json: Union[str, Path], force_recalculate: bool = False) -> Dict[str, Any]:
-        """
-        Called by __init__, this method reads and process the RAW or RAWX data
-        from various input formats.
+        """Read and process RAW/RAWX data from various input formats.
 
-        This method is responsible for loading the RAWX data into the Model object.
-        It can handle multiple input formats and decides whether to use cached data
-        or reprocess the input based on the force_recalculate flag.
+        Called by :meth:`__init__`. Loads the model data into the Model object,
+        handling multiple input formats and deciding whether to use cached data or
+        reprocess the input based on ``force_recalculate``.
 
-        Parameters:
-        -----------
-        file_path_or_json : Union[str, Path, Dict[str, Any]]
-            The source of the RAW or RAWX data. Can be:
-            - A string path to the RAW or RAWX file
-            - A Path object pointing to the RAW or RAWX file
-            - A dictionary containing pre-loaded RAWX data
-            - A string containing the JSON content of a RAWX file
-
-        force_recalculate : bool, optional (default=False)
-            If True, forces the method to reprocess the input data even if a cached
-            version exists.
+        Args:
+            file_path_or_json: Source of the RAW or RAWX data. May be a path
+                string, a Path, a dict of pre-loaded RAWX data, or a string of
+                RAWX JSON content.
+            force_recalculate: If True, reprocess the input even when a cached
+                version exists.
 
         Returns:
-        --------
-        Dict[str, Any]
             The processed JSON data representing the RAW or RAWX file contents.
 
         Raises:
-        -------
-        JSONDecodeError
-            If the provided JSON data is invalid.
-        FileNotFoundError
-            If the specified RAW or RAWX file does not exist.
-        ValueError
-            If the input format is unrecognized or invalid.
+            json.JSONDecodeError: If the provided JSON data is invalid.
+            FileNotFoundError: If the specified RAW or RAWX file does not exist.
+            ValueError: If the input format is unrecognized or invalid.
 
-        Notes:
-        ------
-        - This method sets several attributes of the Model instance, including
-          self.json_data, self.raw_file_path, and self.name.
-        - If a cached pickle file exists and force_recalculate is False, it will
-          attempt to load the cached data instead of reprocessing the input.
+        Note:
+            Sets several Model attributes, including ``self.json_data``,
+            ``self.raw_file_path`` and ``self.name``. When a cached pickle exists
+            and ``force_recalculate`` is False, the cached data is loaded instead
+            of reprocessing the input.
         """
         # Check if input is a JSON string
         if isinstance(file_path_or_json, str) and "{" in file_path_or_json:
@@ -2366,14 +2203,16 @@ class Model:
         return model
 
     def copy(self, deep: bool = True):
-        """
-        Create a copy of the Model instance.
+        """Create a copy of the Model instance with all attributes copied.
 
-        This method creates a new Model instance and copies all attributes.
-        If deep is True, it performs a deep copy; otherwise, it performs a shallow copy.
+        DataFrames retain their ``_metadata``; section objects (General, Network,
+        Harmonics, TimeSeries) are copied via their own ``copy`` methods.
 
-        :param deep: If True, create a deep copy. If False, create a shallow copy. Defaults to True.
-        :return: A new Model instance with copied attributes.
+        Args:
+            deep: If True, perform a deep copy; otherwise a shallow copy.
+
+        Returns:
+            A new Model instance with copied attributes.
         """
         # Create a new Model instance
         new_model = Model.__new__(Model)
@@ -2411,46 +2250,20 @@ class Model:
         return new_model
 
     def network_dfs(self) -> Dict[str, pd.DataFrame]:
-        """
-        Retrieve all pandas DataFrames stored as attributes in the Network instance.
+        """Collect every DataFrame attribute of this model's Network.
 
-        This method is a used for accessing and managing the various power system
-        component DataFrames within the Network object. It dynamically collects all attributes
-        of the Network instance that are pandas DataFrames, providing a comprehensive view of
-        the network model's data.  This is important, since the structure of the "network"
-        section of a RAWX file may change in future PSS/e releases.
-
-        The method performs the following operations:
-        1. Iterates through all attributes of the Network instance.
-        2. Identifies attributes that are pandas DataFrames.
-        3. Creates a dictionary with attribute names as keys and the corresponding
-           DataFrames as values.
+        Convenience accessor delegating to the underlying :class:`Network`. It
+        dynamically discovers all attributes that are pandas DataFrames; discovery
+        is dynamic because the structure of the ``network`` section may change in
+        future PSS/E releases.
 
         Returns:
-        --------
-        Dict[str, pd.DataFrame]
-            A dictionary where each key is the name of a network component (e.g., 'bus',
-            'branch', 'generator'), and each value is the corresponding pandas DataFrame
-            containing that component's data.
+            A dict mapping each network component name (e.g. ``'bus'``,
+            ``'acline'``, ``'generator'``) to its DataFrame.
 
-        Notes:
-        ------
-        - This method is particularly useful for bulk operations on all network components,
-          such as filtering, data export, or comprehensive network analysis.
-        - The returned dictionary includes all DataFrames, regardless of their size or content,
-          allowing for complete access to the network model's data.
-        - The method relies on the convention that all network component data in the Network
-          class is stored as pandas DataFrames.
-        - This method is often used in conjunction with other Network methods or in the
-          Model class for operations that need to iterate over all network components.
-
-        Example Usage:
-        --------------
-        # Inside a method of Model or Network class
-        def some_operation(self):
-            for df_name, df in self.network_dfs().items():
-                # Perform some operation on each DataFrame
-                print(f"{df_name} has {len(df)} rows")
+        Note:
+            Useful for bulk operations over all network components -- filtering,
+            data export, or comprehensive analysis.
         """
 
         return {_: getattr(self.network, _) for _ in dir(self.network)
@@ -2458,46 +2271,28 @@ class Model:
 
     @property
     def csv_folder(self) -> Path:
-        """
-        Generate and return the path to the folder where CSV files will be exported.
+        """Path to the folder where this model's CSV files are exported.
 
-        This method creates a Path object representing the folder where CSV files
-        for this model will be stored. The folder name is derived from the model's
-        pickle file name, ensuring a unique and identifiable location for each model's
-        CSV exports.
+        The folder lives under ``site_data_dir`` and is named after the stem of
+        the model's pickle path, giving each model a unique, identifiable export
+        location. The parent directory is created on first access, but the folder
+        itself is not.
 
         Returns:
-        --------
-        Path
-            A Path object representing the folder where CSV files will be stored.
-            The folder is located in the same directory as the model's CSV export path.
+            The folder path for CSV exports, or None if the pickle path cannot be
+            determined.
 
-        Notes:
-        ------
-        - The method does not actually create the folder; it only generates the Path.
-        - The folder name is based on the stem of the pickle file path, which typically
-          includes a unique identifier for the model.
-        - This method ensures consistency between different export methods (CSV)
-          by using the same base path.
-        - The returned path can be used directly in file operations, such as creating
-          the directory or saving files.
+        Note:
+            Used by :meth:`to_csv`, which actually creates the folder and writes
+            the CSV files.
 
-        Example:
-        --------
-        model = Model('path/to/rawx/file.rawx')
-        csv_folder_path = model.csv_folder
-        print(csv_folder_path)
-        # Might print something like:
-        # /path/to/exports/rawx_file_model
+        Examples:
+            ::
 
-        # To use the path:
-        csv_folder_path.mkdir(parents=True, exist_ok=True)
-        (csv_folder_path / 'some_data.csv').write_text('data')
-
-        See Also:
-        ---------
-        to_csv : Method that uses this folder path to export CSV files.
-        csv_filepath : Property that determines the base directory for exports.
+                >>> model = Model('path/to/rawx/file.rawx')
+                >>> csv_folder_path = model.csv_folder
+                >>> csv_folder_path.mkdir(parents=True, exist_ok=True)
+                >>> (csv_folder_path / 'some_data.csv').write_text('data')
         """
         if not hasattr(self, '_csv_folder') or self._csv_folder is None:
             if not self.pickle_path:
@@ -2534,48 +2329,30 @@ class Model:
         self.__dict__.update(state)
 
     def to_csv(self):
-        """
-        Export the Model data to a series of CSV files.
+        """Export the model data to a folder of CSV files.
 
-        This method exports various components of the Model object to separate CSV files.
-        It creates a folder named after the model and saves individual CSV files for general
-        information and each DataFrame in the network section.
-
-        The method performs the following steps:
-        1. Creates a folder to store the CSV files.
-        2. Exports general information about the model.
-        3. Exports each DataFrame from the network section to its own CSV file.
+        Creates :attr:`csv_folder` (named after the model's pickle path stem),
+        writes ``general.csv`` with the model version, and writes one
+        ``network_<section>.csv`` per network DataFrame. A DataFrame's index is
+        included only when it holds named fields (a plain ``RangeIndex`` is
+        omitted to avoid a spurious unnamed column).
 
         Returns:
-        --------
-        None
-
-        Side Effects:
-        -------------
-        - Creates a new folder in the file system.
-        - Writes multiple CSV files to the created folder.
+            None.
 
         Raises:
-        -------
-        IOError: If there are issues creating the folder or writing the files.
+            OSError: If the folder cannot be created or a file cannot be written.
 
-        Notes:
-        ------
-        - The folder name is derived from the model's pickle path stem.
-        - Each network DataFrame is exported with its index included.
-        - This method can be time-consuming for large models with many DataFrames.
-        - The resulting CSV files can be used for external analysis or as a human-readable
-          backup of the model data.
+        Note:
+            Can be time-consuming for large models with many DataFrames. The
+            resulting CSV files are useful for external analysis or as a
+            human-readable backup of the model data.
 
-        Example:
-        --------
-        model = Model('path/to/rawx/file.rawx')
-        model.to_csv()
-        # This will create a folder like 'model_name' containing CSV files like:
-        # - general.csv
-        # - network_bus.csv
-        # - network_branch.csv
-        # ... and so on for each DataFrame in the network section.
+        Examples:
+            ::
+
+                >>> model = Model('path/to/rawx/file.rawx')
+                >>> model.to_csv()
         """
         start_time = perf_counter_ns()
         logger.info(f'Exporting model ({self.pickle_path}) ...')
@@ -2605,35 +2382,25 @@ class Model:
 
     @property
     def pickle_path(self) -> Path:
-        """
-        Get the path for the pickle file associated with this Model instance.
+        """Path to the pickle (``.model``) file for this Model instance.
 
-        This property manages the location where the serialized (pickled) version of the
-        Model object will be stored or retrieved from. It ensures that the pickle file
-        has a consistent and predictable location based on the model's attributes.
+        Returns a previously set path if one exists. Otherwise it derives a path
+        within ``site_cache_dir`` (extension ``.model``) from the stem of
+        ``raw_file_path`` if set, else from ``name``. The parent directory is
+        created on access.
 
         Returns:
-        --------
-        Path
-            A Path object representing the location of the pickle file.
+            The pickle file path, or None if neither ``raw_file_path`` nor
+            ``name`` is set.
 
-        Notes:
-        ------
-        - If the pickle path has been previously set, it returns that path.
-        - If not set, it generates a path based on the following priority:
-          1. Using the stem of raw_file_path if it exists
-          2. Using the model's name if it exists
-        - The generated path is always within the site_cache_dir.
-        - The file extension is always '.model'.
-        - This method ensures the parent directory of the pickle path exists.
+        Examples:
+            ::
 
-        Example:
-        --------
-        >>> from model import Model
-        >>> fp = r"path/to/Model_1.raw"
-        >>> model = Model(fp)
-        >>> print(model.pickle_path)
-        path/to/cache/Model_1.model
+                >>> from psse_model_util.model import Model
+                >>> fp = r"path/to/Model_1.raw"
+                >>> model = Model(fp)
+                >>> print(model.pickle_path)
+                path/to/cache/Model_1.model
         """
         if not hasattr(self, '_pickle_path'):
             self._pickle_path = None
@@ -2650,36 +2417,26 @@ class Model:
 
     @pickle_path.setter
     def pickle_path(self, new_path: Path | str):
-        """
-        Set a custom path for the pickle file associated with this Model instance.
+        """Set a custom pickle (``.model``) path for this Model instance.
 
-        This setter allows manual specification of where the serialized (pickled) version
-        of the Model object should be stored or retrieved from.
+        Overrides the default path-generation logic; use with caution. The parent
+        directory of the new path is created.
 
-        Parameters:
-        -----------
-        new_path : Path | str
-            The new path for the pickle file. Can be either a Path object or a string.
+        Args:
+            new_path: New pickle file path (Path or str). Must end in ``.model``.
 
         Raises:
-        -------
-        AssertionError
-            If the provided path does not have a '.model' extension.
+            AssertionError: If ``new_path`` does not have a ``.model`` extension.
 
-        Notes:
-        ------
-        - The provided path must have a '.model' extension.
-        - This method ensures the parent directory of the new pickle path exists.
-        - Use this setter with caution, as it overrides the default path generation logic.
+        Examples:
+            ::
 
-        Example:
-        --------
-         >>> from model import Model
-        >>> fp = r"path/to/Model_1.raw"
-        >>> model = Model(fp)
-        >>> model.pickle_path = '/custom/path/mymodel.model'
-        >>> print(model.pickle_path)
-        /custom/path/mymodel.model
+                >>> from psse_model_util.model import Model
+                >>> fp = r"path/to/Model_1.raw"
+                >>> model = Model(fp)
+                >>> model.pickle_path = '/custom/path/mymodel.model'
+                >>> print(model.pickle_path)
+                /custom/path/mymodel.model
         """
         new_path = Path(new_path)
         assert new_path.suffix == '.model', "Pickle path must have a '.model' extension"
@@ -2687,29 +2444,37 @@ class Model:
         self._pickle_path.parent.mkdir(parents=True, exist_ok=True)
 
     def to_pickle(self, resilient: bool = True) -> bool:
-        """
-        Cache the ModelComparison to a pickle file.
+        """Cache the Model to its pickle file.
 
         Args:
-            resilient (bool): If True, return False if pickling fails instead of raising an exception
+            resilient: If True, return without raising on failure (the underlying
+                writer returns falsy) instead of propagating the exception.
 
         Returns:
-            bool: True if caching was successful, False otherwise
+            The pickle path on success, or None if caching failed.
         """
         pickled: bool = to_pickle(pickle_path=self.pickle_path, data=self, resilient=resilient)
         logger.info(f'Saved: {self.pickle_path}')
         return self.pickle_path if pickled else None
 
     def read_pickle(self, mode: str = 'rb', resilient: bool = True):
-        """
-        Read the Model from a pickle file.
+        """Read the Model from its pickle file and load its attributes.
+
+        Attributes from the unpickled object are copied onto this instance; an
+        explicitly provided ``name`` is preserved.
 
         Args:
-            mode (str): File open mode, should always be 'rb'
-            resilient (bool): If True, warn instead of raising an exception on failure
+            mode: File open mode; should always be ``'rb'``.
+            resilient: If True, warn instead of raising on failure.
+
+        Returns:
+            An ``FpPickleType`` namedtuple ``(file_path, object)``. Both fields
+            are None when the file is missing (and ``resilient`` is True) or
+            loading failed.
 
         Raises:
-            FileNotFoundError: If the pickle file is not found and resilient is False
+            FileNotFoundError: If the pickle file is not found and ``resilient``
+                is False.
         """
 
         if not self.pickle_path.exists():

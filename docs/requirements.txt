@@ -1,0 +1,3 @@
+# Documentation build dependencies (dev-only; NOT a runtime requirement).
+# autodoc + napoleon are bundled in Sphinx core, so Sphinx is the only dep.
+sphinx>=7.0
