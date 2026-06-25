@@ -89,6 +89,11 @@ from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
 logger = setup_logger('model')
 
+# Bump whenever the cached Model layout changes (e.g. metadata representation).
+# v2 = SectionSchema registry on Network (replaces df._metadata). Caches without
+# a matching version are ignored and rebuilt from the RAW.
+MODEL_CACHE_SCHEMA_VERSION = 2
+
 
 def _fmt_kv(v) -> str:
     """
@@ -2099,6 +2104,7 @@ class Model:
         self.name: str = name  # If not name, self._read_json will set a name.
         self.raw_file_path: Path = None  # site_data_dir / f"rawx_{dtdt.now().strftime('%Y_%m_%d_%H_%M_%S')}.model"
         self.json_data = {}
+        self._cache_schema_version = MODEL_CACHE_SCHEMA_VERSION
 
         # Load the RAW or RAWX data
         logger.info('Model __init__ loading model from disk...')
@@ -2110,10 +2116,12 @@ class Model:
 
         # Check if we can load from a cached pickle file
         if not force_recalculate and self.pickle_path and self.pickle_path.exists():
-            self.read_pickle()
-            logger.info(f'Model __init__ ({self.pickle_path}) finished: '
-                        f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
-            return
+            result = self.read_pickle()
+            if result[1] is not None:
+                logger.info(f'Model __init__ ({self.pickle_path}) finished: '
+                            f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+                return
+            # stale/failed cache -> fall through and (re)build below
 
         # Set up the pickle path for caching
         self._csv_folder = None
@@ -2289,7 +2297,10 @@ class Model:
             if not self.name:
                 self.name = self.raw_file_path.stem
 
-            self.read_pickle()
+            result = self.read_pickle()
+            if result[1] is None and self.raw_file_path.exists():
+                # stale/failed cache and the source RAW exists -> rebuild
+                self.json_data = raw_file_to_rawx_dict(self.raw_file_path)
         else:
             # Assume input is a file path
             self.raw_file_path = Path(file_path_or_json)
@@ -2297,8 +2308,10 @@ class Model:
             # Check if we can use cached data
             if not force_recalculate and self.pickle_path.exists():
                 # Load model from cached pickle file instead of .raw or .rawx file.
-                self.read_pickle()
-                return self.json_data
+                result = self.read_pickle()
+                if result[1] is not None:
+                    return self.json_data
+                # stale/failed cache -> fall through to rebuild from raw/rawx below
 
             # Set the name attribute based on the file name
             if not self.name:
@@ -2682,6 +2695,14 @@ class Model:
                 warnings.warn(f'Could not load file {str(self.pickle_path)}. {str(e)}')
             else:
                 raise
+
+        # Reject stale caches (decision A: invalidate-and-rebuild, no migration).
+        if obj is not None and getattr(obj, '_cache_schema_version', None) != MODEL_CACHE_SCHEMA_VERSION:
+            warnings.warn(
+                f'Ignoring stale cache schema (found '
+                f'{getattr(obj, "_cache_schema_version", None)!r}, expected '
+                f'{MODEL_CACHE_SCHEMA_VERSION}): {self.pickle_path}')
+            return FpPickleType(None, None)
 
         # Save current name before loading attributes
         original_name = self.name
