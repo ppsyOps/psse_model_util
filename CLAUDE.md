@@ -7,7 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **PDM** — dependency management and virtual environment. Primary tool for `install`, `run`, and `lock`.
 - **Hatch** — build backend (via `pdm run hatch build`). Manages calver versioning sourced from `__about__.py`.
 - **Ruff** — linter and import sorter. Config in `pyproject.toml` under `[tool.ruff]`. Line length 120; E501 ignored.
-- **pytest + pytest-cov** — test runner. Coverage threshold: 40% (CI gate).
+- **pytest + pytest-cov** — test runner. Coverage threshold: 90% (CI gate, `pyproject.toml` `fail_under`).
+- **Sphinx** — API docs (`docs/`), generated from Google-style docstrings via `autodoc` + `napoleon`. Built with `sphinx-build -W` (warnings-as-errors) in CI. Docstrings are Google-style throughout `src/`.
 
 ## Common Commands
 
@@ -62,6 +63,7 @@ The field mapping between RAW column names and RAWX field names is entirely data
 - **`Model`** (`model.py`) — primary user-facing class. Composes `General`, `Network`, `Harmonics`, `TimeSeries`.
 - **`Network`** (`model.py`) — holds one `pd.DataFrame` per PSS/E section (`bus`, `acline`, `transformer`, `generator`, `load`, etc.) plus a lazy `nx.Graph`. Extends `AbstractSection`.
 - **`ModelComparison`** (`compare.py`) — compares two `Model` instances. `compare_network_dfs()` produces outer-joined DataFrames with `_delta` and `presence` columns. `compare_graph()` detects added/removed edges, sectionalizations, and bypasses.
+- **`flowgate`** (package) — `.mon` flowgate parsing and key-facility neighborhood extraction. Parses PSS/E `.mon` flowgate-definition files, resolves their monitored/contingency elements against a `Model`, expands an n-hop bus neighborhood, and emits DataFrames (branches, generators, 3-winding transformers, unresolved). Public API (`extract_key_facilities`, `parse_mon_file`, `resolve_elements`, `neighborhood_buses`, `collect_key_facilities`, dataclasses `Flowgate`/`FlowgateElement`/`ResolvedSeed`) is re-exported from `flowgate/__init__.py`; the implementation lives in underscore-prefixed submodules (`_parse`, `_resolve`, `_graph`, `_collect`, `_api`, `_types`).
 
 ### Section-schema registry
 
@@ -113,6 +115,8 @@ All runtime paths are resolved by `common/dirs.py` via `platformdirs`:
 | `common/constants.py` | `INCLUDE_AREAS`, `DEFAULT_KV_FILTER`, `NETWORK_DF_COMPARISON_QUERIES`, `ALT_PATH_MAX_PATH_LENGTH`, `RESILIENT` |
 | `__about__.py` | Single source of truth for version string |
 | `version.py` | Deprecated shim — do not use |
+| `flowgate/__init__.py` | Public API surface for `.mon` flowgate parsing / key-facility extraction (re-exports underscore submodules) |
+| `docs/` | Sphinx API docs (autodoc + napoleon); build with `sphinx-build -W -b html docs docs/_build/html` |
 
 ## Test Suite
 
@@ -142,4 +146,4 @@ When porting a legacy test, place the new file in `tests/` (e.g., `tests/test_mo
 
 ## Versioning
 
-CalVer: `YYYY.M.micro` (e.g., `2026.4.3`). Managed by Hatch via `__about__.py`. To bump, edit `__about__.py` directly — Hatch reads the pattern `__version__ = "..."`.
+CalVer: `YYYY.M.micro` (e.g., `2026.4.5`; pre-releases use PEP 440 suffixes like `2026.4.5b1`). Managed by Hatch via `__about__.py`. To bump, edit `__about__.py` directly — Hatch reads the pattern `__version__ = "..."`.

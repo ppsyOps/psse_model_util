@@ -1,3 +1,12 @@
+"""JSON loading and sanitization helpers.
+
+Provides ``load_and_clean_json`` to read a JSON file while repairing common
+defects (unescaped control characters, floats with a trailing period) before
+parsing, backed by ``clean_invalid_json_characters``.
+"""
+
+from __future__ import annotations
+
 import json
 import re
 

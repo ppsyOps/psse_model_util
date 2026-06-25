@@ -13,10 +13,11 @@
 | **Ruff** | Linter & import sorter | Replaces `flake8`; configured in `pyproject.toml` under `[tool.ruff.lint]` |
 | **pytest + pytest-cov** | Test runner & coverage | Run via `pdm run pytest --cov=psse_model_util` |
 
-> **Local dev setup:** `pip install pdm && pdm install -G lint`  
+> **Local dev setup:** `pip install pdm && pdm install -G dev`  
 > **Run linter:** `pdm run ruff check .`  
 > **Run tests:** `pdm run pytest --cov=psse_model_util`  
-> **Build package:** `pdm run hatch build`
+> **Build package:** `pdm run hatch build`  
+> **Build docs:** `pip install -r docs/requirements.txt && sphinx-build -W -b html docs docs/_build/html`
 
 ---
 
@@ -26,8 +27,9 @@ Defined in `.github/workflows/`:
 
 | File | Trigger | Jobs |
 |------|---------|------|
-| `lint.yml` | push/PR to `main` | Lint (Ruff), Test (pytest + coverage ≥80%), Build (Hatch) |
-| `cd.yml` | push/PR to `main` | Same gates as CI + deployment placeholder |
+| `ci.yml` | push / PR | Lint (Ruff), Test & Coverage (pytest, gate ≥90%), Build (Hatch), Docs (Sphinx, `sphinx-build -W`) |
+| `cd.yml` | push to `main` | Build (Hatch) + create a GitHub Release for the current `__about__.py` version |
+| `publish.yml` | GitHub Release / manual dispatch | Build and publish to TestPyPI then PyPI via Trusted Publishing (OIDC); the PyPI step is gated by a required-reviewer environment |
 
 ---
 
@@ -83,17 +85,17 @@ Defined in `.github/workflows/`:
 | `raw_to_rawx.py` | Parses PSS/E RAW files into a RAWX-compatible Python dict. |
 | `compare.py` | `ModelComparison` — compares two `Model` instances at the DataFrame and graph level. |
 | `inch.py` | WIP: IDEV/INCH export scaffolding (Phase 3.2, not functional). |
-| `__about__.py` | Single source of truth for version (`__version__ = "2026.4.3"`). |
+| `__about__.py` | Single source of truth for version (calver `YYYY.M.micro`, e.g. `2026.4.5`). |
 | `version.py` | Legacy shim — **deprecated**, kept for compatibility only. |
 
 ### `common/`
 
 | Module | Purpose |
 |--------|---------|
-| `constants.py` | `INCLUDE_AREAS`, `DEFAULT_KV_FILTER`, `NETWORK_DF_COMPARISON_QUERIES`, `ALT_PATH_MAX_PATH_LENGTH` |
-| `dataframe_util.py` | `convert_df_column_dtypes()` — safe dtype coercion for DataFrames |
+| `constants.py` | `INCLUDE_AREAS`, `DEFAULT_KV_FILTER`, `NETWORK_DF_COMPARISON_QUERIES`, `ALT_PATH_MAX_PATH_LENGTH`, `RESILIENT` |
+| `dataframe_util.py` | DataFrame helpers: `convert_df_column_dtypes()` (dtype coercion), `coalesce()`, `create_empty_DataFrame()`, `df_column_validator()`, Excel export, and column-reorder utilities |
 | `dirs.py` | Canonical app directories via `platformdirs` (site-level and user-level) |
-| `file_util.py` | `to_pickle()`, `read_pickle()`, `wait_for_file()` |
+| `file_util.py` | Pickle I/O (`to_pickle()`, `read_pickle()`), model-file discovery (`get_available_model_files()`), and CSV/BytesIO helpers (`read_uneven_csv_file()`, `uneven_lists_to_df()`, `write_bytesio_to_disk()`) |
 | `json_util.py` | `load_and_clean_json()` — loads and sanitizes RAWX JSON |
 | `logging_config.py` | Logger setup (`setup_logger()`, `get_log_file_path()`) |
 
@@ -103,8 +105,29 @@ Defined in `.github/workflows/`:
 |------|---------|
 | `rawx_raw_map.csv` | Field-level mapping: RAW column names ↔ RAWX field names, per PSS/E version (v34, v35) |
 | `rawx_json_template.py` | RAWX section schema: `fields`, `data_type`, `id_cols`, `bus_cols` per network subsection |
-| `classes.py` | Supporting data classes |
+| `classes.py` | Domain quantity types (voltage, reactance, etc.), dict/dataclass helpers, and the metadata-carrying `ModelDF` DataFrame subclass |
 | `inch_templates.py` | INCH format field templates (WIP) |
+
+### `flowgate/`
+
+`.mon` flowgate parsing and key-facility neighborhood extraction. The public API
+is re-exported from `flowgate/__init__.py`; the implementation lives in
+underscore-prefixed submodules.
+
+| Module | Purpose |
+|--------|---------|
+| `_types.py` | Frozen dataclasses (`Flowgate`, `FlowgateElement`, `ResolvedSeed`) + `DEFAULT_*` constants |
+| `_parse.py` | State-machine parser for `.mon` files (`parse_mon_file`, `filter_by_sc`) |
+| `_resolve.py` | Resolve monitored/contingency elements against a `Model` (`resolve_elements`) |
+| `_graph.py` | Bus-only `nx.Graph` builder + `neighborhood_buses` |
+| `_collect.py` | Per-equipment-type collection into DataFrames (`collect_key_facilities`) |
+| `_api.py` | End-to-end wrapper `extract_key_facilities` |
+
+### `util/`
+
+| Module | Purpose |
+|--------|---------|
+| `contingency_util.py` | WIP: contingency / alternate-path analysis scaffolding (not yet functional; excluded from coverage and the generated API docs) |
 
 ---
 
@@ -290,8 +313,7 @@ All runtime paths are managed by `common/dirs.py` using `platformdirs`:
 
 | Limitation | Notes |
 |------------|-------|
-| RAWX export bug | Exported `.rawx` doesn't reload in PSS/E — small format diff. Tracked for Phase 2.1. |
-| CSV export drops index columns | `index=False` in `to_csv()` loses bus numbers. Fix in Phase 1.5. |
+| RAWX export bug | Exported `.rawx` doesn't reload in PSS/E — small format diff. Tracked for Phase 2.2 (low priority). |
 | `v33` support | Inferred but not explicitly tested. v34/v35 are primary targets. |
 | No large-scale BES test data | Anonymized large-scale BES model needed for scale UAT (Phase 2.3). Synthetic test fixtures in `tests/data/` cover unit and integration tests. |
 | Substation section parsing | Present but complex; substations excluded from NetworkX graph. |

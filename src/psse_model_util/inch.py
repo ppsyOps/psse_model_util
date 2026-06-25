@@ -1,6 +1,11 @@
+"""Work in progress — not yet functional.
+
+INCH/IDEV export support for PowerGEM TARA. This module is intended to translate
+a :class:`~psse_model_util.compare.ModelComparison` into INCH (incremental
+change) file records that TARA can apply to a base case. Roadmap phase 3.2.
 """
-docstring for inch.py
-"""
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
@@ -10,6 +15,25 @@ from psse_model_util.compare import ModelComparison
 
 @dataclass
 class InchRecord:
+    """A single INCH file record describing one change to a PSS/E model.
+
+    Holds the INCH command, its field/value lists, and the corresponding RAWX
+    section/field names so a model change can be rendered as INCH file text.
+
+    Args:
+        title: Optional descriptive title for this INCH record.
+        command: The INCH file command recognized by PowerGEM TARA software.
+        inch_fields: Valid INCH file field names.
+        rawx_section: A valid RAWX section name, such as ``'bus'``, ``'acline'``,
+            ``'generator'``, etc.
+        rawx_fields: Corresponding ``model.Model.network`` DataFrame field names.
+        template: Template section of the INCH file. Line 1 is a ``//`` comment,
+            line 2 is ``#COMMAND`` followed by the CSV INCH field-name list, and
+            line 3 is the CSV value list.
+        values: CSV value list to include in ``inch_text``.
+        inch_text: The rendered INCH file contents.
+    """
+
     # Optional descriptive title for this INCH record.
     title: str = ''
     # command (str): the INCH file command recognized by PowerGEM TARA software.
@@ -39,29 +63,46 @@ class InchRecord:
 
 
 class Inch(object):
+    """Builds an INCH/IDEV change set from a model comparison.
+
+    Accumulates :class:`InchRecord` entries derived from a
+    :class:`~psse_model_util.compare.ModelComparison` and renders them as an
+    INCH file for PowerGEM TARA.
+
+    Args:
+        comparison: The model comparison whose differences drive the INCH
+            records. May be ``None`` when records are added manually.
+    """
+
     def __init__(self, comparison: ModelComparison = None):
-        """
-        docstring for Inch
-        """
         self.comparison: ModelComparison = comparison
         _records: list[InchRecord] = []
 
     def add_record(self, record: InchRecord):
+        """Append an INCH record to this change set.
+
+        Args:
+            record: The INCH record to add.
+        """
         assert isinstance(record, InchRecord)
         self._records += [record]
 
     def del_record(self, loc: int):
+        """Remove an INCH record from this change set.
+
+        Args:
+            loc: Position of the record to remove.
+        """
         assert isinstance(loc, int)
         self._records.remove(loc)
 
     def add_bus(self, bus_id: int, direction: str = '2to1'):
-        """
+        """Add an INCH record that creates a bus from the comparison.
 
-        :param bus_id: Model (RAW file) bus number
-        :param direction: Model comparison direction
-                          Default: '2to1'
-                          Options: '2to1' or '1to2'
-        :return:
+        Args:
+            bus_id: Model (RAW file) bus number.
+            direction: Model comparison direction. One of ``'2to1'`` or
+                ``'1to2'``.
         """
         # TODO: write code for add_bus
         assert isinstance(self.comparison, ModelComparison) and self.comparison is not None
@@ -70,25 +111,43 @@ class Inch(object):
         ...
 
     def modify_bus(self, bus_id):
+        """Add an INCH record that modifies an existing bus.
+
+        Args:
+            bus_id: Model (RAW file) bus number to modify.
+        """
         # TODO: write code
         assert isinstance(self.comparison, ModelComparison) and self.comparison is not None
         ...
 
     def modify_bus_number(self, bus_id):
+        """Add an INCH record that renumbers an existing bus.
+
+        Args:
+            bus_id: Model (RAW file) bus number to renumber.
+        """
         # TODO: write code
         assert isinstance(self.comparison, ModelComparison) and self.comparison is not None
         ...
 
     def del_bus(self, bus_id):
+        """Add an INCH record that deletes an existing bus.
+
+        Args:
+            bus_id: Model (RAW file) bus number to delete.
+        """
         # TODO: write code
         assert isinstance(self.comparison, ModelComparison) and self.comparison is not None
         ...
 
     def to_inch(self, filepath: Path | str) -> tuple[Path, str]:
-        """
-        Write the inch records to a file
-        :param filepath: Path | str where to write the INCH file.
-        :return: tuple[Path, str] of the filepath written and the file content.
+        """Write the INCH records to a file.
+
+        Args:
+            filepath: Where to write the INCH file.
+
+        Returns:
+            A tuple of the filepath written and the file content.
         """
         # TODO: write the inch records to a file.
         ...

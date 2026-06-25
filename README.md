@@ -2,7 +2,7 @@
 
 Python library for reading, editing, validating, and comparing PSS/E power system models (RAW v33/34/35 and RAWX formats).
 
-> **Status:** Active development — proprietary, internal use only.
+> **Status:** Active development. Licensed under the [MIT License](LICENSE).
 
 ---
 
@@ -161,14 +161,16 @@ psse_model_util/
 ├── compare.py                 # ModelComparison class
 ├── version.py                 # Legacy version shim (deprecated — use __about__.py)
 ├── inch.py                    # WIP: IDEV/INCH export (Phase 3.2)
-├── __about__.py               # Version: 2026.4.3 (calver YYYY.M.micro)
+├── flowgate/                  # .mon flowgate parsing + key-facility extraction
+├── util/                      # WIP: contingency / alternate-path scaffolding
+├── __about__.py               # Single source of truth for the version (calver YYYY.M.micro)
 ├── __init__.py
 ├── CLAUDE.md                  # Architecture guide for Claude Code
 ├── common/
 │   ├── constants.py           # INCLUDE_AREAS, filter constants, query defaults
 │   ├── dataframe_util.py      # convert_df_column_dtypes()
 │   ├── dirs.py                # Canonical app dirs (platformdirs)
-│   ├── file_util.py           # to_pickle(), read_pickle(), wait_for_file()
+│   ├── file_util.py           # to_pickle(), read_pickle(), model-file discovery, CSV helpers
 │   ├── json_util.py           # load_and_clean_json()
 │   └── logging_config.py      # Logger setup
 ├── dataformat/
@@ -221,11 +223,28 @@ pdm run pytest tests/test_model.py -k "test_filter_by_area"
 
 # Test with coverage report
 pdm run pytest --cov=psse_model_util --cov-report=term-missing
-# Current: 434 tests, 78% coverage (CI gate: 40%)
+# Current: 607 passing, ~91% coverage (CI gate: 90%)
 
 # Version (hatch-managed calver)
 hatch version
 ```
+
+### Build the API docs
+
+The HTML API reference is generated from the in-source Google-style docstrings
+via Sphinx (`autodoc` + `napoleon`):
+
+```bash
+# Install the docs toolchain (Sphinx only; autodoc + napoleon ship in core)
+pdm run python -m pip install -r docs/requirements.txt
+
+# Build (warnings treated as errors, matching CI)
+pdm run python -m sphinx -W -b html docs docs/_build/html
+# Open docs/_build/html/index.html
+```
+
+CI builds the docs with `-W` (warnings-as-errors) on every push/PR, so a
+malformed docstring or broken cross-reference fails the build.
 
 > **Claude Code users:** `CLAUDE.md` at the repo root contains architecture
 > notes, data-flow diagrams, and the rationale behind key design decisions.
@@ -266,4 +285,4 @@ Publishing is automated via **Trusted Publishing** (OIDC — no API tokens) in `
 
 ## License
 
-Proprietary — internal use only.
+Released under the [MIT License](LICENSE). © 2026 cadvena.

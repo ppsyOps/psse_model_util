@@ -1,3 +1,12 @@
+"""Logging configuration for psse_model_util.
+
+Provides ``setup_logger`` to build a logger that writes to both the console and
+a rotating file under the user log directory, plus ``get_log_file_path`` to
+discover the active log file from a logger's handlers.
+"""
+
+from __future__ import annotations
+
 import logging
 import logging.handlers
 import sys
@@ -15,28 +24,22 @@ def setup_logger(
     logformat: Optional[str] = None,
     log_file: Optional[Path] = LOG_FILE,
 ) -> logging.Logger:
-    """
-    Configure and return a logger instance that writes to both console and file.
+    """Configure and return a logger that writes to both console and file.
 
-    Parameters
-    ----------
-    name : str, optional
-        The logger name. If None, returns the root logger.
-    loglevel : int, optional
-        The logging level to use. Defaults to logging.INFO.
-    logformat : str, optional
-        Custom log format string. If None, uses default format.
+    Args:
+        name: The logger name. If None, returns the root logger.
+        loglevel: The logging level to use. Defaults to ``logging.INFO``.
+        logformat: Custom log format string. If None, a default format is used.
+        log_file: Path to the rotating log file. Defaults to ``LOG_FILE`` under
+            the user log directory.
 
-    Returns
-    -------
-    logging.Logger
-        Configured logger instance.
+    Returns:
+        logging.Logger: The configured logger instance.
 
-    Examples
-    --------
-    # >>> from logging_config import setup_logger
-    # >>> logger = setup_logger("my_module")
-    # >>> logger.info("Hello, logging!")
+    Examples:
+        >>> from logging_config import setup_logger  # doctest: +SKIP
+        >>> logger = setup_logger("my_module")  # doctest: +SKIP
+        >>> logger.info("Hello, logging!")  # doctest: +SKIP
     """
     user_log_dir.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(name)

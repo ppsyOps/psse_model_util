@@ -17,12 +17,19 @@ logger = logging.getLogger(__name__)
 
 
 def _build_bus_only_graph(model: Model) -> nx.Graph:
-    """Build a graph whose nodes are bus ibus values and edges are
-    AC lines plus transformer windings.
+    """Build a bus-only graph from the model's AC lines and transformers.
 
-    2W transformers (kbus == 0) contribute one edge (ibus, jbus).
-    3W transformers contribute a triangle among (ibus, jbus, kbus) -- this
+    Nodes are bus ibus values; edges are AC lines plus transformer windings.
+    2W transformers (kbus == 0) contribute one edge ``(ibus, jbus)``. 3W
+    transformers contribute a triangle among ``(ibus, jbus, kbus)``, which
     correctly models that any pair of windings is one electrical hop apart.
+
+    Args:
+        model: The model whose network tables seed the graph.
+
+    Returns:
+        An undirected :class:`networkx.Graph` of buses and electrical
+        connections.
     """
     g = nx.Graph()
     g.add_nodes_from(int(b) for b in model.network.bus.index)
@@ -51,14 +58,25 @@ def neighborhood_buses(
     hops: int = DEFAULT_HOPS,
     graph: nx.Graph | None = None,
 ) -> set[int]:
-    """Return the set of buses within `hops` edges of any bus in `seed_buses`
-    on the bus-only graph (AC lines + transformer windings).
+    """Expand a set of seed buses to their n-hop neighborhood.
 
-    Includes the seed buses themselves. Uses nx.ego_graph with radius=hops.
+    Returns the set of buses within ``hops`` edges of any bus in
+    ``seed_buses`` on the bus-only graph (AC lines + transformer windings),
+    including the seed buses themselves. Uses :func:`networkx.ego_graph` with
+    ``radius=hops``. Seed buses absent from the graph are logged at WARNING
+    level and skipped.
 
-    If `graph` is supplied, it is used directly (avoids rebuilding for
-    multi-FG callers like `collect_key_facilities`). Otherwise a fresh
-    bus-only graph is built from `model`.
+    Args:
+        model: The model used to build the graph when ``graph`` is not given.
+        seed_buses: Bus numbers to expand around.
+        hops: Maximum number of edges from any seed bus.
+        graph: An optional pre-built bus-only graph. When supplied it is used
+            directly (avoids rebuilding for multi-FG callers like
+            :func:`collect_key_facilities`); otherwise a fresh graph is built
+            from ``model``.
+
+    Returns:
+        The set of bus numbers in the combined neighborhood.
     """
     g = graph if graph is not None else _build_bus_only_graph(model)
     result: set[int] = set()

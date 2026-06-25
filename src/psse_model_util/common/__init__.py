@@ -1,24 +1,28 @@
+"""Common package utilities for psse_model_util.
+
+Provides shared helpers used across the package, including ``multi_replace``
+for applying multiple string substitutions in sequence.
+"""
+
+from __future__ import annotations
 
 
 def multi_replace(string: str, replacements: dict[str, str]):
-    """
-    Replace occurrences of substrings in `string` based on a dictionary of
-    replacements.
+    """Replace occurrences of substrings in a string based on a dict of replacements.
 
-    This function iterates over each key-value pair in the `replacements`
-     dictionary. Each key represents a substring in `string` that should be
-     replaced by its corresponding value. The function applies these
-     replacements sequentially and returns the modified string.
+    Iterates over each key-value pair in ``replacements``. Each key is a
+    substring of ``string`` that should be replaced by its corresponding value.
+    Replacements are applied sequentially and the modified string is returned.
 
-    :param string: The original string to perform replacements on.
-    :type string: str
-    :param replacements: A dictionary where each key-value pair represents a
-    substring to be replaced (key) and the string to replace it with (value).
-    :type replacements: dict[str, str]
-    :return: A new string with all specified replacements applied.
-    :rtype: str
+    Args:
+        string: The original string to perform replacements on.
+        replacements: A dictionary where each key is a substring to be replaced
+            and each value is the string to replace it with.
 
-    Example:
+    Returns:
+        str: A new string with all specified replacements applied.
+
+    Examples:
         >>> multi_replace("hello world", {"hello": "goodbye", "world": "universe"})
         'goodbye universe'
     """

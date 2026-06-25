@@ -1,3 +1,19 @@
+"""Package-wide configuration constants for psse_model_util.
+
+Defines the default knobs that drive model filtering and comparison:
+
+- ``INCLUDE_AREAS`` (and its ``NATIVE_AREAS`` / ``NEIGHBOR_AREAS`` components) --
+  the area numbers used as the default system footprint for area filtering.
+- ``DEFAULT_KV_FILTER`` / ``GEN_MW_FILTER`` -- default voltage and generation
+  range filters applied during filtering operations.
+- ``NETWORK_DF_COMPARISON_QUERIES`` -- the default pandas query strings used to
+  reduce comparison DataFrames for INCH/IDEV creation.
+- ``RESILIENT`` -- global flag controlling whether parsing errors log warnings
+  and continue (True) or raise (False).
+"""
+
+from __future__ import annotations
+
 from collections import namedtuple
 
 RangeFilterType = namedtuple('RangeFilterType', ['min', 'max'])

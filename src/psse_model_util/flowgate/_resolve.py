@@ -27,9 +27,17 @@ _UNRESOLVED_COLUMNS = [
 def _unresolved_token_fields(elem: FlowgateElement) -> dict:
     """Split a FlowgateElement's raw_tokens into per-type unresolved columns.
 
-    Branches fill (from_token, to_token, ckt_id); generators fill
-    (bus_token, machine_id). The other columns are None so they render
-    as empty cells in the CSV.
+    Branches fill ``(from_token, to_token, ckt_id)``; generators fill
+    ``(bus_token, machine_id)``. The other columns are ``None`` so they
+    render as empty cells in the CSV.
+
+    Args:
+        elem: The element whose ``raw_tokens`` should be unpacked.
+
+    Returns:
+        A dict with keys ``from_token``, ``to_token``, ``ckt_id``,
+        ``bus_token``, and ``machine_id``; the keys not relevant to the
+        element's type are ``None``.
     """
     if elem.element_type == "branch":
         from_token, to_token, ckt_id = elem.raw_tokens
@@ -52,7 +60,15 @@ def _unresolved_token_fields(elem: FlowgateElement) -> dict:
 
 
 def _build_bus_lookup(model: Model) -> dict[tuple[str, float], int]:
-    """Build {(name_stripped, round(baskv, KV_KEY_DECIMALS)): ibus}."""
+    """Build a ``(name, rounded_kv) -> ibus`` lookup from the model's buses.
+
+    Args:
+        model: The model whose ``network.bus`` table supplies the entries.
+
+    Returns:
+        A dict mapping ``(name_stripped, round(baskv, KV_KEY_DECIMALS))`` to
+        the bus number (ibus).
+    """
     bus_df = model.network.bus
     return {
         (str(name).strip(), round(float(baskv), KV_KEY_DECIMALS)): int(ibus)
@@ -63,7 +79,21 @@ def _build_bus_lookup(model: Model) -> dict[tuple[str, float], int]:
 
 
 def _branch_exists(model: Model, ibus: int, jbus: int, ckt: str) -> bool:
-    """Check if (ibus, jbus, ckt) — in any order — exists in acline or 2W transformer."""
+    """Check whether a branch exists between two buses, in either order.
+
+    Matches against AC lines and 2-winding transformers (kbus == 0), trying
+    both ``(ibus, jbus)`` and ``(jbus, ibus)`` orderings.
+
+    Args:
+        model: The model to search.
+        ibus: One endpoint bus number.
+        jbus: The other endpoint bus number.
+        ckt: Circuit id; compared after stripping surrounding whitespace.
+
+    Returns:
+        ``True`` if a matching AC line or 2W transformer exists, else
+        ``False``.
+    """
     ckt_norm = str(ckt).strip()
 
     ac = model.network.acline
@@ -85,9 +115,21 @@ def resolve_elements(
 ) -> tuple[list[ResolvedSeed], pd.DataFrame]:
     """Resolve flowgate elements to model bus numbers.
 
-    Returns (resolved_seeds, unresolved_df). Unresolved elements are emitted
-    to the second return value rather than raising, so processing of the
-    remaining flowgates continues.
+    Each monitored and contingency element is matched against the model's
+    buses, AC lines, transformers, and generators. Elements that fail to
+    match are collected into a DataFrame rather than raising, so processing
+    of the remaining flowgates continues.
+
+    Args:
+        fgs: Flowgates whose monitor and contingency elements are resolved.
+        model: The model to resolve against.
+
+    Returns:
+        A ``(resolved_seeds, unresolved_df)`` tuple. ``resolved_seeds`` is a
+        list of :class:`ResolvedSeed`; ``unresolved_df`` is a DataFrame with
+        the columns in ``_UNRESOLVED_COLUMNS``, one row per element that did
+        not resolve, each carrying a ``reason`` of ``"bus_not_found"``,
+        ``"branch_not_found"``, or ``"generator_not_found"``.
     """
     lookup = _build_bus_lookup(model)
     # Build a set of (ibus, machid_stripped) for robust generator lookup.

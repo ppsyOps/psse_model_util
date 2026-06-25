@@ -1,3 +1,17 @@
+"""DataFrame dtype coercion and column-manipulation helpers.
+
+Utilities for working with pandas DataFrames across the package, including:
+
+- dtype coercion (``convert_df_column_dtypes``)
+- column coalescing and creation (``coalesce``, ``create_empty_DataFrame``)
+- timezone normalization (``make_naive``, ``make_df_naive``)
+- column validation (``df_column_validator``)
+- chunked Excel export (``df_to_excel_worksheet``)
+- column reordering (``move_columns_far_left``, ``move_columns_far_right``)
+"""
+
+from __future__ import annotations
+
 import re
 from datetime import datetime as dtdt
 from pathlib import Path
@@ -19,27 +33,26 @@ def convert_df_column_dtypes(
         inplace: bool = False,
         default_types: Tuple[Union[Callable, type]] = (pd.to_datetime, int, float),
 ) -> pd.DataFrame:
-    """
-    Converts the column types of a dataframe from str to datetime, float, or int if possible.
+    """Convert the column types of a DataFrame from str to datetime, float, or int if possible.
 
-    :param df_in: The dataframe to convert.
-    :param new_dtypes: A dictionary of {column_name: new_dtype},
-                       where column_name is the name of the column and
-                       new_dtype is an ordered list of datatypes to try to convert
-                       the column to. If None is provided, defaults are
-                       [pd.to_datetime, float, int].
-    :param convert_all_columns: If True, any columns in df but not in
-                                new_dtypes will be converted using default types.
-                                If False, only columns specified in new_dtypes
-                                will be converted.
-    :param inplace: If True, modify the original dataframe. If False,
-                    return a new dataframe.
-    :param default_types: If new_dtypes not specified at or or not for a
-                          specific column, then default_types will be used for
-                          the conversion.
-    :return: The dataframe with converted column types.
+    Args:
+        df_in: The DataFrame to convert.
+        new_dtypes: A dictionary of ``{column_name: new_dtype}``, where
+            ``new_dtype`` is an ordered list of datatypes to try to convert the
+            column to. If None, defaults to ``[pd.to_datetime, float, int]``.
+        convert_all_columns: If True, any columns in the DataFrame but not in
+            ``new_dtypes`` are converted using ``default_types``. If False, only
+            columns specified in ``new_dtypes`` are converted.
+        inplace: If True, modify the original DataFrame. If False, return a new
+            DataFrame.
+        default_types: Datatypes to use for the conversion when ``new_dtypes`` is
+            not specified for a given column.
 
-    :raises AssertionError: If df is not a pandas DataFrame.
+    Returns:
+        The DataFrame with converted column types.
+
+    Raises:
+        AssertionError: If ``df_in`` is not a pandas DataFrame.
     """
     assert isinstance(df_in, pd.DataFrame), \
         (f"Expected df_in to be a pandas DataFrame; got {type(df_in)}.")
@@ -117,21 +130,22 @@ def convert_df_column_dtypes(
 # If df[col1] is null get value from df[col1]
 def coalesce(df: pd.DataFrame, new_col: str, col1: str, col2: str,
              drop=True) -> pd.DataFrame:
+    """Fill missing values in one column from another, writing the result to a new column.
+
+    If a value in ``col1`` is missing (None/NaN), it is filled with the
+    corresponding value from ``col2``; the result is stored in ``new_col``.
+
+    Args:
+        df: The DataFrame to process.
+        new_col: Name of the column in which to place the result. This may be an
+            existing column name (such as ``col1``), which would overwrite it.
+        col1: Use data from this column if not None/NaN, else use ``col2``.
+        col2: Use data from this column where ``col1`` contains None/NaN.
+        drop: If True, drop ``col1`` and ``col2`` after coalescing.
+
+    Returns:
+        pd.DataFrame: The DataFrame with the coalesced column added.
     """
-    caolesce says: if data in one column (col1) of a dataframe is missing, then fill
-    it with data from another column (col2) and save it to new_col.
-    :param df: pd.DataFrame to process
-    :param new_col: name of column in df in which to place the result.  Note
-                    that you could set new_col to an existing column name, such
-                    as col1, which would overwrite that column.
-    :param col1: Use data from this column if not None/NaN, else use col2
-    :param col2: Use data from this column if col1 contains None/NaN
-    :param drop: bool: if True, drop col1 and col2.
-                       if True, do not drop any columns.
-    :return: pd.DataFrame
-    Make column c which takes the value in c1, unless it is null,
-    in which case it uses the value in c2.  If `drop`, columns c1 and
-    c2 and removed"""
     df[new_col] = df[col1].fillna(df[col2])
     if drop:
         df.drop([col1, col2], axis=1, inplace=True)
@@ -139,19 +153,24 @@ def coalesce(df: pd.DataFrame, new_col: str, col1: str, col2: str,
 
 
 def create_empty_DataFrame(columns, index_col=None):
-    """
-    Create an empty dataframe and specify the datatype of each column.
-    Ex: df = create_empty_DataFrame([('my_date', 'datetime64[ns]'),
-                                     ('my_num', int),
-                                     ('id', str),
-                                     ('primary', bool),
-                                     ('side', str),
-                                     ('quantity', int),
-                                     ('price', float)
-                                     ]
-                                    )
-    :param columns: list of 2-tuples, where each tuple is a pair of column name and data type.
-    :return: an empty pandas DataFrame with the specified column names and data types.
+    """Create an empty DataFrame with a specified datatype for each column.
+
+    Args:
+        columns: List of 2-tuples, where each tuple is a pair of column name and
+            data type.
+        index_col: Optional column name to use as the DataFrame index.
+
+    Returns:
+        An empty pandas DataFrame with the specified column names and data types.
+
+    Examples:
+        >>> df = create_empty_DataFrame([('my_date', 'datetime64[ns]'),
+        ...                              ('my_num', int),
+        ...                              ('id', str),
+        ...                              ('primary', bool),
+        ...                              ('side', str),
+        ...                              ('quantity', int),
+        ...                              ('price', float)])
     """
     if index_col:
         index_type = next((t for name, t in columns if name == index_col))
@@ -169,13 +188,18 @@ def create_empty_DataFrame(columns, index_col=None):
 
 def make_naive(datetime_value: arrow.Arrow | dtdt,
                as_tz=None):
-    """
-    Converts an arrow.Arrow or datetime with timezone to a datetime
-    that is time zone naive.  If a timezone is part of datetime_value,
-    the datetime is converted to as_tz before stripping time zone info.
-    :param datetime_value:
-    :return: naive datetime.datetime value, i.e., datetime_value stripped of
-             tz_info.
+    """Convert an aware ``arrow.Arrow`` or ``datetime`` to a timezone-naive datetime.
+
+    If ``datetime_value`` carries timezone info, it is converted to ``as_tz``
+    (when provided) before stripping the timezone info.
+
+    Args:
+        datetime_value: The aware ``arrow.Arrow`` or ``datetime`` to convert.
+        as_tz: Optional target timezone to convert to before stripping tz info.
+
+    Returns:
+        A naive ``datetime.datetime`` value, i.e. ``datetime_value`` stripped of
+        its tzinfo.
     """
     if datetime_value.tzinfo is None:
         return datetime_value
@@ -188,11 +212,14 @@ def make_naive(datetime_value: arrow.Arrow | dtdt,
 
 
 def make_df_naive(df: pd.DataFrame, as_tz=pytz.UTC):
-    """
-    Convert all datetime columns in a dataframe from aware to naive.
-    :param df: pd.DataFrame to process.
-    :param as_tz: a valid datetime.tzinfo object, like pytz.UTC
-    :return: DataFrame with naive datetime columns
+    """Convert all datetime columns in a DataFrame from aware to naive.
+
+    Args:
+        df: The DataFrame to process.
+        as_tz: A valid ``datetime.tzinfo`` object, such as ``pytz.UTC``.
+
+    Returns:
+        A DataFrame with naive datetime columns.
     """
     df = df.copy()  # Create a copy to avoid modifying the original DataFrame
     for col in df.columns:
@@ -212,6 +239,31 @@ def df_column_validator(df_column: pd.Series,
                         isin: list = [],
                         pattern: str = '',
                         pattern_criteria: str = 'all') -> str:
+    """Validate a Series against a set of constraints and return a message string.
+
+    Each failed constraint appends a description to the returned string; an empty
+    string means all checks passed.
+
+    Args:
+        df_column: The Series (or value coercible to one) to validate.
+        nullable: If False, fail when the column contains any null values.
+        col_dtype: Expected dtype, or a list/tuple of acceptable dtypes.
+        col_min: Minimum allowable value; fail if the column minimum is below it.
+        col_max: Maximum allowable value; fail if the column maximum exceeds it.
+        isin: Allowed set of values; fail if any value is not in this list.
+        pattern: A regex ``str`` or compiled ``re.Pattern`` to match against the
+            string form of each value.
+        pattern_criteria: Either ``'all'`` (every value must match) or ``'any'``
+            (at least one value must match).
+
+    Returns:
+        str: A concatenation of failure messages, stripped of surrounding
+        whitespace. Empty if all constraints are satisfied.
+
+    Raises:
+        TypeError: If ``pattern`` is neither a ``str`` nor a ``re.Pattern``.
+        ValueError: If ``pattern_criteria`` is not ``'all'`` or ``'any'``.
+    """
     pattern_criteria: str = pattern_criteria.lower()
     if not isinstance(df_column, pd.Series) \
             and not isinstance(df_column, pd.DataFrame):
@@ -276,14 +328,15 @@ def df_to_excel_worksheet(
     worksheets, optimized for speed.
 
     Args:
-        dataframe (pd.DataFrame): The dataframe to export to Excel.
-        sheet_name (str): The name of the Excel worksheet to write to.
-        filepath (Union[str, Path]): The path to the Excel workbook.
-        if_sheet_exists (str): Action to take if the sheet already exists.
-            Options are 'replace', 'overlay', or 'new'.
-        chunk_size (int): Number of rows to write at a time for large datasets.
-        make_naive (bool): Whether to convert datetime columns to naive datetimes.
-        **kwargs: Additional arguments to pass to openpyxl's worksheet.append() method.
+        dataframe: The DataFrame to export to Excel.
+        sheet_name: The name of the Excel worksheet to write to.
+        filepath: The path to the Excel workbook.
+        if_sheet_exists: Action to take if the sheet already exists. One of
+            ``'replace'``, ``'overlay'``, or ``'new'``.
+        chunk_size: Number of rows to write at a time for large datasets.
+        make_naive: Whether to convert datetime columns to naive datetimes.
+        **kwargs: Additional arguments passed to openpyxl's
+            ``worksheet.append()`` method.
 
     Returns:
         Path: The path to the created or modified Excel file.
@@ -334,10 +387,10 @@ def _write_dataframe_to_worksheet(
     Write a DataFrame to an openpyxl worksheet in chunks.
 
     Args:
-        df (pd.DataFrame): The DataFrame to write.
-        worksheet (Worksheet): The openpyxl worksheet to write to.
-        chunk_size (int): Number of rows to write at a time.
-        **kwargs: Additional arguments to pass to worksheet.append().
+        df: The DataFrame to write.
+        worksheet: The openpyxl worksheet to write to.
+        chunk_size: Number of rows to write at a time.
+        **kwargs: Additional arguments passed to ``worksheet.append()``.
     """
     # Write headers
     headers = list(df.columns)
@@ -357,7 +410,7 @@ def _make_df_naive(df: pd.DataFrame) -> pd.DataFrame:
     Convert all datetime columns in a dataframe from aware to naive.
 
     Args:
-        df (pd.DataFrame): The input DataFrame.
+        df: The input DataFrame.
 
     Returns:
         pd.DataFrame: DataFrame with naive datetime columns.
@@ -374,20 +427,18 @@ def _make_df_naive(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def move_columns_far_left(df: pd.DataFrame, columns_to_move: list | tuple):
-    """
-    Move a specified subset of columns (columns_to_move) to the far left (the beginning) of the dataframe.
+    """Move a subset of columns to the far left (beginning) of the DataFrame.
 
-    Verbose version of code:
-        # Filter out cols_to_move from the original DataFrame's columns
-        remaining_cols = [col for col in df.columns if col not in columns_to_move]
-        # Concatenate the moved columns with the remaining columns
-        new_order = columns_to_move + remaining_cols
-        #  Reindex the DataFrame using this new column order
-        return df[new_order]
+    Columns in ``columns_to_move`` that are not present in the DataFrame are
+    ignored.
 
-    :param df: pd.DataFrame for which to modify the column order
-    :param columns_to_move: Columns to move to the far left (the beginning) of the dataframe.
-    :return: The DataFrame with columns re-ordered.
+    Args:
+        df: The DataFrame for which to modify the column order.
+        columns_to_move: Columns to move to the far left (the beginning) of the
+            DataFrame.
+
+    Returns:
+        The DataFrame with columns re-ordered.
     """
     if df.empty and len(df.columns) == 0:
         return df
@@ -400,11 +451,18 @@ def move_columns_far_left(df: pd.DataFrame, columns_to_move: list | tuple):
 
 
 def move_columns_far_right(df: pd.DataFrame, columns_to_move: list | tuple):
-    """
-    Move a specified subset of columns (columns_to_move) to the far right (the end) of the dataframe.
-    :param df: pd.DataFrame for which to modify the column order
-    :param columns_to_move: Columns to move to the far right (the end) of the dataframe.
-    :return: The DataFrame with columns re-ordered.
+    """Move a subset of columns to the far right (end) of the DataFrame.
+
+    Columns in ``columns_to_move`` that are not present in the DataFrame are
+    ignored.
+
+    Args:
+        df: The DataFrame for which to modify the column order.
+        columns_to_move: Columns to move to the far right (the end) of the
+            DataFrame.
+
+    Returns:
+        The DataFrame with columns re-ordered.
     """
     if df.empty and len(df.columns) == 0:
         return df

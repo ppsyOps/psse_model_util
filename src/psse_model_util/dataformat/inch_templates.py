@@ -1,26 +1,26 @@
+"""INCH-format templates for PowerGEM incremental change (INCH) files.
+
+PowerGEM incremental change (INCH) files are used to modify a power system model.
+This module defines :data:`INCH_TEMPLATE`, the metadata that drives creation of INCH
+files via this library (the ``psse_model_util.Inch`` class).
+
+:data:`INCH_TEMPLATE` is a dict of INCH action definitions/specifications. It holds
+all the metadata needed to build an INCH file but no actual data values; those must
+be supplied and combined with the template to produce a file. Each entry maps an
+action name (e.g. ``'ADD_BUS'``) to a spec with these keys:
+
+* ``command`` (str): the INCH command recognized by PowerGEM TARA software.
+* ``inch_fields`` (list[str]): the valid INCH file field names.
+* ``rawx_section`` (str): the corresponding RAWX section name (``'bus'``,
+  ``'acline'``, ``'generator'``, etc.).
+* ``rawx_fields`` (list[str]): the corresponding ``Model.network`` DataFrame field
+  names, aligned with ``inch_fields``.
+* ``template`` (str): the INCH file template block, where line 1 is a ``//`` comment,
+  line 2 is ``#COMMAND [csv INCH field name list]``, and line 3 is the csv value list.
+"""
+from __future__ import annotations
+
 from textwrap import dedent
-
-"""
-PowerGEM incremental change (INCH) files are used to modify the power system
-model.  This module introduces the INCH_TEMPLATE constant to support creation
-of the INCH files using this library (psse_model_util.Inch class).
-
-INCH_TEMPLATE (dict) is a metadata dict of INCH action definitions/specifications.
-It contains all metadata needed to creat the INCH file.  Actual data values are
-not included and must be provided.  Use the INCH_TEMPLATE, data values and other
-code to create INCH files.
-
-command (str): the INCH file command recognized by PowerGEM TARA software.
-inch_fields list[str]: valid INCH file field names
-rawx_section (str): a valid section name in a RAWX file, such as 'bus',
-                    'acline', 'generator', etc.
-rawx_fields (list[str]): list of corresponding model.Model.network dataframe
-                         field names
-template (str): template section of INCH file.
-                line 1: // comment
-                line 2: #COMMAND [csv INCH field name list]
-                line 3: csv value list
-"""
 
 INCH_TEMPLATE = {
     'ADD_BUS': {'command': '#ADD_BUS',
