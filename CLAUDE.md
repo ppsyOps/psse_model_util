@@ -65,17 +65,27 @@ The field mapping between RAW column names and RAWX field names is entirely data
 - **`ModelComparison`** (`compare.py`) — compares two `Model` instances. `compare_network_dfs()` produces outer-joined DataFrames with `_delta` and `presence` columns. `compare_graph()` detects added/removed edges, sectionalizations, and bypasses.
 - **`flowgate`** (package) — `.mon` flowgate parsing and key-facility neighborhood extraction. Parses PSS/E `.mon` flowgate-definition files, resolves their monitored/contingency elements against a `Model`, expands an n-hop bus neighborhood, and emits DataFrames (branches, generators, 3-winding transformers, unresolved). Public API (`extract_key_facilities`, `parse_mon_file`, `resolve_elements`, `neighborhood_buses`, `collect_key_facilities`, dataclasses `Flowgate`/`FlowgateElement`/`ResolvedSeed`) is re-exported from `flowgate/__init__.py`; the implementation lives in underscore-prefixed submodules (`_parse`, `_resolve`, `_graph`, `_collect`, `_api`, `_types`).
 
-### DataFrame metadata convention
+### Section-schema registry
 
-Every network DataFrame carries `df._metadata` (a dict) with three keys set during `Network._create_dataframe()`:
+Schema metadata is stored in a registry on `Network`, not on individual DataFrames. During `Network._create_dataframe()` each section's schema is built from `dataformat/rawx_json_template.py` and stored in `self._section_schemas: dict[str, SectionSchema]` keyed by section name.
 
-| Key | Use |
-|-----|-----|
-| `id_cols` | Columns used as the DataFrame index (unique equipment id) |
-| `bus_cols` | Columns holding bus numbers — drives `filter_by_area()` and `graph()` |
-| `data_type` | Per-column dtype hints for coercion |
+`SectionSchema` (`dataformat/section_schema.py`) is a frozen dataclass with:
 
-These are defined in `dataformat/rawx_json_template.py` and applied once at load time. Any new network section must have an entry there.
+| Field | Type | Use |
+|-------|------|-----|
+| `id_cols` | `tuple` | Columns used as the DataFrame index (unique equipment id) |
+| `bus_cols` | `tuple` | Columns holding bus numbers — drives `filter_by_area()` and `graph()` |
+| `data_type` | `Mapping[str, type]` | Per-column dtype hints for coercion |
+
+Access via the `Network` accessors:
+
+| Accessor | Returns |
+|----------|---------|
+| `network.section_schema(name)` | `SectionSchema` (empty sentinel if unknown section) |
+| `network.bus_cols(name)` | `tuple` of bus-column names |
+| `network.id_cols(name)` | `tuple` of index-column names |
+
+Because the registry lives on `Network` (not on the frame), no pandas operation (merge/concat/filter/copy) can drop it, and it survives pickle round-trips with the model. Any new network section must have an entry in `dataformat/rawx_json_template.py`.
 
 ### NetworkX graph
 

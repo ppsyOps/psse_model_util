@@ -1,8 +1,7 @@
 """
 test_classes_coverage.py — characterization tests for dataformat/classes.py.
 
-Targets the pure, coverable symbols in the module (the ModelDF class is dead
-code — its __init__ raises NotImplementedError — and is deliberately untouched):
+Targets the pure, coverable symbols in the module:
 
   - get_builtin_base_type        (lines ~180-209)
   - infer_type                   (lines ~262-288, incl. 282-283)

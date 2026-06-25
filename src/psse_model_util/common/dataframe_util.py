@@ -25,16 +25,14 @@ import pytz
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.worksheet.worksheet import Worksheet
 
-from psse_model_util.dataformat.classes import ModelDF
-
 
 def convert_df_column_dtypes(
-        df_in: pd.DataFrame | ModelDF,
+        df_in: pd.DataFrame,
         new_dtypes: dict = None,
         convert_all_columns: bool = True,
         inplace: bool = False,
         default_types: Tuple[Union[Callable, type]] = (pd.to_datetime, int, float),
-) -> pd.DataFrame | ModelDF:
+) -> pd.DataFrame:
     """Convert the column types of a DataFrame from str to datetime, float, or int if possible.
 
     Args:
@@ -54,16 +52,13 @@ def convert_df_column_dtypes(
         The DataFrame with converted column types.
 
     Raises:
-        AssertionError: If ``df_in`` is not a pandas DataFrame or ModelDF.
+        AssertionError: If ``df_in`` is not a pandas DataFrame.
     """
-    assert isinstance(df_in, (pd.DataFrame, ModelDF)), \
+    assert isinstance(df_in, pd.DataFrame), \
         (f"Expected df_in to be a pandas DataFrame; got {type(df_in)}.")
 
     # default_types: Tuple[Union[Callable, type]] = pd.to_datetime, int, float
     new_dtypes = new_dtypes or {}
-    metadata = df_in._metadata
-    if isinstance(df_in, ModelDF):
-        meta = df_in.meta
 
     df_out = df_in if inplace else df_in.copy()
 
@@ -128,10 +123,6 @@ def convert_df_column_dtypes(
             if isinstance(types, type):
                 types = [types]
             df_out[column_name] = convert_column(df_out[column_name], try_dtypes=types)
-
-    if hasattr(df_in, 'meta'):
-        df_out.meta = meta
-    df_out._metadata = metadata
 
     return df_out
 

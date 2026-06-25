@@ -14,6 +14,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from psse_model_util.dataformat.section_schema import SectionSchema
 from psse_model_util.model import AbstractSection, Model, ModelDecoder, ModelEncoder, Network
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
@@ -46,7 +47,9 @@ def model1_network():
 def empty_network():
     network = Network.__new__(Network)
     network.bus = pd.DataFrame(columns=["ibus", "baskv"])
-    network.bus._metadata = {"bus_cols": ["ibus"], "id_cols": ["ibus"], "data_type": {}}
+    network._section_schemas = {
+        "bus": SectionSchema(bus_cols=["ibus"], id_cols=["ibus"], data_type={}),
+    }
     network._graph = None
     return network
 
@@ -130,18 +133,9 @@ class TestFilterByKv:
         assert len(result.bus) == 0
 
     def test_metadata_preservation(self, model1_network):
-        original_metadata = {
-            name: df._metadata
-            for name, df in model1_network.model_dfs().items()
-            if hasattr(df, "_metadata")
-        }
+        original = model1_network._section_schemas
         result = model1_network.filter_by_kv(230, 500)
-        filtered_metadata = {
-            name: df._metadata
-            for name, df in result.model_dfs().items()
-            if hasattr(df, "_metadata")
-        }
-        assert original_metadata == filtered_metadata
+        assert result._section_schemas == original
 
     def test_inplace(self, model1_network):
         original_bus_count = len(model1_network.bus)
@@ -189,10 +183,11 @@ def test_network_graph(filtered_model):
 
 
 def test_append_bus_info_to_dfs(filtered_model):
-    filtered_model.network.append_bus_info_to_dfs()
-    for df_name, df in filtered_model.network.model_dfs().items():
-        if df_name != "bus" and hasattr(df, "_metadata") and "bus_cols" in df._metadata:
-            for bus_col in df._metadata["bus_cols"]:
+    net = filtered_model.network
+    net.append_bus_info_to_dfs()
+    for df_name, df in net.model_dfs().items():
+        if df_name != "bus" and not df.empty and net.section_schema(df_name).data_type:
+            for bus_col in net.bus_cols(df_name):
                 assert f"{bus_col}_name" in df.columns
 
 
@@ -510,15 +505,33 @@ def test_filter_by_area_graph_effect_leave(model1_network):
 
 
 def test_filter_by_area_no_matching_bus_cols_warns(model1_network):
-    """filter_by_area warns (and keeps all rows) when bus_cols declared in metadata
-    but none of those columns appear in the DataFrame's index or columns."""
+    """filter_by_area warns (and keeps all rows) when bus_cols are declared for a
+    section but none of those columns appear in the DataFrame's index or columns."""
     import copy as copy_mod
-    phantom_df = pd.DataFrame({'col_a': [1, 2]})
-    phantom_df._metadata = {'bus_cols': ['phantom_col']}
     net = copy_mod.deepcopy(model1_network)
-    net.phantom = phantom_df
+    net.phantom = pd.DataFrame({'col_a': [1, 2]})
+    net._section_schemas['phantom'] = SectionSchema(bus_cols=['phantom_col'])
     with pytest.warns(UserWarning, match="no bus columns found"):
         net.filter_by_area({1: 'AREA'}, graph_effect='clear')
+
+
+def test_filter_by_area_filters_no_data_type_section():
+    """A bus-bearing section WITHOUT data_type (e.g. swshunt) is filtered by bus
+    connection just like data_type sections. This is an intentional widening of
+    the legacy behavior (which left such sections untouched)."""
+    net = Network.__new__(Network)
+    net.bus = pd.DataFrame({"area": [1, 2]}, index=pd.Index([101, 202], name="ibus"))
+    net.swshunt = pd.DataFrame({"ibus": [101, 202], "bl": [1.0, 2.0]})
+    net._section_schemas = {
+        "bus": SectionSchema(bus_cols=["ibus"], id_cols=["ibus"]),
+        "swshunt": SectionSchema(bus_cols=["ibus"]),  # no data_type
+    }
+    net._orig_dfs_cache = {"bus": net.bus.copy()}
+    net._graph = nx.Graph()
+    net.filter_by_area({1: "AREA"}, inplace=True, graph_effect="leave")
+    # bus 202 (area 2) is removed; the swshunt row referencing bus 202 is removed too.
+    assert list(net.bus.index) == [101]
+    assert list(net.swshunt["ibus"]) == [101]
 
 
 # ---------------------------------------------------------------------------
@@ -526,14 +539,13 @@ def test_filter_by_area_no_matching_bus_cols_warns(model1_network):
 # ---------------------------------------------------------------------------
 
 def test_network_copy_shallow(model1_network):
-    """copy(deep=False) produces a distinct Network whose DataFrames are new objects
-    but whose metadata dicts are shared references (not deepcopied)."""
+    """copy(deep=False) produces a distinct Network whose DataFrames are new
+    objects and whose section schemas are shared references (not deepcopied)."""
     shallow = model1_network.copy(deep=False)
     assert shallow is not model1_network
-    # DataFrames are always deepcopied (the df itself), so identity differs
     assert shallow.bus is not model1_network.bus
-    # In shallow mode, metadata dict is a shared reference
-    assert shallow.bus._metadata is model1_network.bus._metadata
+    # Immutable schema objects are shared in shallow mode
+    assert shallow.section_schema("bus") is model1_network.section_schema("bus")
 
 
 # ---------------------------------------------------------------------------
@@ -699,7 +711,8 @@ def test_abstract_section_single_row_data():
 # ---------------------------------------------------------------------------
 
 def test_abstract_section_copy_shallow():
-    """AbstractSection.copy(deep=False) shares DataFrame metadata references."""
+    """AbstractSection.copy(deep=False) deep-copies DataFrames and shallow-copies
+    scalar attributes."""
     section_data = {
         'test_sec': {
             'fields': ['col_a', 'col_b'],
@@ -707,12 +720,11 @@ def test_abstract_section_copy_shallow():
         }
     }
     obj = AbstractSection(section_data)
-    obj.test_sec._metadata = {'bus_cols': ['col_a']}
+    obj.marker = "shared"  # an immutable non-DataFrame attribute
     shallow = obj.copy(deep=False)
     assert shallow is not obj
-    # DataFrame is a new object but metadata is a shared reference in shallow mode
-    assert shallow.test_sec is not obj.test_sec
-    assert shallow.test_sec._metadata is obj.test_sec._metadata
+    assert shallow.test_sec is not obj.test_sec          # df always deep-copied
+    assert shallow.marker is obj.marker                  # copy.copy() of an immutable returns the same object
 
 
 # ---------------------------------------------------------------------------
@@ -738,3 +750,31 @@ def test_load_node_positions_with_cache(model1_network, tmp_path, monkeypatch):
 
     result = model1_network.load_node_positions()
     assert result == positions
+
+
+# ---------------------------------------------------------------------------
+# Network._section_schemas registry and accessors
+# ---------------------------------------------------------------------------
+
+class TestSectionSchemaRegistry:
+    def test_known_section_returns_populated_schema(self, model1_network):
+        s = model1_network.section_schema("acline")
+        assert s.bus_cols == ("ibus", "jbus")
+        assert s.id_cols == ("ibus", "jbus", "ckt")
+        assert "rpu" in s.data_type
+
+    def test_unknown_section_returns_empty_schema(self, model1_network):
+        s = model1_network.section_schema("does_not_exist")
+        assert s == SectionSchema()
+        assert s.bus_cols == ()
+
+    def test_bus_cols_and_id_cols_conveniences(self, model1_network):
+        assert model1_network.bus_cols("bus") == ("ibus",)
+        assert model1_network.id_cols("load") == ("ibus", "loadid")
+        assert model1_network.bus_cols("area") == ()  # section exists, no bus_cols
+
+    def test_section_schemas_survive_pickle(self, model1_network):
+        import pickle
+        rt = pickle.loads(pickle.dumps(model1_network))
+        assert rt.bus_cols("acline") == ("ibus", "jbus")
+        assert rt.id_cols("load") == ("ibus", "loadid")

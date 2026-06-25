@@ -58,7 +58,6 @@ from typing import Any, Callable, Dict, List, Union  # Union
 import networkx as nx
 import networkx.exception
 
-# from psse_model_util.common.classes import ModelDF
 # from psse_model_util.common.dirs import site_data_dir
 # from psse_model_util.common.classes import (BusId, IdStr, IdInt,
 #                                             ZoneId, AreaId, OwnerId, SwShID)
@@ -73,10 +72,16 @@ from psse_model_util.common.file_util import read_pickle, to_pickle
 from psse_model_util.common.json_util import load_and_clean_json
 from psse_model_util.common.logging_config import get_log_file_path, setup_logger
 from psse_model_util.dataformat.rawx_json_template import rawx_json_template
+from psse_model_util.dataformat.section_schema import SectionSchema
 from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
 logger = setup_logger('model')
+
+# Bump whenever the cached Model layout changes (e.g. schema representation).
+# v2 = SectionSchema registry on Network (replaces per-DataFrame metadata dicts).
+# Caches without a matching version are ignored and rebuilt from the RAW.
+MODEL_CACHE_SCHEMA_VERSION = 2
 
 
 def _fmt_kv(v) -> str:
@@ -290,7 +295,8 @@ class AbstractSection:
     def copy(self, deep: bool = True):
         """Create a copy of the instance with all attributes copied.
 
-        DataFrame attributes are copied along with their ``_metadata``.
+        DataFrame attributes are deep- or shallow-copied per ``deep``; the section
+        schema lives on the Network registry, not the frames.
 
         Args:
             deep: If True, perform a deep copy; otherwise a shallow copy.
@@ -306,13 +312,6 @@ class AbstractSection:
             if isinstance(attr_value, pd.DataFrame):
                 # For DataFrames, use pandas copy method
                 setattr(new_abstract_section, attr_name, copy.deepcopy(attr_value))
-
-                # Copy DataFrame metadata
-                new_df = getattr(new_abstract_section, attr_name)
-                if deep:
-                    new_df._metadata = copy.deepcopy(attr_value._metadata)
-                else:
-                    new_df._metadata = attr_value._metadata
             else:
                 # For other attributes, use Python's copy or deepcopy
                 if deep:
@@ -388,6 +387,7 @@ class Network(AbstractSection):
         self.zone: pd.DataFrame = pd.DataFrame()
 
         logger.info('Network.__init__ starting...')
+        self._section_schemas: dict[str, SectionSchema] = {}
         for subsection, data in section.items():
             logger.info(f'Network.__init__ creating dataframe {subsection}...')
             self.subsection = subsection  # Added to aid in debugging
@@ -398,7 +398,6 @@ class Network(AbstractSection):
 
         self._orig_dfs_cache: dict[str, pd.DataFrame] = dict()
         self._orig_dfs_cache['bus'] = copy.deepcopy(self.bus)
-        self._orig_dfs_cache['bus']._metadata = self.bus._metadata
 
         self._graph: nx.Graph = self.graph(regenerate=True) if generate_graph else nx.Graph()
         logger.info(f'Network.__init__  finished: '
@@ -431,8 +430,9 @@ class Network(AbstractSection):
 
         Returns:
             A DataFrame structured per the RAWX section specification, with
-            correct data types, index, and attached ``_metadata``. An empty
-            section yields an empty DataFrame with the correct columns.
+            correct data types and index. The section schema is registered
+            separately in ``Network._section_schemas``. An empty section
+            yields an empty DataFrame with the correct columns.
 
         Raises:
             ValueError: If ``data`` does not contain ``fields``, or if the
@@ -445,7 +445,6 @@ class Network(AbstractSection):
             especially ``bus_cols`` and ``id_cols`` -- drives other methods such
             as :meth:`filter_by_area` and :meth:`section_with_bus`.
         """
-        orig_keys = tuple(data.keys())
         if 'fields' not in data.keys():
             logger.info(f'data keys: {list(data.keys())}')
             logger.info(f'data[:100]: {str(data)[:100]} ...')
@@ -455,18 +454,13 @@ class Network(AbstractSection):
         values: list = data.pop('data')
         meta: dict = data
 
-        # Get metadata from "data" argument for from rawx_json_template.
+        # Build and register the typed schema for this section in
+        # self._section_schemas (the registry is the sole source of truth).
         if self.subsection in rawx_json_template['network']:
-            template = rawx_json_template['network'][self.subsection]
-            template = {k: v for k, v in template.items() if k not in orig_keys}
-            # Add metatdata from rawx_json_template to the dataframe's _metadata
-            # attribute.
-            for key in template:
-                meta.setdefault(key, template[key])
-
-        # If meta['data_type'] is a list or tuple, convert it to a dict.
-        if 'data_type' in meta.keys() and not isinstance(meta['data_type'], dict):
-            meta['data_type'] = {k: v for k, v in zip(fields, meta['data_type'])}
+            self._section_schemas[self.subsection] = SectionSchema.from_template(
+                rawx_json_template['network'][self.subsection], fields)
+        else:
+            self._section_schemas[self.subsection] = SectionSchema()
 
         if not values:
             # data is empty.  Return empty dataframe.
@@ -495,44 +489,41 @@ class Network(AbstractSection):
             logger.warning(f'meta: {len(meta)}, {meta}')
             raise
 
-        # Get metadata like data_type, bus_cols, and id_cols from rawx_json_template.
-        metadata = df._metadata or {}
-        if self.subsection in rawx_json_template['network']:
-            template = rawx_json_template['network'][self.subsection]
-            template = {k: v for k, v in template.items() if k not in orig_keys}
-            # Add metatdata from rawx_json_template to the dataframe's _metadata
-            # attribute.
-            for key in template:
-                metadata[key] = template[key]
-                # id_cols = data['id_cols'] if 'id_cols' in data else None
+        # Coerce dtypes and set the index using the registry schema (no metadata
+        # is written onto the frame).
+        schema = self._section_schemas.get(self.subsection, SectionSchema())
 
-        if 'data_type' in metadata:
-            # new_dtypes = metadata['data_type']
-            new_dtypes = dict(zip(fields, metadata['data_type']))
-            metadata = metadata
+        if schema.data_type:
             df = convert_df_column_dtypes(df_in=df,
-                                          new_dtypes=new_dtypes,
+                                          new_dtypes=dict(schema.data_type),
                                           convert_all_columns=True,
                                           default_types=(int, float, str))
-            df._metadata = metadata
 
-        # Replace the default df index with the columns specified in id_cols
-        # (optionally specified in rawx_json_template).
-        if 'id_cols' in metadata:
-            id_cols = [_ for _ in metadata['id_cols'] if _ in df.columns]  # id_cols = metadata['id_cols']
-            ommited_from_index = set(id_cols) - set(df.columns)
-            if len(ommited_from_index) > 0:
-                msg = f'Unable to move columns to index (may be okay for models older than v35): {str(ommited_from_index)}.'
-                warnings.warn(msg)
-            # Set the index using the specified id_cols
+        if schema.id_cols:
+            id_cols = [c for c in schema.id_cols if c in df.columns]
+            ommited_from_index = set(schema.id_cols) - set(df.columns)
+            if ommited_from_index:
+                warnings.warn(
+                    f'Unable to move columns to index (may be okay for models older '
+                    f'than v35): {str(ommited_from_index)}.')
             try:
                 df.set_index(id_cols, inplace=True)
             except KeyError as e:
-                msg = f'Error moving columns {str(id_cols)} to index. {str(e)}'
-                warnings.warn(msg)
-                # raise
+                warnings.warn(f'Error moving columns {str(id_cols)} to index. {str(e)}')
 
         return df
+
+    def section_schema(self, section: str) -> SectionSchema:
+        """Return the SectionSchema for a section, or an empty schema if unknown."""
+        return self._section_schemas.get(section, SectionSchema())
+
+    def bus_cols(self, section: str) -> tuple[str, ...]:
+        """Bus-number columns for a section (empty tuple if none/unknown)."""
+        return self.section_schema(section).bus_cols
+
+    def id_cols(self, section: str) -> tuple[str, ...]:
+        """Unique-equipment index columns for a section (empty tuple if none/unknown)."""
+        return self.section_schema(section).id_cols
 
     def section_with_bus(self, section: str,
                          filter_condition: str = None,
@@ -565,14 +556,12 @@ class Network(AbstractSection):
         logger.info(f'Adding bus information to {section} starting...')
         # Get the specified section's DataFrame
         df = getattr(self, section)
-        metadata = df._metadata
-        df = copy.deepcopy(df)
-
         if not isinstance(df, pd.DataFrame):
             raise ValueError(f"{section} is not a DataFrame attribute of Network.")
+        df = copy.deepcopy(df)
 
-        # Get the bus columns from metadata
-        bus_cols = metadata.setdefault('bus_cols', {})
+        # Get the bus columns from the registry
+        bus_cols = self.bus_cols(section)
 
         if not bus_cols:
             raise ValueError(f"No bus columns found in metadata for {section}.")
@@ -625,7 +614,7 @@ class Network(AbstractSection):
         #   multi-bus:   "<name> <kv>kV - <name> <kv>kV <id>"  (bare id, no label)
         # A 'ckt' identifier (acline, transformer, sysswd) is labelled "CKT".
         # Absent buses (e.g. kbus=0 on a two-winding transformer) are skipped.
-        id_cols = metadata.get('id_cols', [])
+        id_cols = self.id_cols(section)
         equip_id_cols = [c for c in id_cols if c not in bus_cols and c in df.columns]
 
         # One "<name> <kv>kV" segment per bus column; empty where the bus is absent.
@@ -664,8 +653,6 @@ class Network(AbstractSection):
         if not isinstance(df.index, pd.MultiIndex) and original_index_columns[0] == 'index':
             df.index.name = None
 
-        df._metadata = metadata
-
         # If inplace, update the original DataFrame
         if inplace:
             setattr(self, section, df)
@@ -677,26 +664,31 @@ class Network(AbstractSection):
 
     def append_bus_info_to_dfs(self):
         """
-        For each dataframe in self.dfs(), if the dataframe._metadata['bus_cols']
-        exists and is not empty, update the dataframe to include bus info by
-        running the self.section_with_bus method.
+        For each dataframe in self.dfs(), if the section has bus columns
+        (per the section schema registry), update the dataframe to include bus
+        info by running the self.section_with_bus method.
 
-        This method modifies the dataframes in place, preserving their _metadata.
+        This method modifies the dataframes in place.
 
         Returns:
             None
 
         Note:
-            This method modifies the dataframes in the Network object directly.
-            It preserves the _metadata of each dataframe, including any bus_cols information.
+            Bus-column information is retrieved from the section-schema registry
+            via self.bus_cols(section) rather than from the DataFrame itself.
         """
         for section, df in self.model_dfs().items():
-            # Check if the dataframe has bus_cols in its metadata
+            bus_cols = self.bus_cols(section)
+            # Process only sections the legacy _metadata mechanism would have
+            # handled: bus-bearing, with a non-empty data_type, and non-empty df.
+            # The final clause skips frames whose bus columns aren't present
+            # (e.g. a section whose df was swapped for a structurally-different
+            # one) instead of letting the merge raise.
             if (section != 'bus'
-                    and hasattr(df, '_metadata')
-                    and 'bus_cols' in df._metadata
-                    and df._metadata['bus_cols']):
-                # Apply section_with_bus method in place
+                    and bus_cols
+                    and self.section_schema(section).data_type
+                    and not df.empty
+                    and all(c in df.columns or c in df.index.names for c in bus_cols)):
                 self.section_with_bus(section, inplace=True)
 
     def filter_by_area(self, areas: dict | list[str] = INCLUDE_AREAS,
@@ -705,9 +697,10 @@ class Network(AbstractSection):
         """Filter the network to the specified areas.
 
         Filters the ``bus`` DataFrame to buses in ``areas``, then filters every
-        network component DataFrame by its bus references (as defined in each
-        DataFrame's ``_metadata['bus_cols']``), keeping rows that reference any
-        retained bus. The network graph is updated per ``graph_effect``.
+        network component DataFrame by its bus references (as defined in the
+        section-schema registry via ``self.bus_cols(section)``), keeping rows
+        that reference any retained bus. The network graph is updated per
+        ``graph_effect``.
 
         Args:
             areas: Areas to retain in the filtered network. A dict is reduced to
@@ -736,10 +729,8 @@ class Network(AbstractSection):
         network: 'Network' = self if inplace else self.copy()
 
         # Filter bus DataFrame by area
-        bus_meta = network.bus._metadata
         logger.info(f"Network.filter_by_area: filtering buses for areas: {areas}")
         network.bus = network.bus[network.bus['area'].isin(areas)]
-        network.bus._metadata = bus_meta
 
         filtered_buses = set(network.bus.index)
         logger.info(f"Network.filter_by_area: retained {len(filtered_buses)} buses after area filtering.")
@@ -747,11 +738,9 @@ class Network(AbstractSection):
         # Filter all DataFrames that reference buses
         for attr_name, df in network.__dict__.items():
             if isinstance(df, pd.DataFrame) and attr_name != 'bus':
-                meta = df._metadata
-                if 'bus_cols' not in meta:
+                bus_cols = network.bus_cols(attr_name)
+                if not bus_cols:
                     continue  # skip DataFrames without bus references
-
-                bus_cols = meta['bus_cols']
                 # Check if bus_cols are in the columns or index
                 index_bus_cols = [col for col in bus_cols if col in df.index.names]
                 column_bus_cols = [col for col in bus_cols if col in df.columns]
@@ -772,7 +761,6 @@ class Network(AbstractSection):
                     continue
 
                 df = df[mask]
-                df._metadata = meta
                 setattr(network, attr_name, df)
 
         # Handle network graph based on graph_effect argument
@@ -846,13 +834,9 @@ class Network(AbstractSection):
         if not isinstance(df, pd.DataFrame):
             raise AttributeError(f"'{section}' is not a DataFrame")
 
-        # Save metadata before filtering
-        metadata = df._metadata if hasattr(df, '_metadata') else {}
-
         try:
             # Apply the filter using pandas query
             filtered_df = df.query(where_clause)
-            filtered_df._metadata = metadata
             logger.info(f"Network.filter_section: filtered '{section}' down to {len(filtered_df)} rows")
         except Exception as e:
             logger.error(f"Network.filter_section: failed to filter '{section}' with error: {str(e)}")
@@ -937,19 +921,15 @@ class Network(AbstractSection):
 
         # Update bus DataFrame
         network.bus = filtered_buses
-        network.bus._metadata = bus_df._metadata
 
         # Filter other equipment based on bus connections
         for section_name, df in network.model_dfs().items():
             if section_name == 'bus':
                 continue
 
-            metadata = df._metadata
-            if not metadata or 'bus_cols' not in metadata:
+            bus_cols = network.bus_cols(section_name)
+            if not bus_cols:
                 continue
-
-            # Get bus columns for this equipment type
-            bus_cols = metadata['bus_cols']
 
             # Reset index if necessary to access bus columns
             if isinstance(df.index, pd.MultiIndex):
@@ -971,9 +951,6 @@ class Network(AbstractSection):
             # Restore index if needed
             if isinstance(df.index, pd.MultiIndex):
                 filtered_df.set_index(df.index.names, inplace=True)
-
-            # Preserve metadata
-            filtered_df._metadata = metadata
 
             # Update section in network
             setattr(network, section_name, filtered_df)
@@ -1009,7 +986,8 @@ class Network(AbstractSection):
     def copy(self, deep: bool = True):
         """Create a copy of the Network instance with all attributes copied.
 
-        DataFrame attributes are copied along with their ``_metadata``.
+        DataFrame attributes are deep- or shallow-copied per ``deep``; the section
+        schema lives on the Network registry, not the frames.
 
         Args:
             deep: If True, perform a deep copy; otherwise a shallow copy.
@@ -1023,12 +1001,7 @@ class Network(AbstractSection):
         # Iterate through all attributes of the current instance
         for attr_name, attr_value in self.__dict__.items():
             if isinstance(attr_value, pd.DataFrame):
-                # For DataFrames, use pandas copy method
                 new_df = copy.deepcopy(attr_value)
-                if deep:
-                    new_df._metadata = copy.deepcopy(attr_value._metadata)
-                else:
-                    new_df._metadata = attr_value._metadata
                 setattr(new_network, attr_name, new_df)
             else:
                 # For other attributes, use Python's copy or deepcopy
@@ -1140,17 +1113,22 @@ class Network(AbstractSection):
                 # Do not add substations to model
                 continue
 
-            logger.debug(f'{section}._metadata: {df._metadata}')
+            schema = self.section_schema(section)
+            logger.debug(f'{section} schema: {schema}')
 
             # Skip rawx sections that do not have bus information, as they
-            # do nto get added to the network graph.
-            if 'bus_cols' not in df._metadata or 'id_cols' not in df._metadata:
+            # do not get added to the network graph.
+            # Also skip sections with an empty data_type: those sections ARE
+            # registered in self._section_schemas, but were never given column
+            # metadata under the legacy mechanism and are excluded to preserve
+            # the original graph-building behavior.
+            if not schema.bus_cols or not schema.id_cols or not schema.data_type:
                 # Do not add items to the network graph if they don't have any
                 # associated buses and clear identifiers.
                 continue
 
             # Get a list of column names that contain bus numbers or equipment IDs.
-            bus_cols, id_cols = df._metadata['bus_cols'], df._metadata['id_cols']
+            bus_cols, id_cols = schema.bus_cols, schema.id_cols
             # Process for adding equipment from a rawx section to the network
             # graph differs for 1-bus, 2-bus and 3-bus equipment.
             match len(bus_cols):
@@ -1327,11 +1305,10 @@ class Network(AbstractSection):
         for attr_name, df in result.__dict__.items():
             if not isinstance(df, pd.DataFrame):
                 continue
-            meta = df._metadata
-            if 'bus_cols' not in meta:
+            bus_cols = result.bus_cols(attr_name)
+            if not bus_cols:
                 continue
 
-            bus_cols = meta['bus_cols']
             index_bus_cols = [c for c in bus_cols if c in df.index.names]
             column_bus_cols = [c for c in bus_cols if c in df.columns]
 
@@ -1345,7 +1322,6 @@ class Network(AbstractSection):
                 continue
 
             filtered = df[mask]
-            filtered._metadata = meta
             setattr(result, attr_name, filtered)
 
         result._graph = nx.Graph()
@@ -1400,9 +1376,8 @@ class Network(AbstractSection):
         if ties.empty:
             empty = self.copy()
             for attr_name, df in empty.__dict__.items():
-                if isinstance(df, pd.DataFrame) and 'bus_cols' in getattr(df, '_metadata', {}):
+                if isinstance(df, pd.DataFrame) and empty.bus_cols(attr_name):
                     empty_df = df.iloc[0:0].copy()
-                    empty_df._metadata = df._metadata
                     setattr(empty, attr_name, empty_df)
             if output == 'network':
                 return empty
@@ -1990,6 +1965,7 @@ class Model:
         self.name: str = name  # If not name, self._read_json will set a name.
         self.raw_file_path: Path = None  # site_data_dir / f"rawx_{dtdt.now().strftime('%Y_%m_%d_%H_%M_%S')}.model"
         self.json_data = {}
+        self._cache_schema_version = MODEL_CACHE_SCHEMA_VERSION
 
         # Load the RAW or RAWX data
         logger.info('Model __init__ loading model from disk...')
@@ -2001,10 +1977,12 @@ class Model:
 
         # Check if we can load from a cached pickle file
         if not force_recalculate and self.pickle_path and self.pickle_path.exists():
-            self.read_pickle()
-            logger.info(f'Model __init__ ({self.pickle_path}) finished: '
-                        f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
-            return
+            result = self.read_pickle()
+            if result[1] is not None:
+                logger.info(f'Model __init__ ({self.pickle_path}) finished: '
+                            f'{((perf_counter_ns() - start_time) / 1e9):.9f} seconds.')
+                return
+            # stale/failed cache -> fall through and (re)build below
 
         # Set up the pickle path for caching
         self._csv_folder = None
@@ -2165,7 +2143,10 @@ class Model:
             if not self.name:
                 self.name = self.raw_file_path.stem
 
-            self.read_pickle()
+            result = self.read_pickle()
+            if result[1] is None and self.raw_file_path.exists():
+                # stale/failed cache and the source RAW exists -> rebuild
+                self.json_data = raw_file_to_rawx_dict(self.raw_file_path)
         else:
             # Assume input is a file path
             self.raw_file_path = Path(file_path_or_json)
@@ -2173,8 +2154,10 @@ class Model:
             # Check if we can use cached data
             if not force_recalculate and self.pickle_path.exists():
                 # Load model from cached pickle file instead of .raw or .rawx file.
-                self.read_pickle()
-                return self.json_data
+                result = self.read_pickle()
+                if result[1] is not None:
+                    return self.json_data
+                # stale/failed cache -> fall through to rebuild from raw/rawx below
 
             # Set the name attribute based on the file name
             if not self.name:
@@ -2205,7 +2188,7 @@ class Model:
     def copy(self, deep: bool = True):
         """Create a copy of the Model instance with all attributes copied.
 
-        DataFrames retain their ``_metadata``; section objects (General, Network,
+        DataFrames are deep-copied; section objects (General, Network,
         Harmonics, TimeSeries) are copied via their own ``copy`` methods.
 
         Args:
@@ -2221,12 +2204,6 @@ class Model:
         for attr_name, attr_value in self.__dict__.items():
             if isinstance(attr_value, pd.DataFrame):
                 # For DataFrames, use pandas copy method
-                new_df = copy.deepcopy(attr_value)
-                new_df = getattr(new_model, attr_name)
-                if deep:
-                    new_df._metadata = copy.deepcopy(attr_value._metadata)
-                else:
-                    new_df._metadata = attr_value._metadata
                 setattr(new_model, attr_name, copy.deepcopy(attr_value))
             elif isinstance(attr_value, nx.Graph):
                 # For networkx Graph, use its copy method
@@ -2492,6 +2469,14 @@ class Model:
                 warnings.warn(f'Could not load file {str(self.pickle_path)}. {str(e)}')
             else:
                 raise
+
+        # Reject stale caches (decision A: invalidate-and-rebuild, no migration).
+        if obj is not None and getattr(obj, '_cache_schema_version', None) != MODEL_CACHE_SCHEMA_VERSION:
+            warnings.warn(
+                f'Ignoring stale cache schema (found '
+                f'{getattr(obj, "_cache_schema_version", None)!r}, expected '
+                f'{MODEL_CACHE_SCHEMA_VERSION}): {self.pickle_path}')
+            return FpPickleType(None, None)
 
         # Save current name before loading attributes
         original_name = self.name

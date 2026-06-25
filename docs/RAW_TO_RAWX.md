@@ -231,7 +231,7 @@ For each subsection:
 4. Build `pd.DataFrame(data, columns=fields)`
 5. Coerce dtypes: `convert_df_column_dtypes(df, new_dtypes, default_types=(int, float, str))`
 6. Set index: `df.set_index(id_cols)` (e.g., `ibus` for bus; `ibus, jbus, ckt` for acline)
-7. Attach metadata: `df._metadata = {'data_type': ..., 'id_cols': ..., 'bus_cols': ...}`
+7. Store df on `Network` and register its schema: `Network._section_schemas[section] = SectionSchema(...)` (no metadata is attached to the frame)
 
 ---
 
@@ -279,7 +279,7 @@ caller
   │                       ├─ pd.DataFrame(data, columns=fields)
   │                       ├─ convert_df_column_dtypes()
   │                       ├─ df.set_index(id_cols)
-  │                       └─ df._metadata = {...}
+  │                       └─ Network._section_schemas[section] = SectionSchema(...)
   │
   └─ model.network.bus  →  typed pd.DataFrame
 ```
