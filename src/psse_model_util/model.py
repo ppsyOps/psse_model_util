@@ -686,6 +686,11 @@ class Network(AbstractSection):
         """
         for section, df in self.model_dfs().items():
             bus_cols = self.bus_cols(section)
+            # Process only sections the legacy _metadata mechanism would have
+            # handled: bus-bearing, with a non-empty data_type, and non-empty df.
+            # The final clause skips frames whose bus columns aren't present
+            # (e.g. a section whose df was swapped for a structurally-different
+            # one) instead of letting the merge raise.
             if (section != 'bus'
                     and bus_cols
                     and self.section_schema(section).data_type
@@ -1192,8 +1197,10 @@ class Network(AbstractSection):
 
             # Skip rawx sections that do not have bus information, as they
             # do not get added to the network graph.
-            # Also skip sections whose SectionSchema has no data_type: those
-            # sections were not registered in self._section_schemas.
+            # Also skip sections with an empty data_type: those sections ARE
+            # registered in self._section_schemas, but were never given column
+            # metadata under the legacy mechanism and are excluded to preserve
+            # the original graph-building behavior.
             if not schema.bus_cols or not schema.id_cols or not schema.data_type:
                 # Do not add items to the network graph if they don't have any
                 # associated buses and clear identifiers.
