@@ -38,6 +38,9 @@ htmlcov/
 *.sublime-project
 *.sublime-workspace
 
+# Claude Code (agent worktree scaffolding)
+.claude/worktrees/
+
 # OS
 .DS_Store
 Thumbs.db
