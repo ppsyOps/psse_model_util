@@ -181,7 +181,7 @@ class ModelComparison:
             self._pickle_path = None
         if not hasattr(self, "_bus_num_changes"):
             self._bus_num_changes: pd.DataFrame = pd.DataFrame()
-            self._bus_num_changes._metadata = {'join_columns': []}
+            self._bus_num_changes_join_cols: Optional[list] = None
 
         self.pickle_path  # Set the pickle file path for the model comparison
         self.csv_folder  # Set the CSV file path for the model comparison
@@ -228,7 +228,7 @@ class ModelComparison:
         # create that cache, then use the cached results.  Else, start from
         # scratch.
         if not self._bus_num_changes.empty and \
-                self._bus_num_changes._metadata['join_columns'] == join_columns:
+                getattr(self, '_bus_num_changes_join_cols', None) == join_columns:
             return self._bus_num_changes
 
         # Do not join on index column, 'ibus'.
@@ -265,9 +265,7 @@ class ModelComparison:
         if not changes_df.empty:
             result_columns = ['ibus_model1', 'ibus_model2'] + join_columns
             self._bus_num_changes = changes_df[result_columns].copy()
-            if not self._bus_num_changes._metadata:
-                self._bus_num_changes._metadata = {}
-            self._bus_num_changes._metadata['join_columns'] = join_columns
+            self._bus_num_changes_join_cols = join_columns
             return self._bus_num_changes
         else:
             # If no changes, return None or an empty DataFrame based on your preference

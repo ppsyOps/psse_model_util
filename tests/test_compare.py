@@ -231,8 +231,6 @@ def test_bus_num_changes_performance(raw_models):
         "area": [i % 10 for i in range(num_buses)],
         "baskv": np.random.uniform(100, 500, num_buses),
     }).set_index("ibus")
-    large_model.network.bus._metadata = model1.network.bus._metadata
-
     comp = ModelComparison(large_model, large_model)
     start = time.perf_counter()
     comp.bus_num_changes()

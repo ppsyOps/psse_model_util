@@ -94,7 +94,7 @@ class TestCompareGraphNamedColumns:
         comp.model2 = m2
         comp.max_path_length = 5
         comp._bus_num_changes = pd.DataFrame()
-        comp._bus_num_changes._metadata = {'join_columns': []}
+        comp._bus_num_changes_join_cols = None
         comp._csv_folder = None
         comp._pickle_path = None
 
@@ -219,7 +219,7 @@ class TestCompareNetworkDfsEnrichment:
         comp.model2 = m2
         comp.max_path_length = 5
         comp._bus_num_changes = pd.DataFrame()
-        comp._bus_num_changes._metadata = {'join_columns': []}
+        comp._bus_num_changes_join_cols = None
         comp._csv_folder = None
         comp._pickle_path = None
 
@@ -375,7 +375,7 @@ class TestBusLabelContent:
         comp.model2 = _stub_model(net2, "Model_2")
         comp.max_path_length = 5
         comp._bus_num_changes = pd.DataFrame()
-        comp._bus_num_changes._metadata = {'join_columns': []}
+        comp._bus_num_changes_join_cols = None
         comp._csv_folder = None
         comp._pickle_path = None
         comp.compare_graph()
