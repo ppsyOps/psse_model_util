@@ -69,7 +69,6 @@ from typing import Any, Callable, Dict, List, Union  # Union
 import networkx as nx
 import networkx.exception
 
-# from psse_model_util.common.classes import ModelDF
 # from psse_model_util.common.dirs import site_data_dir
 # from psse_model_util.common.classes import (BusId, IdStr, IdInt,
 #                                             ZoneId, AreaId, OwnerId, SwShID)
