@@ -171,7 +171,7 @@ Model.__init__() → Network.__init__() → _create_dataframe() per subsection
     │  4. Build pd.DataFrame
     │  5. Coerce dtypes via convert_df_column_dtypes()
     │  6. Set index from id_cols
-    │  7. Attach metadata to df._metadata
+    │  7. Store df on Network and register its SectionSchema in Network._section_schemas[section]
     │
     ▼
 Model.network.<subsection>  — typed, indexed pd.DataFrame
@@ -203,17 +203,19 @@ Model.__init__()
 
 ---
 
-## DataFrame Metadata (`df._metadata`)
+## Section-Schema Registry (`Network._section_schemas`)
 
-Every network DataFrame carries metadata attached to `df._metadata` (dict):
+Schema metadata is stored in a per-`Network` registry, not on individual DataFrames. `Network._create_dataframe()` builds a `SectionSchema` from `dataformat/rawx_json_template.py` for each section and stores it in `self._section_schemas: dict[str, SectionSchema]` keyed by section name.
 
-| Key | Type | Description |
-|-----|------|-------------|
-| `data_type` | `dict[str, type]` | Per-column dtype hints |
-| `id_cols` | `list[str]` | Columns used as the DataFrame index (unique equipment identifier) |
-| `bus_cols` | `list[str]` | Column names that contain bus numbers (used by `filter_by_area`, `graph()`) |
+`SectionSchema` (`dataformat/section_schema.py`) is a frozen dataclass:
 
-This metadata is defined in `dataformat/rawx_json_template.py` and applied during `Network._create_dataframe()`.
+| Field | Type | Description |
+|-------|------|-------------|
+| `data_type` | `Mapping[str, type]` | Per-column dtype hints |
+| `id_cols` | `tuple` | Columns used as the DataFrame index (unique equipment identifier) |
+| `bus_cols` | `tuple` | Column names that contain bus numbers (used by `filter_by_area`, `graph()`) |
+
+Access via `network.section_schema(name)`, `network.bus_cols(name)`, or `network.id_cols(name)`. Because the registry lives on `Network`, it survives all pandas operations (merge/concat/filter/copy) and pickle round-trips. New sections must have an entry in `dataformat/rawx_json_template.py`.
 
 ---
 
@@ -276,7 +278,7 @@ All runtime paths are managed by `common/dirs.py` using `platformdirs`:
 |----------|-----------|
 | RAW files converted to RAWX-compatible dict before parsing | Single downstream code path; RAWX is the canonical internal format |
 | `rawx_raw_map.csv` drives all RAW→RAWX field mapping | Keeps field mappings data-driven and version-aware (v34 vs v35 columns side-by-side) |
-| DataFrame metadata in `df._metadata` | Allows per-DataFrame schema awareness without a separate registry; used by `filter_by_area()` and `graph()` |
+| Section-schema registry on `Network._section_schemas` | Schema survives all pandas ops (merge/concat/copy) and pickle round-trips; looked up via `network.section_schema(name)` — drives `filter_by_area()` and `graph()` |
 | Pickle cache keyed by raw file stem | Parsing large BES models (tens of thousands of buses) is slow; cache makes repeated loads fast |
 | `filter_by_area()` filters all DFs via `bus_cols` metadata | Single filter method covers all equipment types without hard-coding section names |
 | NetworkX graph built lazily | Graph construction is expensive; only done when needed |

@@ -63,17 +63,27 @@ The field mapping between RAW column names and RAWX field names is entirely data
 - **`Network`** (`model.py`) — holds one `pd.DataFrame` per PSS/E section (`bus`, `acline`, `transformer`, `generator`, `load`, etc.) plus a lazy `nx.Graph`. Extends `AbstractSection`.
 - **`ModelComparison`** (`compare.py`) — compares two `Model` instances. `compare_network_dfs()` produces outer-joined DataFrames with `_delta` and `presence` columns. `compare_graph()` detects added/removed edges, sectionalizations, and bypasses.
 
-### DataFrame metadata convention
+### Section-schema registry
 
-Every network DataFrame carries `df._metadata` (a dict) with three keys set during `Network._create_dataframe()`:
+Schema metadata is stored in a registry on `Network`, not on individual DataFrames. During `Network._create_dataframe()` each section's schema is built from `dataformat/rawx_json_template.py` and stored in `self._section_schemas: dict[str, SectionSchema]` keyed by section name.
 
-| Key | Use |
-|-----|-----|
-| `id_cols` | Columns used as the DataFrame index (unique equipment id) |
-| `bus_cols` | Columns holding bus numbers — drives `filter_by_area()` and `graph()` |
-| `data_type` | Per-column dtype hints for coercion |
+`SectionSchema` (`dataformat/section_schema.py`) is a frozen dataclass with:
 
-These are defined in `dataformat/rawx_json_template.py` and applied once at load time. Any new network section must have an entry there.
+| Field | Type | Use |
+|-------|------|-----|
+| `id_cols` | `tuple` | Columns used as the DataFrame index (unique equipment id) |
+| `bus_cols` | `tuple` | Columns holding bus numbers — drives `filter_by_area()` and `graph()` |
+| `data_type` | `Mapping[str, type]` | Per-column dtype hints for coercion |
+
+Access via the `Network` accessors:
+
+| Accessor | Returns |
+|----------|---------|
+| `network.section_schema(name)` | `SectionSchema` (empty sentinel if unknown section) |
+| `network.bus_cols(name)` | `tuple` of bus-column names |
+| `network.id_cols(name)` | `tuple` of index-column names |
+
+Because the registry lives on `Network` (not on the frame), no pandas operation (merge/concat/filter/copy) can drop it, and it survives pickle round-trips with the model. Any new network section must have an entry in `dataformat/rawx_json_template.py`.
 
 ### NetworkX graph
 

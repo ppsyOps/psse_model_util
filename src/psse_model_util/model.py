@@ -89,9 +89,9 @@ from psse_model_util.raw_to_rawx import raw_file_to_rawx_dict
 FpPickleType = namedtuple('FpPickleType', ['file_path', 'object'])
 logger = setup_logger('model')
 
-# Bump whenever the cached Model layout changes (e.g. metadata representation).
-# v2 = SectionSchema registry on Network (replaces df._metadata). Caches without
-# a matching version are ignored and rebuilt from the RAW.
+# Bump whenever the cached Model layout changes (e.g. schema representation).
+# v2 = SectionSchema registry on Network (replaces per-DataFrame metadata dicts).
+# Caches without a matching version are ignored and rebuilt from the RAW.
 MODEL_CACHE_SCHEMA_VERSION = 2
 
 
@@ -461,9 +461,8 @@ class Network(AbstractSection):
         values: list = data.pop('data')
         meta: dict = data
 
-        # Build and register the typed schema for this section (registry is the
-        # new source of truth; the df._metadata writes below are legacy and are
-        # removed in a later task).
+        # Build and register the typed schema for this section in
+        # self._section_schemas (the registry is the sole source of truth).
         if self.subsection in rawx_json_template['network']:
             self._section_schemas[self.subsection] = SectionSchema.from_template(
                 rawx_json_template['network'][self.subsection], fields)
@@ -672,18 +671,18 @@ class Network(AbstractSection):
 
     def append_bus_info_to_dfs(self):
         """
-        For each dataframe in self.dfs(), if the dataframe._metadata['bus_cols']
-        exists and is not empty, update the dataframe to include bus info by
-        running the self.section_with_bus method.
+        For each dataframe in self.dfs(), if the section has bus columns
+        (per the section schema registry), update the dataframe to include bus
+        info by running the self.section_with_bus method.
 
-        This method modifies the dataframes in place, preserving their _metadata.
+        This method modifies the dataframes in place.
 
         Returns:
             None
 
         Note:
-            This method modifies the dataframes in the Network object directly.
-            It preserves the _metadata of each dataframe, including any bus_cols information.
+            Bus-column information is retrieved from the section-schema registry
+            via self.bus_cols(section) rather than from the DataFrame itself.
         """
         for section, df in self.model_dfs().items():
             bus_cols = self.bus_cols(section)
@@ -703,7 +702,7 @@ class Network(AbstractSection):
 
         How? Filters the `bus` DataFrame based on the provided areas,
         then filters network component dfs by their bus references
-        (as defined in each DataFrame's `_metadata['bus_cols']`).
+        (as defined in the section-schema registry via self.bus_cols(section)).
 
         Graph: Updates the network graph according to the `graph_effect` option.
 
@@ -1193,9 +1192,8 @@ class Network(AbstractSection):
 
             # Skip rawx sections that do not have bus information, as they
             # do not get added to the network graph.
-            # Also skip sections without data_type: those sections did not have
-            # _metadata written by _create_dataframe (legacy behaviour preserved
-            # until a later task removes the _metadata writes entirely).
+            # Also skip sections whose SectionSchema has no data_type: those
+            # sections were not registered in self._section_schemas.
             if not schema.bus_cols or not schema.id_cols or not schema.data_type:
                 # Do not add items to the network graph if they don't have any
                 # associated buses and clear identifiers.
